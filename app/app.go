@@ -46,7 +46,10 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 
 	"mychain/docs"
+	dexmodulekeeper "mychain/x/dex/keeper"
+	maincoinmodulekeeper "mychain/x/maincoin/keeper"
 	mychainmodulekeeper "mychain/x/mychain/keeper"
+	testusdmodulekeeper "mychain/x/testusd/keeper"
 )
 
 const (
@@ -98,7 +101,10 @@ type App struct {
 	ICAHostKeeper       icahostkeeper.Keeper
 	TransferKeeper      ibctransferkeeper.Keeper
 
-	MychainKeeper mychainmodulekeeper.Keeper
+	MychainKeeper  mychainmodulekeeper.Keeper
+	TestusdKeeper  testusdmodulekeeper.Keeper
+	MaincoinKeeper maincoinmodulekeeper.Keeper
+	DexKeeper      dexmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -176,6 +182,10 @@ func New(
 		&app.CircuitBreakerKeeper,
 		&app.ParamsKeeper,
 		&app.MychainKeeper,
+		&app.TestusdKeeper,
+		&app.MaincoinKeeper,
+		&app.DexKeeper,
+		&app.TestusdKeeper,
 	); err != nil {
 		panic(err)
 	}

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package mychain.maincoin.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "mychain/maincoin/v1/params.proto";
+
+option go_package = "mychain/x/maincoin/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/params";
+  }
+
+  // CurrentPrice Queries a list of CurrentPrice items.
+  rpc CurrentPrice(QueryCurrentPriceRequest) returns (QueryCurrentPriceResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/current_price";
+  }
+
+  // SegmentInfo Queries a list of SegmentInfo items.
+  rpc SegmentInfo(QuerySegmentInfoRequest) returns (QuerySegmentInfoResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/segment_info";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryCurrentPriceRequest defines the QueryCurrentPriceRequest message.
+message QueryCurrentPriceRequest {}
+
+// QueryCurrentPriceResponse defines the QueryCurrentPriceResponse message.
+message QueryCurrentPriceResponse {}
+
+// QuerySegmentInfoRequest defines the QuerySegmentInfoRequest message.
+message QuerySegmentInfoRequest {}
+
+// QuerySegmentInfoResponse defines the QuerySegmentInfoResponse message.
+message QuerySegmentInfoResponse {}

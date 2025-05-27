@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package mychain.dex.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "mychain/dex/v1/params.proto";
+
+option go_package = "mychain/x/dex/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/params";
+  }
+
+  // OrderBook Queries a list of OrderBook items.
+  rpc OrderBook(QueryOrderBookRequest) returns (QueryOrderBookResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/order_book/{pair_id}";
+  }
+
+  // UserRewards Queries a list of UserRewards items.
+  rpc UserRewards(QueryUserRewardsRequest) returns (QueryUserRewardsResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/user_rewards/{address}";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryOrderBookRequest defines the QueryOrderBookRequest message.
+message QueryOrderBookRequest {
+  uint64 pair_id = 1;
+}
+
+// QueryOrderBookResponse defines the QueryOrderBookResponse message.
+message QueryOrderBookResponse {}
+
+// QueryUserRewardsRequest defines the QueryUserRewardsRequest message.
+message QueryUserRewardsRequest {
+  string address = 1;
+}
+
+// QueryUserRewardsResponse defines the QueryUserRewardsResponse message.
+message QueryUserRewardsResponse {}

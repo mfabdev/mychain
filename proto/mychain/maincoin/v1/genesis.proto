@@ -1,0 +1,17 @@
+syntax = "proto3";
+package mychain.maincoin.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "mychain/maincoin/v1/params.proto";
+
+option go_package = "mychain/x/maincoin/types";
+
+// GenesisState defines the maincoin module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}

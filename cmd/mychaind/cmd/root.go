@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	_ "mychain/x/testusd/module"
 	"os"
 
 	"cosmossdk.io/client/v2/autocli"
