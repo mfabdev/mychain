@@ -10,4 +10,19 @@ option go_package = "mychain/x/testusd/types";
 message Params {
   option (amino.name) = "mychain/x/testusd/Params";
   option (gogoproto.equal) = true;
+  
+  // bridge_enabled controls whether bridging is enabled
+  bool bridge_enabled = 1;
+  
+  // peg_ratio defines the ratio for USDC:TestUSD (should always be "1.0")
+  string peg_ratio = 2;
+  
+  // testusd_denom is the denomination for TestUSD tokens
+  string testusd_denom = 3;
+  
+  // usdc_denom is the denomination for USDC tokens (for tracking)
+  string usdc_denom = 4;
+  
+  // bridge_address is the module account that holds bridged USDC
+  string bridge_address = 5;
 }

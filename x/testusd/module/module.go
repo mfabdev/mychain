@@ -30,20 +30,17 @@ var (
 type AppModule struct {
 	cdc        codec.Codec
 	keeper     keeper.Keeper
-	authKeeper types.AuthKeeper
 	bankKeeper types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	authKeeper types.AuthKeeper,
 	bankKeeper types.BankKeeper,
 ) AppModule {
 	return AppModule{
 		cdc:        cdc,
 		keeper:     keeper,
-		authKeeper: authKeeper,
 		bankKeeper: bankKeeper,
 	}
 }
@@ -103,15 +100,13 @@ func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
 
-	return am.keeper.InitGenesis(ctx, genState)
+	am.keeper.InitGenesis(ctx, genState)
+	return nil
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx context.Context) (json.RawMessage, error) {
-	genState, err := am.keeper.ExportGenesis(ctx)
-	if err != nil {
-		return nil, err
-	}
+	genState := am.keeper.ExportGenesis(ctx)
 
 	return am.cdc.MarshalJSON(genState)
 }

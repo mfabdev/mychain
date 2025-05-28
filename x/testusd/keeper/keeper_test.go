@@ -16,6 +16,7 @@ import (
 	"mychain/x/testusd/keeper"
 	module "mychain/x/testusd/module"
 	"mychain/x/testusd/types"
+	"cosmossdk.io/log"
 )
 
 type fixture struct {
@@ -25,34 +26,37 @@ type fixture struct {
 }
 
 func initFixture(t *testing.T) *fixture {
-	t.Helper()
+t.Helper()
 
-	encCfg := moduletestutil.MakeTestEncodingConfig(module.AppModule{})
-	addressCodec := addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
-	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+encCfg := moduletestutil.MakeTestEncodingConfig(module.AppModule{})
+addressCodec := addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix())
 
-	storeService := runtime.NewKVStoreService(storeKey)
-	ctx := testutil.DefaultContextWithDB(t, storeKey, storetypes.NewTransientStoreKey("transient_test")).Ctx
+storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+storeService := runtime.NewKVStoreService(storeKey)
+ctx := testutil.DefaultContextWithDB(t, storeKey, storetypes.NewTransientStoreKey("transient_test")).Ctx
 
-	authority := authtypes.NewModuleAddress(types.GovModuleName)
+authority := authtypes.NewModuleAddress(types.GovModuleName)
 
-	k := keeper.NewKeeper(
-		storeService,
-		encCfg.Codec,
-		addressCodec,
-		authority,
-		nil,
-		nil,
-	)
+k := keeper.NewKeeper(
+encCfg.Codec,
+storeService,
+storeKey,
+log.NewNopLogger(),
+authority.String(),
+addressCodec,
+nil,
+nil,
+nil,
+)
 
-	// Initialize params
-	if err := k.Params.Set(ctx, types.DefaultParams()); err != nil {
-		t.Fatalf("failed to set params: %v", err)
-	}
+// Initialize params
+if err := k.Params.Set(ctx, types.DefaultParams()); err != nil {
+t.Fatalf("failed to set params: %v", err)
+}
 
-	return &fixture{
-		ctx:          ctx,
-		keeper:       k,
-		addressCodec: addressCodec,
-	}
+return &fixture{
+ctx:          ctx,
+keeper:       k,
+addressCodec: addressCodec,
+}
 }

@@ -1,19 +1,38 @@
 package types
 
-import "cosmossdk.io/collections"
-
 const (
-	// ModuleName defines the module name
-	ModuleName = "testusd"
+    // ModuleName defines the module name
+    ModuleName = "testusd"
 
-	// StoreKey defines the primary module store key
-	StoreKey = ModuleName
+    // StoreKey defines the primary module store key
+    StoreKey = ModuleName
 
-	// GovModuleName duplicates the gov module's name to avoid a dependency with x/gov.
-	// It should be synced with the gov module's name if it is ever changed.
-	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.52.0-beta.2/x/gov/types/keys.go#L9
-	GovModuleName = "gov"
+    // MemStoreKey defines the in-memory store key
+    MemStoreKey = "mem_testusd"
+    
+    // RouterKey defines the module's message routing key
+    RouterKey = ModuleName
 )
 
-// ParamsKey is the prefix to retrieve all Params
-var ParamsKey = collections.NewPrefix("p_testusd")
+// Store key prefixes
+var (
+    ParamsKey          = []byte{0x01} // Prefix for params
+    TotalBridgedKey    = []byte{0x02} // Key for total bridged amount
+    TotalSupplyKey     = []byte{0x03} // Key for total supply
+    BridgeStatisticsKey = []byte{0x04} // Key for bridge statistics
+)
+
+// Event types
+const (
+    EventTypeBridgeIn  = "bridge_in"
+    EventTypeBridgeOut = "bridge_out"
+    
+    AttributeKeySender         = "sender"
+    AttributeKeyAmount         = "amount"
+    AttributeKeyMintedAmount   = "minted_amount"
+    AttributeKeyReleasedAmount = "released_amount"
+)
+
+func KeyPrefix(p string) []byte {
+    return []byte(p)
+}

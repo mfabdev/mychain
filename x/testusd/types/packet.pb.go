@@ -25,7 +25,6 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // TestusdPacketData defines the Testusd data packet.
 type TestusdPacketData struct {
 	// Types that are valid to be assigned to Packet:
-	//
 	//	*TestusdPacketData_NoData
 	Packet isTestusdPacketData_Packet `protobuf_oneof:"packet"`
 }

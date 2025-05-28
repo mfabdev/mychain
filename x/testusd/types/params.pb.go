@@ -26,6 +26,16 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
+	// bridge_enabled controls whether bridging is enabled
+	BridgeEnabled bool `protobuf:"varint,1,opt,name=bridge_enabled,json=bridgeEnabled,proto3" json:"bridge_enabled,omitempty"`
+	// peg_ratio defines the ratio for USDC:TestUSD (should always be "1.0")
+	PegRatio string `protobuf:"bytes,2,opt,name=peg_ratio,json=pegRatio,proto3" json:"peg_ratio,omitempty"`
+	// testusd_denom is the denomination for TestUSD tokens
+	TestusdDenom string `protobuf:"bytes,3,opt,name=testusd_denom,json=testusdDenom,proto3" json:"testusd_denom,omitempty"`
+	// usdc_denom is the denomination for USDC tokens (for tracking)
+	UsdcDenom string `protobuf:"bytes,4,opt,name=usdc_denom,json=usdcDenom,proto3" json:"usdc_denom,omitempty"`
+	// bridge_address is the module account that holds bridged USDC
+	BridgeAddress string `protobuf:"bytes,5,opt,name=bridge_address,json=bridgeAddress,proto3" json:"bridge_address,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -61,6 +71,41 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
+func (m *Params) GetBridgeEnabled() bool {
+	if m != nil {
+		return m.BridgeEnabled
+	}
+	return false
+}
+
+func (m *Params) GetPegRatio() string {
+	if m != nil {
+		return m.PegRatio
+	}
+	return ""
+}
+
+func (m *Params) GetTestusdDenom() string {
+	if m != nil {
+		return m.TestusdDenom
+	}
+	return ""
+}
+
+func (m *Params) GetUsdcDenom() string {
+	if m != nil {
+		return m.UsdcDenom
+	}
+	return ""
+}
+
+func (m *Params) GetBridgeAddress() string {
+	if m != nil {
+		return m.BridgeAddress
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "mychain.testusd.v1.Params")
 }
@@ -68,17 +113,25 @@ func init() {
 func init() { proto.RegisterFile("mychain/testusd/v1/params.proto", fileDescriptor_9f9fbb1cabae6426) }
 
 var fileDescriptor_9f9fbb1cabae6426 = []byte{
-	// 159 bytes of a gzipped FileDescriptorProto
+	// 276 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcf, 0xad, 0x4c, 0xce,
 	0x48, 0xcc, 0xcc, 0xd3, 0x2f, 0x49, 0x2d, 0x2e, 0x29, 0x2d, 0x4e, 0xd1, 0x2f, 0x33, 0xd4, 0x2f,
 	0x48, 0x2c, 0x4a, 0xcc, 0x2d, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x82, 0x2a, 0xd0,
 	0x83, 0x2a, 0xd0, 0x2b, 0x33, 0x94, 0x12, 0x4c, 0xcc, 0xcd, 0xcc, 0xcb, 0xd7, 0x07, 0x93, 0x10,
-	0x65, 0x52, 0x22, 0xe9, 0xf9, 0xe9, 0xf9, 0x60, 0xa6, 0x3e, 0x88, 0x05, 0x11, 0x55, 0xd2, 0xe6,
-	0x62, 0x0b, 0x00, 0x1b, 0x66, 0xa5, 0xf8, 0x62, 0x81, 0x3c, 0x63, 0xd7, 0xf3, 0x0d, 0x5a, 0x12,
-	0x30, 0x0b, 0x2b, 0xe0, 0x56, 0x42, 0x94, 0x38, 0x19, 0x9e, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91,
-	0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70, 0xe3,
-	0xb1, 0x1c, 0x43, 0x94, 0x38, 0xa6, 0x9e, 0x92, 0xca, 0x82, 0xd4, 0xe2, 0x24, 0x36, 0xb0, 0x35,
-	0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x28, 0x16, 0xdb, 0x7a, 0xc6, 0x00, 0x00, 0x00,
+	0x65, 0x52, 0x22, 0xe9, 0xf9, 0xe9, 0xf9, 0x60, 0xa6, 0x3e, 0x88, 0x05, 0x11, 0x55, 0xba, 0xc5,
+	0xc8, 0xc5, 0x16, 0x00, 0x36, 0x4d, 0x48, 0x95, 0x8b, 0x2f, 0xa9, 0x28, 0x33, 0x25, 0x3d, 0x35,
+	0x3e, 0x35, 0x2f, 0x31, 0x29, 0x27, 0x35, 0x45, 0x82, 0x51, 0x81, 0x51, 0x83, 0x23, 0x88, 0x17,
+	0x22, 0xea, 0x0a, 0x11, 0x14, 0x92, 0xe6, 0xe2, 0x2c, 0x48, 0x4d, 0x8f, 0x2f, 0x4a, 0x2c, 0xc9,
+	0xcc, 0x97, 0x60, 0x52, 0x60, 0xd4, 0xe0, 0x0c, 0xe2, 0x28, 0x48, 0x4d, 0x0f, 0x02, 0xf1, 0x85,
+	0x94, 0xb9, 0x78, 0xa1, 0xae, 0x88, 0x4f, 0x49, 0xcd, 0xcb, 0xcf, 0x95, 0x60, 0x06, 0x2b, 0xe0,
+	0x81, 0x0a, 0xba, 0x80, 0xc4, 0x84, 0x64, 0xb9, 0xb8, 0x4a, 0x8b, 0x53, 0x92, 0xa1, 0x2a, 0x58,
+	0xc0, 0x2a, 0x38, 0x41, 0x22, 0x10, 0x69, 0x84, 0x3b, 0x12, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b,
+	0x25, 0x58, 0xc1, 0x4a, 0xa0, 0xee, 0x70, 0x84, 0x08, 0x5a, 0x29, 0xbe, 0x58, 0x20, 0xcf, 0xd8,
+	0xf5, 0x7c, 0x83, 0x96, 0x04, 0x2c, 0x80, 0x2a, 0xe0, 0x41, 0x04, 0xf1, 0x91, 0x93, 0xe1, 0x89,
+	0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3,
+	0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x44, 0x89, 0x63, 0xea, 0x29, 0xa9, 0x2c, 0x48,
+	0x2d, 0x4e, 0x62, 0x03, 0x07, 0x8b, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0xcd, 0x6f, 0xd7, 0xb9,
+	0x76, 0x01, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -98,6 +151,21 @@ func (this *Params) Equal(that interface{}) bool {
 	if that1 == nil {
 		return this == nil
 	} else if this == nil {
+		return false
+	}
+	if this.BridgeEnabled != that1.BridgeEnabled {
+		return false
+	}
+	if this.PegRatio != that1.PegRatio {
+		return false
+	}
+	if this.TestusdDenom != that1.TestusdDenom {
+		return false
+	}
+	if this.UsdcDenom != that1.UsdcDenom {
+		return false
+	}
+	if this.BridgeAddress != that1.BridgeAddress {
 		return false
 	}
 	return true
@@ -122,6 +190,44 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.BridgeAddress) > 0 {
+		i -= len(m.BridgeAddress)
+		copy(dAtA[i:], m.BridgeAddress)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.BridgeAddress)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.UsdcDenom) > 0 {
+		i -= len(m.UsdcDenom)
+		copy(dAtA[i:], m.UsdcDenom)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.UsdcDenom)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.TestusdDenom) > 0 {
+		i -= len(m.TestusdDenom)
+		copy(dAtA[i:], m.TestusdDenom)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.TestusdDenom)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.PegRatio) > 0 {
+		i -= len(m.PegRatio)
+		copy(dAtA[i:], m.PegRatio)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.PegRatio)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.BridgeEnabled {
+		i--
+		if m.BridgeEnabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -142,6 +248,25 @@ func (m *Params) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.BridgeEnabled {
+		n += 2
+	}
+	l = len(m.PegRatio)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	l = len(m.TestusdDenom)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	l = len(m.UsdcDenom)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	l = len(m.BridgeAddress)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
 	return n
 }
 
@@ -180,6 +305,154 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BridgeEnabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.BridgeEnabled = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PegRatio", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PegRatio = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TestusdDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TestusdDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UsdcDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UsdcDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BridgeAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BridgeAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipParams(dAtA[iNdEx:])

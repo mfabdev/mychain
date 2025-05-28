@@ -1,67 +1,79 @@
 package keeper
 
 import (
-	"fmt"
+    "context"
 
-	"cosmossdk.io/collections"
+    "cosmossdk.io/core/event"
+    "cosmossdk.io/core/store"
+    "cosmossdk.io/log"
+    storetypes "cosmossdk.io/store/types"
+    "github.com/cosmos/cosmos-sdk/codec"
+    sdk "github.com/cosmos/cosmos-sdk/types"
+    
+    "mychain/x/testusd/types"
 	"cosmossdk.io/core/address"
-	corestore "cosmossdk.io/core/store"
-	"github.com/cosmos/cosmos-sdk/codec"
-
-	"mychain/x/testusd/types"
+	"cosmossdk.io/collections"
 )
 
 type Keeper struct {
-	storeService corestore.KVStoreService
-	cdc          codec.Codec
-	addressCodec address.Codec
-	// Address capable of executing a MsgUpdateParams message.
-	// Typically, this should be the x/gov module account.
-	authority []byte
-
-	Schema collections.Schema
-	Params collections.Item[types.Params]
-
-	bankKeeper types.BankKeeper
-	authKeeper types.AuthKeeper
+    cdc          codec.BinaryCodec
+    storeService store.KVStoreService
+    storeKey     storetypes.StoreKey
+    logger       log.Logger
+    authority    string
+    addressCodec address.Codec
+    
+    // keepers
+    accountKeeper types.AccountKeeper
+    bankKeeper    types.BankKeeper
+    eventService  event.Service
+    Params        collections.Item[types.Params]
 }
 
+// NewKeeper creates a new testusd Keeper instance
 func NewKeeper(
-	storeService corestore.KVStoreService,
-	cdc codec.Codec,
-	addressCodec address.Codec,
-	authority []byte,
-
-	bankKeeper types.BankKeeper,
-	authKeeper types.AuthKeeper,
+    cdc codec.BinaryCodec,
+    storeService store.KVStoreService,
+    storeKey storetypes.StoreKey,
+    logger log.Logger,
+    authority string,
+    addressCodec address.Codec,
+    ak types.AccountKeeper,
+    bk types.BankKeeper,
+    eventService event.Service,
 ) Keeper {
-	if _, err := addressCodec.BytesToString(authority); err != nil {
-		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
-	}
-
-	sb := collections.NewSchemaBuilder(storeService)
-
-	k := Keeper{
-		storeService: storeService,
-		cdc:          cdc,
-		addressCodec: addressCodec,
-		authority:    authority,
-
-		bankKeeper: bankKeeper,
-		authKeeper: authKeeper,
-		Params:     collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
-	}
-
-	schema, err := sb.Build()
-	if err != nil {
-		panic(err)
-	}
-	k.Schema = schema
-
-	return k
+    return Keeper{
+        cdc:           cdc,
+        storeService:  storeService,
+        storeKey:      storeKey,
+        logger:        logger,
+        authority:     authority,
+        addressCodec:  addressCodec,
+        accountKeeper: ak,
+        bankKeeper:    bk,
+        eventService:  eventService,
+    }
 }
 
 // GetAuthority returns the module's authority.
-func (k Keeper) GetAuthority() []byte {
-	return k.authority
+func (k Keeper) GetAuthority() string {
+    return k.authority
+}
+
+// Logger returns a module-specific logger.
+func (k Keeper) Logger(ctx context.Context) log.Logger {
+    sdkCtx := sdk.UnwrapSDKContext(ctx)
+    return sdkCtx.Logger().With(log.ModuleKey, "x/"+types.ModuleName)
+}
+
+
+// GetParams returns the module parameters.
+func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
+    params, _ = k.Params.Get(ctx)
+    return params
+}
+
+// SetParams sets the module parameters.
+func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
+    return k.Params.Set(ctx, params)
 }

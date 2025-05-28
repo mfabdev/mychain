@@ -2,18 +2,30 @@ syntax = "proto3";
 package mychain.testusd.v1;
 
 import "amino/amino.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "mychain/testusd/v1/params.proto";
+import "mychain/testusd/v1/genesis.proto";
 
 option go_package = "mychain/x/testusd/types";
 
 // Query defines the gRPC querier service.
 service Query {
+  
   // Parameters queries the parameters of the module.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/mychain/testusd/v1/params";
+  }
+  
+  // BridgeStatus queries the current bridge status
+  rpc BridgeStatus (QueryBridgeStatusRequest) returns (QueryBridgeStatusResponse) {
+    option (google.api.http).get = "/mychain/testusd/v1/bridge_status";
+  }
+  
+  // TotalSupply queries the total supply of TestUSD
+  rpc TotalSupply (QueryTotalSupplyRequest) returns (QueryTotalSupplyResponse) {
+    option (google.api.http).get = "/mychain/testusd/v1/total_supply";
   }
 }
 
@@ -22,9 +34,43 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
+  
   // params holds all the parameters of this module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// QueryBridgeStatusRequest is request type for the Query/BridgeStatus RPC method.
+message QueryBridgeStatusRequest {}
+
+// QueryBridgeStatusResponse is response type for the Query/BridgeStatus RPC method.
+message QueryBridgeStatusResponse {
+  // total_bridged is the total amount of USDC bridged
+  string total_bridged = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
+  ];
+  
+  // total_supply is the total supply of TestUSD
+  string total_supply = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
+  ];
+  
+  // bridge_enabled indicates if bridging is currently enabled
+  bool bridge_enabled = 3;
+  
+  // statistics contains bridge usage statistics
+  BridgeStatistics statistics = 4;
+}
+
+// QueryTotalSupplyRequest is request type for the Query/TotalSupply RPC method.
+message QueryTotalSupplyRequest {}
+
+// QueryTotalSupplyResponse is response type for the Query/TotalSupply RPC method.
+message QueryTotalSupplyResponse {
+  // total_supply is the total supply of TestUSD
+  string total_supply = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
   ];
 }

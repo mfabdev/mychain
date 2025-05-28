@@ -15,8 +15,8 @@ func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams)
 		return nil, errorsmod.Wrap(err, "invalid authority address")
 	}
 
-	if !bytes.Equal(k.GetAuthority(), authority) {
-		expectedAuthorityStr, _ := k.addressCodec.BytesToString(k.GetAuthority())
+	if !bytes.Equal([]byte(k.GetAuthority()), authority) {
+		expectedAuthorityStr, _ := k.addressCodec.BytesToString([]byte(k.GetAuthority()))
 		return nil, errorsmod.Wrapf(types.ErrInvalidSigner, "invalid authority; expected %s, got %s", expectedAuthorityStr, req.Authority)
 	}
 

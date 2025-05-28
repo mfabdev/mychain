@@ -9,9 +9,34 @@ option go_package = "mychain/x/testusd/types";
 
 // GenesisState defines the testusd module's genesis state.
 message GenesisState {
+  
   // params defines all the parameters of the module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  
+  // total_bridged tracks the total amount of USDC bridged
+  string total_bridged = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
   ];
+  
+  // total_supply tracks the total supply of TestUSD minted
+  string total_supply = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
+  ];
+}
+
+// BridgeStatistics tracks bridge usage statistics
+message BridgeStatistics {
+  // total_bridge_in_count is the total number of bridge in transactions
+  uint64 total_bridge_in_count = 1;
+  
+  // total_bridge_out_count is the total number of bridge out transactions
+  uint64 total_bridge_out_count = 2;
+  
+  // last_bridge_in_timestamp is the timestamp of the last bridge in
+  int64 last_bridge_in_timestamp = 3;
+  
+  // last_bridge_out_timestamp is the timestamp of the last bridge out
+  int64 last_bridge_out_timestamp = 4;
 }
