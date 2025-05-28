@@ -15,5 +15,18 @@ const (
 	GovModuleName = "gov"
 )
 
-// ParamsKey is the prefix to retrieve all Params
-var ParamsKey = collections.NewPrefix("p_dex")
+// Storage keys
+var (
+	ParamsKey          = collections.NewPrefix("p_dex")
+	NextOrderIDKey     = collections.NewPrefix("next_order_id")
+	OrdersKey          = collections.NewPrefix("orders")
+	TradingPairsKey    = collections.NewPrefix("trading_pairs")
+	UserRewardsKey     = collections.NewPrefix("user_rewards")
+	OrderRewardsKey    = collections.NewPrefix("order_rewards")
+	LiquidityTiersKey  = collections.NewPrefix("liquidity_tiers")
+	VolumeTrackersKey  = collections.NewPrefix("volume_trackers")
+	PriceReferencesKey = collections.NewPrefix("price_references")
+	LCTotalSupplyKey   = collections.NewPrefix("lc_total_supply")
+	UserOrdersKey      = collections.NewPrefix("user_orders")
+	PairOrdersKey      = collections.NewPrefix("pair_orders")
+)

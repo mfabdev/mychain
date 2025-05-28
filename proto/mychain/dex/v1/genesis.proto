@@ -4,6 +4,7 @@ package mychain.dex.v1;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "mychain/dex/v1/params.proto";
+import "mychain/dex/v1/types.proto";
 
 option go_package = "mychain/x/dex/types";
 
@@ -14,4 +15,28 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  
+  // next_order_id is the next order ID to be assigned
+  uint64 next_order_id = 2;
+  
+  // trading_pairs contains all trading pairs
+  repeated TradingPair trading_pairs = 3 [(gogoproto.nullable) = false];
+  
+  // orders contains all active orders
+  repeated Order orders = 4 [(gogoproto.nullable) = false];
+  
+  // user_rewards contains user reward information
+  repeated UserReward user_rewards = 5 [(gogoproto.nullable) = false];
+  
+  // liquidity_tiers contains tier definitions
+  repeated LiquidityTier liquidity_tiers = 6 [(gogoproto.nullable) = false];
+  
+  // order_rewards contains order reward information
+  repeated OrderRewardInfo order_rewards = 7 [(gogoproto.nullable) = false];
+  
+  // price_references contains reference prices for tiers
+  repeated PriceReference price_references = 8 [(gogoproto.nullable) = false];
+  
+  // volume_trackers contains volume tracking information
+  repeated VolumeTracker volume_trackers = 9 [(gogoproto.nullable) = false];
 }

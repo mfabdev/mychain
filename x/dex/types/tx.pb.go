@@ -5,6 +5,7 @@ package types
 
 import (
 	context "context"
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/types"
@@ -204,6 +205,7 @@ func (m *MsgCreateOrder) GetIsBuy() bool {
 
 // MsgCreateOrderResponse defines the MsgCreateOrderResponse message.
 type MsgCreateOrderResponse struct {
+	OrderId uint64 `protobuf:"varint,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 }
 
 func (m *MsgCreateOrderResponse) Reset()         { *m = MsgCreateOrderResponse{} }
@@ -238,6 +240,13 @@ func (m *MsgCreateOrderResponse) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_MsgCreateOrderResponse proto.InternalMessageInfo
+
+func (m *MsgCreateOrderResponse) GetOrderId() uint64 {
+	if m != nil {
+		return m.OrderId
+	}
+	return 0
+}
 
 // MsgCancelOrder defines the MsgCancelOrder message.
 type MsgCancelOrder struct {
@@ -331,7 +340,8 @@ var xxx_messageInfo_MsgCancelOrderResponse proto.InternalMessageInfo
 
 // MsgClaimRewards defines the MsgClaimRewards message.
 type MsgClaimRewards struct {
-	User string `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	User   string                `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Amount cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=amount,proto3,customtype=cosmossdk.io/math.Int" json:"amount"`
 }
 
 func (m *MsgClaimRewards) Reset()         { *m = MsgClaimRewards{} }
@@ -376,6 +386,7 @@ func (m *MsgClaimRewards) GetUser() string {
 
 // MsgClaimRewardsResponse defines the MsgClaimRewardsResponse message.
 type MsgClaimRewardsResponse struct {
+	ClaimedAmount cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=claimed_amount,json=claimedAmount,proto3,customtype=cosmossdk.io/math.Int" json:"claimed_amount"`
 }
 
 func (m *MsgClaimRewardsResponse) Reset()         { *m = MsgClaimRewardsResponse{} }
@@ -411,6 +422,105 @@ func (m *MsgClaimRewardsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgClaimRewardsResponse proto.InternalMessageInfo
 
+// MsgClaimOrderRewards defines the MsgClaimOrderRewards message.
+type MsgClaimOrderRewards struct {
+	User     string   `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	OrderIds []uint64 `protobuf:"varint,2,rep,packed,name=order_ids,json=orderIds,proto3" json:"order_ids,omitempty"`
+}
+
+func (m *MsgClaimOrderRewards) Reset()         { *m = MsgClaimOrderRewards{} }
+func (m *MsgClaimOrderRewards) String() string { return proto.CompactTextString(m) }
+func (*MsgClaimOrderRewards) ProtoMessage()    {}
+func (*MsgClaimOrderRewards) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9bd44ec259de5f9d, []int{8}
+}
+func (m *MsgClaimOrderRewards) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgClaimOrderRewards) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgClaimOrderRewards.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgClaimOrderRewards) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgClaimOrderRewards.Merge(m, src)
+}
+func (m *MsgClaimOrderRewards) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgClaimOrderRewards) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgClaimOrderRewards.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgClaimOrderRewards proto.InternalMessageInfo
+
+func (m *MsgClaimOrderRewards) GetUser() string {
+	if m != nil {
+		return m.User
+	}
+	return ""
+}
+
+func (m *MsgClaimOrderRewards) GetOrderIds() []uint64 {
+	if m != nil {
+		return m.OrderIds
+	}
+	return nil
+}
+
+// MsgClaimOrderRewardsResponse defines the MsgClaimOrderRewardsResponse message.
+type MsgClaimOrderRewardsResponse struct {
+	ClaimedAmount cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=claimed_amount,json=claimedAmount,proto3,customtype=cosmossdk.io/math.Int" json:"claimed_amount"`
+	ClaimedOrders []uint64              `protobuf:"varint,2,rep,packed,name=claimed_orders,json=claimedOrders,proto3" json:"claimed_orders,omitempty"`
+}
+
+func (m *MsgClaimOrderRewardsResponse) Reset()         { *m = MsgClaimOrderRewardsResponse{} }
+func (m *MsgClaimOrderRewardsResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgClaimOrderRewardsResponse) ProtoMessage()    {}
+func (*MsgClaimOrderRewardsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9bd44ec259de5f9d, []int{9}
+}
+func (m *MsgClaimOrderRewardsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgClaimOrderRewardsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgClaimOrderRewardsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgClaimOrderRewardsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgClaimOrderRewardsResponse.Merge(m, src)
+}
+func (m *MsgClaimOrderRewardsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgClaimOrderRewardsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgClaimOrderRewardsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgClaimOrderRewardsResponse proto.InternalMessageInfo
+
+func (m *MsgClaimOrderRewardsResponse) GetClaimedOrders() []uint64 {
+	if m != nil {
+		return m.ClaimedOrders
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "mychain.dex.v1.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "mychain.dex.v1.MsgUpdateParamsResponse")
@@ -420,49 +530,59 @@ func init() {
 	proto.RegisterType((*MsgCancelOrderResponse)(nil), "mychain.dex.v1.MsgCancelOrderResponse")
 	proto.RegisterType((*MsgClaimRewards)(nil), "mychain.dex.v1.MsgClaimRewards")
 	proto.RegisterType((*MsgClaimRewardsResponse)(nil), "mychain.dex.v1.MsgClaimRewardsResponse")
+	proto.RegisterType((*MsgClaimOrderRewards)(nil), "mychain.dex.v1.MsgClaimOrderRewards")
+	proto.RegisterType((*MsgClaimOrderRewardsResponse)(nil), "mychain.dex.v1.MsgClaimOrderRewardsResponse")
 }
 
 func init() { proto.RegisterFile("mychain/dex/v1/tx.proto", fileDescriptor_9bd44ec259de5f9d) }
 
 var fileDescriptor_9bd44ec259de5f9d = []byte{
-	// 585 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xbf, 0x6f, 0xd3, 0x40,
-	0x14, 0x8e, 0xdb, 0x24, 0x6d, 0xae, 0xa8, 0x88, 0x23, 0x34, 0x4e, 0x10, 0x6e, 0x94, 0x01, 0xa2,
-	0x48, 0xb5, 0x9b, 0x22, 0x40, 0x64, 0x23, 0x99, 0x3a, 0x44, 0x20, 0xa3, 0x4a, 0x88, 0x25, 0xba,
-	0xc4, 0x27, 0xf7, 0x44, 0xed, 0xb3, 0xee, 0x9c, 0x90, 0x6c, 0x88, 0x91, 0x89, 0x3f, 0x83, 0x31,
-	0x03, 0xe2, 0x6f, 0xe8, 0x58, 0x75, 0x62, 0x42, 0x28, 0x19, 0xb2, 0xf1, 0x37, 0x20, 0xdf, 0x5d,
-	0x7e, 0xd8, 0x58, 0xa5, 0x4b, 0x74, 0x77, 0xdf, 0x7b, 0xdf, 0x7b, 0xdf, 0xf7, 0x9e, 0x03, 0x4a,
-	0xde, 0x64, 0x70, 0x8e, 0x88, 0x6f, 0x39, 0x78, 0x6c, 0x8d, 0x9a, 0x56, 0x38, 0x36, 0x03, 0x46,
-	0x43, 0x0a, 0xf7, 0x15, 0x60, 0x3a, 0x78, 0x6c, 0x8e, 0x9a, 0x95, 0x7b, 0xc8, 0x23, 0x3e, 0xb5,
-	0xc4, 0xaf, 0x0c, 0xa9, 0x18, 0x03, 0xca, 0x3d, 0xca, 0xad, 0x3e, 0xe2, 0xd8, 0x1a, 0x35, 0xfb,
-	0x38, 0x44, 0x4d, 0x6b, 0x40, 0x89, 0xaf, 0xf0, 0x92, 0xc2, 0x3d, 0xee, 0x46, 0xd4, 0x1e, 0x77,
-	0x15, 0x50, 0x96, 0x40, 0x4f, 0xdc, 0x2c, 0x79, 0x51, 0x50, 0xd1, 0xa5, 0x2e, 0x95, 0xef, 0xd1,
-	0x49, 0xbd, 0x3e, 0x4c, 0x74, 0x19, 0x20, 0x86, 0x3c, 0x95, 0x52, 0xfb, 0xa1, 0x81, 0xbb, 0x5d,
-	0xee, 0x9e, 0x05, 0x0e, 0x0a, 0xf1, 0x1b, 0x81, 0xc0, 0xe7, 0xa0, 0x80, 0x86, 0xe1, 0x39, 0x65,
-	0x24, 0x9c, 0xe8, 0x5a, 0x55, 0xab, 0x17, 0xda, 0xfa, 0xf5, 0xf7, 0xa3, 0xa2, 0xaa, 0xf5, 0xca,
-	0x71, 0x18, 0xe6, 0xfc, 0x6d, 0xc8, 0x88, 0xef, 0xda, 0xeb, 0x50, 0xf8, 0x12, 0xe4, 0x25, 0xb7,
-	0xbe, 0x55, 0xd5, 0xea, 0x7b, 0x27, 0x07, 0x66, 0xdc, 0x06, 0x53, 0xf2, 0xb7, 0x0b, 0x97, 0xbf,
-	0x0e, 0x33, 0xdf, 0x16, 0xd3, 0x86, 0x66, 0xab, 0x84, 0xd6, 0xf1, 0xe7, 0xc5, 0xb4, 0xb1, 0xa6,
-	0xfa, 0xb2, 0x98, 0x36, 0x1e, 0x2d, 0xdb, 0x1e, 0x8b, 0xc6, 0x13, 0x4d, 0xd6, 0xca, 0xa0, 0x94,
-	0x78, 0xb2, 0x31, 0x0f, 0xa8, 0xcf, 0x71, 0xed, 0x5a, 0x03, 0xfb, 0x5d, 0xee, 0x76, 0x18, 0x46,
-	0x21, 0x7e, 0xcd, 0x1c, 0xcc, 0x60, 0x11, 0xe4, 0x3c, 0xf4, 0x01, 0x33, 0x29, 0xc7, 0x96, 0x17,
-	0x58, 0x02, 0x3b, 0x01, 0x22, 0xac, 0x47, 0x1c, 0xd1, 0x71, 0x36, 0x6a, 0x87, 0xb0, 0x53, 0x07,
-	0x3e, 0x03, 0xb9, 0x80, 0x91, 0x01, 0xd6, 0xb7, 0x85, 0x90, 0xb2, 0xa9, 0xa4, 0x47, 0xc3, 0x32,
-	0xd5, 0xb0, 0xcc, 0x0e, 0x25, 0x7e, 0x3b, 0x1b, 0x69, 0xb1, 0x65, 0x34, 0x7c, 0x01, 0xf2, 0xc8,
-	0xa3, 0x43, 0x3f, 0xd4, 0xb3, 0xb7, 0xcb, 0x53, 0xe1, 0xf0, 0x01, 0xc8, 0x13, 0xde, 0xeb, 0x0f,
-	0x27, 0x7a, 0xae, 0xaa, 0xd5, 0x77, 0xed, 0x1c, 0xe1, 0xed, 0xe1, 0xa4, 0x05, 0x22, 0x57, 0x64,
-	0xaf, 0x35, 0x1d, 0x1c, 0xc4, 0x35, 0xad, 0xe4, 0x76, 0xa5, 0x5a, 0xe4, 0x0f, 0xf0, 0xc5, 0x4d,
-	0x6a, 0xcb, 0x60, 0x97, 0x46, 0xf0, 0x5a, 0xee, 0x8e, 0xb8, 0x9f, 0x3a, 0x69, 0x85, 0xd6, 0x74,
-	0xab, 0x42, 0xc7, 0x62, 0x55, 0x3a, 0x17, 0x88, 0x78, 0x36, 0xfe, 0x88, 0x98, 0xc3, 0x21, 0x04,
-	0xd9, 0x21, 0x5f, 0x15, 0x12, 0xe7, 0x56, 0x21, 0x22, 0x13, 0x47, 0x35, 0xa4, 0xcd, 0x8c, 0x25,
-	0xd9, 0xc9, 0x9f, 0x2d, 0xb0, 0xdd, 0xe5, 0x2e, 0x7c, 0x07, 0xee, 0xc4, 0x96, 0xef, 0x30, 0xb9,
-	0x34, 0x89, 0x29, 0x57, 0x9e, 0xfc, 0x27, 0x60, 0x59, 0x01, 0x9e, 0x81, 0xbd, 0xcd, 0x15, 0x30,
-	0x52, 0xf2, 0x36, 0xf0, 0xca, 0xe3, 0x9b, 0xf1, 0x18, 0xed, 0x86, 0xd7, 0xa9, 0xb4, 0x6b, 0x3c,
-	0x9d, 0xf6, 0x5f, 0x73, 0x23, 0x1f, 0x62, 0xce, 0xa6, 0xf9, 0xb0, 0x19, 0x90, 0xea, 0x43, 0x9a,
-	0xd3, 0x95, 0xdc, 0xa7, 0xe8, 0x53, 0x6b, 0x1f, 0x5d, 0xce, 0x0c, 0xed, 0x6a, 0x66, 0x68, 0xbf,
-	0x67, 0x86, 0xf6, 0x75, 0x6e, 0x64, 0xae, 0xe6, 0x46, 0xe6, 0xe7, 0xdc, 0xc8, 0xbc, 0xbf, 0x1f,
-	0xff, 0xd2, 0xc2, 0x49, 0x80, 0x79, 0x3f, 0x2f, 0xfe, 0x1f, 0x9e, 0xfe, 0x0d, 0x00, 0x00, 0xff,
-	0xff, 0x50, 0x05, 0xcc, 0x68, 0xe4, 0x04, 0x00, 0x00,
+	// 714 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x3d, 0x4f, 0xdb, 0x40,
+	0x18, 0x8e, 0xc9, 0x07, 0xe4, 0x68, 0xa9, 0xb8, 0x06, 0xf2, 0x41, 0x31, 0xc8, 0xea, 0x47, 0x84,
+	0x8a, 0xdd, 0x80, 0x68, 0x55, 0x36, 0x42, 0x17, 0x86, 0xa8, 0x95, 0x2b, 0xa4, 0xaa, 0x4b, 0x74,
+	0x89, 0x4f, 0xe6, 0x04, 0xf6, 0x59, 0x3e, 0x87, 0x26, 0x5b, 0xd5, 0xb1, 0x5d, 0xfa, 0x33, 0x3a,
+	0x32, 0x54, 0xfd, 0x0d, 0x8c, 0x88, 0xa5, 0x55, 0x07, 0x54, 0xc1, 0xc0, 0xdf, 0xa8, 0xee, 0x7c,
+	0x4e, 0xec, 0x60, 0x28, 0x43, 0x97, 0xc8, 0xf7, 0x7e, 0x3c, 0xef, 0xf3, 0x3c, 0x7e, 0xcf, 0x01,
+	0x65, 0x67, 0xd0, 0xdd, 0x43, 0xc4, 0x35, 0x2c, 0xdc, 0x37, 0x0e, 0x1b, 0x46, 0xd0, 0xd7, 0x3d,
+	0x9f, 0x06, 0x14, 0xce, 0xc8, 0x84, 0x6e, 0xe1, 0xbe, 0x7e, 0xd8, 0xa8, 0xcd, 0x22, 0x87, 0xb8,
+	0xd4, 0x10, 0xbf, 0x61, 0x49, 0x4d, 0xed, 0x52, 0xe6, 0x50, 0x66, 0x74, 0x10, 0xc3, 0xc6, 0x61,
+	0xa3, 0x83, 0x03, 0xd4, 0x30, 0xba, 0x94, 0xb8, 0x32, 0x5f, 0x96, 0x79, 0x87, 0xd9, 0x1c, 0xda,
+	0x61, 0xb6, 0x4c, 0x54, 0xc3, 0x44, 0x5b, 0x9c, 0x8c, 0xf0, 0x20, 0x53, 0x25, 0x9b, 0xda, 0x34,
+	0x8c, 0xf3, 0x27, 0x19, 0x5d, 0x18, 0x63, 0xe9, 0x21, 0x1f, 0x39, 0xb2, 0x45, 0xfb, 0xa1, 0x80,
+	0x7b, 0x2d, 0x66, 0xef, 0x7a, 0x16, 0x0a, 0xf0, 0x1b, 0x91, 0x81, 0xcf, 0x41, 0x11, 0xf5, 0x82,
+	0x3d, 0xea, 0x93, 0x60, 0x50, 0x51, 0x96, 0x95, 0x7a, 0xb1, 0x59, 0x39, 0xfd, 0xbe, 0x5a, 0x92,
+	0xb3, 0xb6, 0x2c, 0xcb, 0xc7, 0x8c, 0xbd, 0x0d, 0x7c, 0xe2, 0xda, 0xe6, 0xa8, 0x14, 0xbe, 0x04,
+	0x85, 0x10, 0xbb, 0x32, 0xb1, 0xac, 0xd4, 0xa7, 0xd7, 0xe6, 0xf5, 0xa4, 0x0d, 0x7a, 0x88, 0xdf,
+	0x2c, 0x1e, 0x9f, 0x2d, 0x65, 0xbe, 0x5d, 0x1e, 0xad, 0x28, 0xa6, 0x6c, 0xd8, 0x7c, 0xf6, 0xe9,
+	0xf2, 0x68, 0x65, 0x04, 0xf5, 0xf9, 0xf2, 0x68, 0x65, 0x31, 0xa2, 0xdd, 0x17, 0xc4, 0xc7, 0x48,
+	0x6a, 0x55, 0x50, 0x1e, 0x0b, 0x99, 0x98, 0x79, 0xd4, 0x65, 0x58, 0x3b, 0x55, 0xc0, 0x4c, 0x8b,
+	0xd9, 0xdb, 0x3e, 0x46, 0x01, 0x7e, 0xed, 0x5b, 0xd8, 0x87, 0x25, 0x90, 0x77, 0xd0, 0x3e, 0xf6,
+	0x43, 0x39, 0x66, 0x78, 0x80, 0x65, 0x30, 0xe9, 0x21, 0xe2, 0xb7, 0x89, 0x25, 0x18, 0xe7, 0x38,
+	0x1d, 0xe2, 0xef, 0x58, 0x70, 0x03, 0xe4, 0x3d, 0x9f, 0x74, 0x71, 0x25, 0x2b, 0x84, 0x54, 0x75,
+	0x29, 0x9d, 0xbf, 0x2c, 0x5d, 0xbe, 0x2c, 0x7d, 0x9b, 0x12, 0xb7, 0x99, 0xe3, 0x5a, 0xcc, 0xb0,
+	0x1a, 0xbe, 0x00, 0x05, 0xe4, 0xd0, 0x9e, 0x1b, 0x54, 0x72, 0xb7, 0xeb, 0x93, 0xe5, 0x70, 0x0e,
+	0x14, 0x08, 0x6b, 0x77, 0x7a, 0x83, 0x4a, 0x7e, 0x59, 0xa9, 0x4f, 0x99, 0x79, 0xc2, 0x9a, 0xbd,
+	0xc1, 0x26, 0xe0, 0xae, 0x84, 0x5c, 0xb5, 0x75, 0x30, 0x9f, 0xd4, 0x14, 0xc9, 0x85, 0x55, 0x30,
+	0x45, 0x79, 0x80, 0xcb, 0x50, 0x84, 0x8c, 0x49, 0x71, 0xde, 0xb1, 0xb4, 0x56, 0x68, 0x04, 0x72,
+	0xbb, 0xf8, 0xe0, 0x26, 0x23, 0xe2, 0x10, 0x13, 0x09, 0x88, 0x04, 0x87, 0x4a, 0xc8, 0x61, 0x04,
+	0x37, 0xb4, 0xdc, 0x16, 0x5b, 0xb4, 0x7d, 0x80, 0x88, 0x63, 0xe2, 0x0f, 0xc8, 0xb7, 0x18, 0x84,
+	0x20, 0xd7, 0x63, 0xc3, 0x41, 0xe2, 0x19, 0x6e, 0x0c, 0x0d, 0x9a, 0x10, 0x6b, 0xb5, 0xc8, 0x5d,
+	0xf8, 0x7d, 0xb6, 0x34, 0x17, 0xfa, 0xc4, 0xac, 0x7d, 0x9d, 0x50, 0xc3, 0x41, 0xc1, 0x9e, 0xbe,
+	0xe3, 0x06, 0x91, 0x3d, 0x9b, 0x45, 0xce, 0x41, 0x20, 0x68, 0x6d, 0xf1, 0xda, 0xe3, 0x83, 0x86,
+	0x3e, 0xbc, 0x02, 0x33, 0x5d, 0x1e, 0xc7, 0x56, 0x5b, 0x0e, 0x51, 0x6e, 0x33, 0xe4, 0xae, 0x6c,
+	0xda, 0x12, 0x3d, 0x9a, 0x09, 0x4a, 0xd1, 0x00, 0x29, 0xf1, 0x7a, 0x39, 0x0b, 0xa0, 0x18, 0xd9,
+	0xc6, 0x77, 0x3e, 0x5b, 0xcf, 0x99, 0x53, 0xd2, 0x37, 0x16, 0x27, 0xfd, 0x45, 0x01, 0x0f, 0xd2,
+	0x40, 0xff, 0x2f, 0x75, 0xf8, 0x68, 0x84, 0x22, 0x58, 0x44, 0x9c, 0xa2, 0x32, 0x31, 0x9a, 0xad,
+	0xfd, 0xcc, 0x82, 0x6c, 0x8b, 0xd9, 0xf0, 0x1d, 0xb8, 0x93, 0xb8, 0xf6, 0x4b, 0xe3, 0xd7, 0x75,
+	0xec, 0x7e, 0xd5, 0x9e, 0xfc, 0xa3, 0x60, 0x28, 0x67, 0x17, 0x4c, 0xc7, 0x2f, 0x9f, 0x9a, 0xd2,
+	0x17, 0xcb, 0xd7, 0x1e, 0xdf, 0x9c, 0x4f, 0xc0, 0xc6, 0x56, 0x39, 0x15, 0x76, 0x94, 0x4f, 0x87,
+	0xbd, 0xba, 0xbb, 0xdc, 0x87, 0xc4, 0xe2, 0xa6, 0xf9, 0x10, 0x2f, 0x48, 0xf5, 0x21, 0x75, 0x23,
+	0x6d, 0x30, 0x7b, 0x75, 0x91, 0x1e, 0x5e, 0xd7, 0x1d, 0xaf, 0xaa, 0x3d, 0xbd, 0x4d, 0x55, 0x34,
+	0xa8, 0x96, 0xff, 0xc8, 0xbf, 0xa6, 0xcd, 0xd5, 0xe3, 0x73, 0x55, 0x39, 0x39, 0x57, 0x95, 0x3f,
+	0xe7, 0xaa, 0xf2, 0xf5, 0x42, 0xcd, 0x9c, 0x5c, 0xa8, 0x99, 0x5f, 0x17, 0x6a, 0xe6, 0xfd, 0xfd,
+	0xe4, 0xc7, 0x34, 0x18, 0x78, 0x98, 0x75, 0x0a, 0xe2, 0x2f, 0x60, 0xfd, 0x6f, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0xfe, 0x82, 0xeb, 0x60, 0xc7, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -486,6 +606,8 @@ type MsgClient interface {
 	CancelOrder(ctx context.Context, in *MsgCancelOrder, opts ...grpc.CallOption) (*MsgCancelOrderResponse, error)
 	// ClaimRewards defines the ClaimRewards RPC.
 	ClaimRewards(ctx context.Context, in *MsgClaimRewards, opts ...grpc.CallOption) (*MsgClaimRewardsResponse, error)
+	// ClaimOrderRewards defines the ClaimOrderRewards RPC.
+	ClaimOrderRewards(ctx context.Context, in *MsgClaimOrderRewards, opts ...grpc.CallOption) (*MsgClaimOrderRewardsResponse, error)
 }
 
 type msgClient struct {
@@ -532,6 +654,15 @@ func (c *msgClient) ClaimRewards(ctx context.Context, in *MsgClaimRewards, opts 
 	return out, nil
 }
 
+func (c *msgClient) ClaimOrderRewards(ctx context.Context, in *MsgClaimOrderRewards, opts ...grpc.CallOption) (*MsgClaimOrderRewardsResponse, error) {
+	out := new(MsgClaimOrderRewardsResponse)
+	err := c.cc.Invoke(ctx, "/mychain.dex.v1.Msg/ClaimOrderRewards", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
@@ -543,6 +674,8 @@ type MsgServer interface {
 	CancelOrder(context.Context, *MsgCancelOrder) (*MsgCancelOrderResponse, error)
 	// ClaimRewards defines the ClaimRewards RPC.
 	ClaimRewards(context.Context, *MsgClaimRewards) (*MsgClaimRewardsResponse, error)
+	// ClaimOrderRewards defines the ClaimOrderRewards RPC.
+	ClaimOrderRewards(context.Context, *MsgClaimOrderRewards) (*MsgClaimOrderRewardsResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -560,6 +693,9 @@ func (*UnimplementedMsgServer) CancelOrder(ctx context.Context, req *MsgCancelOr
 }
 func (*UnimplementedMsgServer) ClaimRewards(ctx context.Context, req *MsgClaimRewards) (*MsgClaimRewardsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimRewards not implemented")
+}
+func (*UnimplementedMsgServer) ClaimOrderRewards(ctx context.Context, req *MsgClaimOrderRewards) (*MsgClaimOrderRewardsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimOrderRewards not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -638,6 +774,24 @@ func _Msg_ClaimRewards_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ClaimOrderRewards_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimOrderRewards)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimOrderRewards(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.dex.v1.Msg/ClaimOrderRewards",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimOrderRewards(ctx, req.(*MsgClaimOrderRewards))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "mychain.dex.v1.Msg",
@@ -658,6 +812,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimRewards",
 			Handler:    _Msg_ClaimRewards_Handler,
+		},
+		{
+			MethodName: "ClaimOrderRewards",
+			Handler:    _Msg_ClaimOrderRewards_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -812,6 +970,11 @@ func (m *MsgCreateOrderResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	_ = i
 	var l int
 	_ = l
+	if m.OrderId != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.OrderId))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -893,6 +1056,16 @@ func (m *MsgClaimRewards) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size := m.Amount.Size()
+		i -= size
+		if _, err := m.Amount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
 	if len(m.User) > 0 {
 		i -= len(m.User)
 		copy(dAtA[i:], m.User)
@@ -923,6 +1096,115 @@ func (m *MsgClaimRewardsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	_ = i
 	var l int
 	_ = l
+	{
+		size := m.ClaimedAmount.Size()
+		i -= size
+		if _, err := m.ClaimedAmount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgClaimOrderRewards) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgClaimOrderRewards) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgClaimOrderRewards) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.OrderIds) > 0 {
+		dAtA5 := make([]byte, len(m.OrderIds)*10)
+		var j4 int
+		for _, num := range m.OrderIds {
+			for num >= 1<<7 {
+				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j4++
+			}
+			dAtA5[j4] = uint8(num)
+			j4++
+		}
+		i -= j4
+		copy(dAtA[i:], dAtA5[:j4])
+		i = encodeVarintTx(dAtA, i, uint64(j4))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.User) > 0 {
+		i -= len(m.User)
+		copy(dAtA[i:], m.User)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.User)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgClaimOrderRewardsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgClaimOrderRewardsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgClaimOrderRewardsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ClaimedOrders) > 0 {
+		dAtA7 := make([]byte, len(m.ClaimedOrders)*10)
+		var j6 int
+		for _, num := range m.ClaimedOrders {
+			for num >= 1<<7 {
+				dAtA7[j6] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j6++
+			}
+			dAtA7[j6] = uint8(num)
+			j6++
+		}
+		i -= j6
+		copy(dAtA[i:], dAtA7[:j6])
+		i = encodeVarintTx(dAtA, i, uint64(j6))
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size := m.ClaimedAmount.Size()
+		i -= size
+		if _, err := m.ClaimedAmount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -990,6 +1272,9 @@ func (m *MsgCreateOrderResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.OrderId != 0 {
+		n += 1 + sovTx(uint64(m.OrderId))
+	}
 	return n
 }
 
@@ -1028,6 +1313,8 @@ func (m *MsgClaimRewards) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
+	l = m.Amount.Size()
+	n += 1 + l + sovTx(uint64(l))
 	return n
 }
 
@@ -1037,6 +1324,46 @@ func (m *MsgClaimRewardsResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = m.ClaimedAmount.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgClaimOrderRewards) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.User)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if len(m.OrderIds) > 0 {
+		l = 0
+		for _, e := range m.OrderIds {
+			l += sovTx(uint64(e))
+		}
+		n += 1 + sovTx(uint64(l)) + l
+	}
+	return n
+}
+
+func (m *MsgClaimOrderRewardsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ClaimedAmount.Size()
+	n += 1 + l + sovTx(uint64(l))
+	if len(m.ClaimedOrders) > 0 {
+		l = 0
+		for _, e := range m.ClaimedOrders {
+			l += sovTx(uint64(e))
+		}
+		n += 1 + sovTx(uint64(l)) + l
+	}
 	return n
 }
 
@@ -1427,6 +1754,25 @@ func (m *MsgCreateOrderResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: MsgCreateOrderResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OrderId", wireType)
+			}
+			m.OrderId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OrderId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -1660,6 +2006,40 @@ func (m *MsgClaimRewards) Unmarshal(dAtA []byte) error {
 			}
 			m.User = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])
@@ -1710,6 +2090,358 @@ func (m *MsgClaimRewardsResponse) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: MsgClaimRewardsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ClaimedAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgClaimOrderRewards) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgClaimOrderRewards: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgClaimOrderRewards: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field User", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.User = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType == 0 {
+				var v uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTx
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.OrderIds = append(m.OrderIds, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTx
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthTx
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthTx
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.OrderIds) == 0 {
+					m.OrderIds = make([]uint64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTx
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.OrderIds = append(m.OrderIds, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field OrderIds", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgClaimOrderRewardsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgClaimOrderRewardsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgClaimOrderRewardsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ClaimedAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType == 0 {
+				var v uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTx
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.ClaimedOrders = append(m.ClaimedOrders, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTx
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthTx
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthTx
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.ClaimedOrders) == 0 {
+					m.ClaimedOrders = make([]uint64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTx
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.ClaimedOrders = append(m.ClaimedOrders, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedOrders", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

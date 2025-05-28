@@ -27,6 +27,9 @@ service Msg {
 
   // ClaimRewards defines the ClaimRewards RPC.
   rpc ClaimRewards(MsgClaimRewards) returns (MsgClaimRewardsResponse);
+
+  // ClaimOrderRewards defines the ClaimOrderRewards RPC.
+  rpc ClaimOrderRewards(MsgClaimOrderRewards) returns (MsgClaimOrderRewardsResponse);
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -61,7 +64,9 @@ message MsgCreateOrder {
 }
 
 // MsgCreateOrderResponse defines the MsgCreateOrderResponse message.
-message MsgCreateOrderResponse {}
+message MsgCreateOrderResponse {
+  uint64 order_id = 1;
+}
 
 // MsgCancelOrder defines the MsgCancelOrder message.
 message MsgCancelOrder {
@@ -77,7 +82,32 @@ message MsgCancelOrderResponse {}
 message MsgClaimRewards {
   option (cosmos.msg.v1.signer) = "user";
   string user = 1;
+  string amount = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
 }
 
 // MsgClaimRewardsResponse defines the MsgClaimRewardsResponse message.
-message MsgClaimRewardsResponse {}
+message MsgClaimRewardsResponse {
+  string claimed_amount = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// MsgClaimOrderRewards defines the MsgClaimOrderRewards message.
+message MsgClaimOrderRewards {
+  option (cosmos.msg.v1.signer) = "user";
+  string user = 1;
+  repeated uint64 order_ids = 2;
+}
+
+// MsgClaimOrderRewardsResponse defines the MsgClaimOrderRewardsResponse message.
+message MsgClaimOrderRewardsResponse {
+  string claimed_amount = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  repeated uint64 claimed_orders = 2;
+}

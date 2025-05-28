@@ -4,6 +4,7 @@
 package types
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -26,6 +27,18 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
+	// base_transfer_fee_percentage is the base fee percentage for transfers (e.g., 0.005 for 0.5%)
+	BaseTransferFeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=base_transfer_fee_percentage,json=baseTransferFeePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"base_transfer_fee_percentage"`
+	// min_order_amount is the minimum order amount in base currency
+	MinOrderAmount cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=min_order_amount,json=minOrderAmount,proto3,customtype=cosmossdk.io/math.Int" json:"min_order_amount"`
+	// lc_initial_supply is the initial supply of LiquidityCoin
+	LcInitialSupply cosmossdk_io_math.Int `protobuf:"bytes,3,opt,name=lc_initial_supply,json=lcInitialSupply,proto3,customtype=cosmossdk.io/math.Int" json:"lc_initial_supply"`
+	// lc_exchange_rate is the initial exchange rate (MC per LC)
+	LcExchangeRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=lc_exchange_rate,json=lcExchangeRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"lc_exchange_rate"`
+	// base_reward_rate is the base LC reward rate per second per quote unit
+	BaseRewardRate cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=base_reward_rate,json=baseRewardRate,proto3,customtype=cosmossdk.io/math.Int" json:"base_reward_rate"`
+	// lc_denom is the denomination for LiquidityCoin
+	LcDenom string `protobuf:"bytes,6,opt,name=lc_denom,json=lcDenom,proto3" json:"lc_denom,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -61,6 +74,13 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
+func (m *Params) GetLcDenom() string {
+	if m != nil {
+		return m.LcDenom
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "mychain.dex.v1.Params")
 }
@@ -68,17 +88,32 @@ func init() {
 func init() { proto.RegisterFile("mychain/dex/v1/params.proto", fileDescriptor_dc882712c716f3a1) }
 
 var fileDescriptor_dc882712c716f3a1 = []byte{
-	// 155 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xce, 0xad, 0x4c, 0xce,
-	0x48, 0xcc, 0xcc, 0xd3, 0x4f, 0x49, 0xad, 0xd0, 0x2f, 0x33, 0xd4, 0x2f, 0x48, 0x2c, 0x4a, 0xcc,
-	0x2d, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x83, 0x4a, 0xea, 0xa5, 0xa4, 0x56, 0xe8,
-	0x95, 0x19, 0x4a, 0x09, 0x26, 0xe6, 0x66, 0xe6, 0xe5, 0xeb, 0x83, 0x49, 0x88, 0x12, 0x29, 0x91,
-	0xf4, 0xfc, 0xf4, 0x7c, 0x30, 0x53, 0x1f, 0xc4, 0x82, 0x88, 0x2a, 0xa9, 0x73, 0xb1, 0x05, 0x80,
-	0x0d, 0xb2, 0x92, 0x7d, 0xb1, 0x40, 0x9e, 0xb1, 0xeb, 0xf9, 0x06, 0x2d, 0x11, 0x98, 0x45, 0x15,
-	0x60, 0xab, 0x20, 0xd2, 0x4e, 0xba, 0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24, 0xc7, 0xf8, 0xe0,
-	0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78, 0x2c, 0xc7, 0x10,
-	0x25, 0x8c, 0xaa, 0xbe, 0xa4, 0xb2, 0x20, 0xb5, 0x38, 0x89, 0x0d, 0x6c, 0xbc, 0x31, 0x20, 0x00,
-	0x00, 0xff, 0xff, 0xe3, 0x40, 0x0e, 0x06, 0xb6, 0x00, 0x00, 0x00,
+	// 393 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xbf, 0xae, 0xd3, 0x30,
+	0x14, 0x87, 0x13, 0x2e, 0x14, 0xc8, 0x50, 0xda, 0x50, 0xa4, 0xb4, 0xa5, 0x29, 0x82, 0x05, 0x21,
+	0x91, 0xa8, 0x62, 0x63, 0xa3, 0x2a, 0xa0, 0x4a, 0x20, 0xaa, 0xc0, 0xc4, 0x62, 0xb9, 0xce, 0x69,
+	0x6a, 0xe1, 0x3f, 0x91, 0xed, 0x96, 0xe4, 0x15, 0x98, 0x78, 0x04, 0x1e, 0x81, 0xc7, 0xe8, 0xd8,
+	0x81, 0x01, 0x31, 0x54, 0xa8, 0x1d, 0xe0, 0x31, 0x50, 0x9c, 0x80, 0x84, 0xee, 0xd2, 0xc5, 0x3a,
+	0xb6, 0xcf, 0xf7, 0x49, 0xc7, 0xfe, 0x79, 0x43, 0x5e, 0x92, 0x35, 0xa6, 0x22, 0x4e, 0xa1, 0x88,
+	0xb7, 0x93, 0x38, 0xc7, 0x0a, 0x73, 0x1d, 0xe5, 0x4a, 0x1a, 0xe9, 0xb7, 0x9b, 0xcb, 0x28, 0x85,
+	0x22, 0xda, 0x4e, 0x06, 0x5d, 0xcc, 0xa9, 0x90, 0xb1, 0x5d, 0xeb, 0x96, 0x41, 0x2f, 0x93, 0x99,
+	0xb4, 0x65, 0x5c, 0x55, 0xf5, 0xe9, 0xfd, 0x6f, 0x17, 0x5e, 0x6b, 0x61, 0x4d, 0x7e, 0xea, 0xdd,
+	0x5d, 0x62, 0x0d, 0xc8, 0x28, 0x2c, 0xf4, 0x0a, 0x14, 0x5a, 0x01, 0xa0, 0x1c, 0x14, 0x01, 0x61,
+	0x70, 0x06, 0x81, 0x7b, 0xcf, 0x7d, 0x78, 0x73, 0xfa, 0x60, 0x77, 0x18, 0x3b, 0x3f, 0x0e, 0xe3,
+	0x21, 0x91, 0x9a, 0x4b, 0xad, 0xd3, 0x0f, 0x11, 0x95, 0x31, 0xc7, 0x66, 0x1d, 0xbd, 0x82, 0x0c,
+	0x93, 0x72, 0x06, 0x24, 0xe9, 0x57, 0xa2, 0x77, 0x8d, 0xe7, 0x05, 0xc0, 0xe2, 0x9f, 0xc5, 0x7f,
+	0xe9, 0x75, 0x38, 0x15, 0x48, 0xaa, 0x14, 0x14, 0xc2, 0x5c, 0x6e, 0x84, 0x09, 0xae, 0x58, 0xf3,
+	0xa8, 0x31, 0xdf, 0xb9, 0x6c, 0x9e, 0x0b, 0x93, 0xb4, 0x39, 0x15, 0x6f, 0x2a, 0xea, 0x99, 0x85,
+	0xfc, 0xb9, 0xd7, 0x65, 0x04, 0x51, 0x41, 0x0d, 0xc5, 0x0c, 0xe9, 0x4d, 0x9e, 0xb3, 0x32, 0xb8,
+	0x38, 0xc7, 0x74, 0x8b, 0x91, 0x79, 0x8d, 0xbd, 0xb5, 0x94, 0xff, 0xda, 0xeb, 0x30, 0x82, 0xa0,
+	0x20, 0x6b, 0x2c, 0x32, 0x40, 0x0a, 0x1b, 0x08, 0xae, 0x9e, 0x3f, 0x6d, 0x9b, 0x91, 0xe7, 0x0d,
+	0x9b, 0x60, 0x63, 0x47, 0xb4, 0x0f, 0xa9, 0xe0, 0x23, 0x56, 0x69, 0xad, 0xbb, 0x76, 0xd6, 0x88,
+	0x15, 0x96, 0x58, 0xca, 0x8a, 0xfa, 0xde, 0x0d, 0x46, 0x50, 0x0a, 0x42, 0xf2, 0xa0, 0x55, 0x09,
+	0x92, 0xeb, 0x8c, 0xcc, 0xaa, 0xed, 0xd3, 0xd1, 0xef, 0x2f, 0x63, 0xf7, 0xd3, 0xaf, 0xaf, 0x8f,
+	0x7a, 0x7f, 0x63, 0x51, 0xd8, 0x60, 0xd4, 0x7f, 0x39, 0x7d, 0xbc, 0x3b, 0x86, 0xee, 0xfe, 0x18,
+	0xba, 0x3f, 0x8f, 0xa1, 0xfb, 0xf9, 0x14, 0x3a, 0xfb, 0x53, 0xe8, 0x7c, 0x3f, 0x85, 0xce, 0xfb,
+	0xdb, 0xff, 0xf7, 0x9b, 0x32, 0x07, 0xbd, 0x6c, 0xd9, 0x30, 0x3c, 0xf9, 0x13, 0x00, 0x00, 0xff,
+	0xff, 0xae, 0xc3, 0x51, 0xad, 0x64, 0x02, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -98,6 +133,24 @@ func (this *Params) Equal(that interface{}) bool {
 	if that1 == nil {
 		return this == nil
 	} else if this == nil {
+		return false
+	}
+	if !this.BaseTransferFeePercentage.Equal(that1.BaseTransferFeePercentage) {
+		return false
+	}
+	if !this.MinOrderAmount.Equal(that1.MinOrderAmount) {
+		return false
+	}
+	if !this.LcInitialSupply.Equal(that1.LcInitialSupply) {
+		return false
+	}
+	if !this.LcExchangeRate.Equal(that1.LcExchangeRate) {
+		return false
+	}
+	if !this.BaseRewardRate.Equal(that1.BaseRewardRate) {
+		return false
+	}
+	if this.LcDenom != that1.LcDenom {
 		return false
 	}
 	return true
@@ -122,6 +175,63 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.LcDenom) > 0 {
+		i -= len(m.LcDenom)
+		copy(dAtA[i:], m.LcDenom)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.LcDenom)))
+		i--
+		dAtA[i] = 0x32
+	}
+	{
+		size := m.BaseRewardRate.Size()
+		i -= size
+		if _, err := m.BaseRewardRate.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	{
+		size := m.LcExchangeRate.Size()
+		i -= size
+		if _, err := m.LcExchangeRate.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size := m.LcInitialSupply.Size()
+		i -= size
+		if _, err := m.LcInitialSupply.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size := m.MinOrderAmount.Size()
+		i -= size
+		if _, err := m.MinOrderAmount.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size := m.BaseTransferFeePercentage.Size()
+		i -= size
+		if _, err := m.BaseTransferFeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -142,6 +252,20 @@ func (m *Params) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = m.BaseTransferFeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MinOrderAmount.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.LcInitialSupply.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.LcExchangeRate.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.BaseRewardRate.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = len(m.LcDenom)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
 	return n
 }
 
@@ -180,6 +304,208 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseTransferFeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseTransferFeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinOrderAmount", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinOrderAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LcInitialSupply", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LcInitialSupply.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LcExchangeRate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LcExchangeRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseRewardRate", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseRewardRate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LcDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LcDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipParams(dAtA[iNdEx:])

@@ -10,4 +10,37 @@ option go_package = "mychain/x/dex/types";
 message Params {
   option (amino.name) = "mychain/x/dex/Params";
   option (gogoproto.equal) = true;
+  
+  // base_transfer_fee_percentage is the base fee percentage for transfers (e.g., 0.005 for 0.5%)
+  string base_transfer_fee_percentage = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_order_amount is the minimum order amount in base currency
+  string min_order_amount = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // lc_initial_supply is the initial supply of LiquidityCoin
+  string lc_initial_supply = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // lc_exchange_rate is the initial exchange rate (MC per LC)
+  string lc_exchange_rate = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // base_reward_rate is the base LC reward rate per second per quote unit
+  string base_reward_rate = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // lc_denom is the denomination for LiquidityCoin
+  string lc_denom = 6;
 }

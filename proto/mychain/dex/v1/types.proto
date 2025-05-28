@@ -1,0 +1,117 @@
+syntax = "proto3";
+package mychain.dex.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "mychain/x/dex/types";
+
+// Order defines a trading order
+message Order {
+  uint64 id = 1;
+  string maker = 2;
+  uint64 pair_id = 3;
+  bool is_buy = 4;
+  cosmos.base.v1beta1.Coin price = 5 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin amount = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin filled_amount = 7 [(gogoproto.nullable) = false];
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+// TradingPair defines a trading pair
+message TradingPair {
+  uint64 id = 1;
+  string base_denom = 2;
+  string quote_denom = 3;
+  bool active = 4;
+}
+
+// LiquidityTier defines reward tiers based on price deviation
+message LiquidityTier {
+  uint32 id = 1;
+  string price_deviation = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string bid_volume_cap = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string ask_volume_cap = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  int64 window_duration_seconds = 5;
+}
+
+// OrderRewardInfo tracks reward information for individual orders
+message OrderRewardInfo {
+  uint64 order_id = 1;
+  uint32 tier_id = 2;
+  int64 start_time = 3;
+  int64 last_updated = 4;
+  int64 accumulated_time = 5;
+  string total_rewards = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 last_claimed_time = 7;
+}
+
+// VolumeTracker tracks volume for tier calculations
+message VolumeTracker {
+  uint64 pair_id = 1;
+  repeated VolumeWindow windows = 2 [(gogoproto.nullable) = false];
+}
+
+// VolumeWindow represents volume in a time window
+message VolumeWindow {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  string bid_volume = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string ask_volume = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// PriceReference tracks reference prices for tier calculations
+message PriceReference {
+  uint64 pair_id = 1;
+  string reference_price = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  int64 last_updated = 3;
+}
+
+// UserReward contains user LC rewards summary
+message UserReward {
+  string address = 1;
+  string total_rewards = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string claimed_rewards = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// UserRewardInfo contains user LC rewards information
+message UserRewardInfo {
+  string address = 1;
+  string pending_lc = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string claimed_lc = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  repeated OrderRewardInfo order_rewards = 4 [(gogoproto.nullable) = false];
+}
