@@ -6,7 +6,9 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	corestore "cosmossdk.io/core/store"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"mychain/x/maincoin/types"
 )
@@ -21,6 +23,16 @@ type Keeper struct {
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]
+	
+	// State management
+	CurrentEpoch       collections.Item[uint64]
+	CurrentPrice       collections.Item[math.LegacyDec]
+	TotalSupply        collections.Item[math.Int]
+	ReserveBalance     collections.Item[math.Int]
+	DevAllocationTotal collections.Item[math.Int]
+	
+	// Expected keepers
+	bankKeeper types.BankKeeper
 }
 
 func NewKeeper(
@@ -28,7 +40,7 @@ func NewKeeper(
 	cdc codec.Codec,
 	addressCodec address.Codec,
 	authority []byte,
-
+	bankKeeper types.BankKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -41,8 +53,14 @@ func NewKeeper(
 		cdc:          cdc,
 		addressCodec: addressCodec,
 		authority:    authority,
+		bankKeeper:   bankKeeper,
 
-		Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
+		Params:             collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
+		CurrentEpoch:       collections.NewItem(sb, types.CurrentEpochKey, "current_epoch", collections.Uint64Value),
+		CurrentPrice:       collections.NewItem(sb, types.CurrentPriceKey, "current_price", sdk.LegacyDecValue),
+		TotalSupply:        collections.NewItem(sb, types.TotalSupplyKey, "total_supply", sdk.IntValue),
+		ReserveBalance:     collections.NewItem(sb, types.ReserveBalanceKey, "reserve_balance", sdk.IntValue),
+		DevAllocationTotal: collections.NewItem(sb, types.DevAllocationTotalKey, "dev_allocation_total", sdk.IntValue),
 	}
 
 	schema, err := sb.Build()

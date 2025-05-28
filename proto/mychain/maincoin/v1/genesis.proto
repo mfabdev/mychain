@@ -14,4 +14,31 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  
+  // current_epoch is the current epoch number
+  uint64 current_epoch = 2;
+  
+  // current_price is the current price of maincoin
+  string current_price = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // total_supply is the current total supply of maincoin
+  string total_supply = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // reserve_balance is the current balance in the reserve pool
+  string reserve_balance = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // dev_allocation_total is the total dev allocation minted
+  string dev_allocation_total = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
 }

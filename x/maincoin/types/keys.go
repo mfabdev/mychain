@@ -13,7 +13,17 @@ const (
 	// It should be synced with the gov module's name if it is ever changed.
 	// See: https://github.com/cosmos/cosmos-sdk/blob/v0.52.0-beta.2/x/gov/types/keys.go#L9
 	GovModuleName = "gov"
+	
+	// MainCoin denomination
+	MainCoinDenom = "maincoin"
 )
 
-// ParamsKey is the prefix to retrieve all Params
-var ParamsKey = collections.NewPrefix("p_maincoin")
+// Storage keys
+var (
+	ParamsKey             = collections.NewPrefix("p_maincoin")
+	CurrentEpochKey       = collections.NewPrefix("current_epoch")
+	CurrentPriceKey       = collections.NewPrefix("current_price")
+	TotalSupplyKey        = collections.NewPrefix("total_supply")
+	ReserveBalanceKey     = collections.NewPrefix("reserve_balance")
+	DevAllocationTotalKey = collections.NewPrefix("dev_allocation_total")
+)

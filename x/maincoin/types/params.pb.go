@@ -4,6 +4,7 @@
 package types
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -26,6 +27,18 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
+	// initial_price is the starting price of the maincoin
+	InitialPrice cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=initial_price,json=initialPrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"initial_price"`
+	// price_increment is the price increase per token bought
+	PriceIncrement cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=price_increment,json=priceIncrement,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"price_increment"`
+	// purchase_denom is the denomination used to buy maincoin (e.g., "testusd")
+	PurchaseDenom string `protobuf:"bytes,3,opt,name=purchase_denom,json=purchaseDenom,proto3" json:"purchase_denom,omitempty"`
+	// fee_percentage is the trading fee percentage (e.g., 0.01 for 1%)
+	FeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=fee_percentage,json=feePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"fee_percentage"`
+	// max_supply is the maximum supply of maincoin (0 for unlimited)
+	MaxSupply cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=max_supply,json=maxSupply,proto3,customtype=cosmossdk.io/math.Int" json:"max_supply"`
+	// dev_address is the address that receives dev allocation
+	DevAddress string `protobuf:"bytes,6,opt,name=dev_address,json=devAddress,proto3" json:"dev_address,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -61,6 +74,20 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
+func (m *Params) GetPurchaseDenom() string {
+	if m != nil {
+		return m.PurchaseDenom
+	}
+	return ""
+}
+
+func (m *Params) GetDevAddress() string {
+	if m != nil {
+		return m.DevAddress
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "mychain.maincoin.v1.Params")
 }
@@ -68,17 +95,31 @@ func init() {
 func init() { proto.RegisterFile("mychain/maincoin/v1/params.proto", fileDescriptor_98f74e4f9d9707fa) }
 
 var fileDescriptor_98f74e4f9d9707fa = []byte{
-	// 160 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0xc8, 0xad, 0x4c, 0xce,
-	0x48, 0xcc, 0xcc, 0xd3, 0xcf, 0x4d, 0xcc, 0xcc, 0x4b, 0xce, 0xcf, 0xcc, 0xd3, 0x2f, 0x33, 0xd4,
-	0x2f, 0x48, 0x2c, 0x4a, 0xcc, 0x2d, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x86, 0xaa,
-	0xd0, 0x83, 0xa9, 0xd0, 0x2b, 0x33, 0x94, 0x12, 0x4c, 0xcc, 0xcd, 0xcc, 0xcb, 0xd7, 0x07, 0x93,
-	0x10, 0x75, 0x52, 0x22, 0xe9, 0xf9, 0xe9, 0xf9, 0x60, 0xa6, 0x3e, 0x88, 0x05, 0x11, 0x55, 0xd2,
-	0xe1, 0x62, 0x0b, 0x00, 0x9b, 0x66, 0xa5, 0xf4, 0x62, 0x81, 0x3c, 0x63, 0xd7, 0xf3, 0x0d, 0x5a,
-	0x92, 0x30, 0x2b, 0x2b, 0x10, 0x96, 0x42, 0xd4, 0x38, 0x19, 0x9d, 0x78, 0x24, 0xc7, 0x78, 0xe1,
-	0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70,
-	0xe3, 0xb1, 0x1c, 0x43, 0x94, 0x04, 0x16, 0x4d, 0x25, 0x95, 0x05, 0xa9, 0xc5, 0x49, 0x6c, 0x60,
-	0x8b, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x69, 0x59, 0x4d, 0x23, 0xca, 0x00, 0x00, 0x00,
+	// 373 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x3f, 0x6b, 0xdb, 0x40,
+	0x18, 0xc6, 0xa5, 0xba, 0x35, 0xf8, 0x5a, 0xbb, 0x54, 0x6d, 0x41, 0x75, 0xa9, 0x64, 0x5c, 0x0a,
+	0xa5, 0x83, 0x84, 0x9b, 0x2d, 0x64, 0x89, 0xf1, 0x10, 0x07, 0x0f, 0xc6, 0xd9, 0xb2, 0x88, 0xcb,
+	0xe9, 0xb5, 0x7c, 0xc4, 0xf7, 0x07, 0x9d, 0x2c, 0xac, 0xaf, 0x90, 0x29, 0x53, 0xe6, 0x7c, 0x84,
+	0x7c, 0x0c, 0x8f, 0x1e, 0x43, 0x06, 0x13, 0xec, 0x21, 0xf9, 0x18, 0x41, 0x27, 0x2b, 0x19, 0x92,
+	0xc1, 0x8b, 0x78, 0x79, 0x78, 0x7e, 0x3f, 0x1d, 0x3c, 0xa8, 0xc5, 0x32, 0x32, 0xc1, 0x94, 0xfb,
+	0x0c, 0x53, 0x4e, 0x04, 0xe5, 0x7e, 0xda, 0xf1, 0x25, 0x8e, 0x31, 0x53, 0x9e, 0x8c, 0x45, 0x22,
+	0xac, 0xaf, 0xdb, 0x86, 0x57, 0x36, 0xbc, 0xb4, 0xd3, 0xfc, 0x82, 0x19, 0xe5, 0xc2, 0xd7, 0xdf,
+	0xa2, 0xd7, 0xfc, 0x16, 0x89, 0x48, 0xe8, 0xd3, 0xcf, 0xaf, 0x22, 0x6d, 0x5f, 0x55, 0x50, 0x75,
+	0xa8, 0x75, 0xd6, 0x11, 0xaa, 0x53, 0x4e, 0x13, 0x8a, 0xa7, 0x81, 0x8c, 0x29, 0x01, 0xdb, 0x6c,
+	0x99, 0x7f, 0x6b, 0xdd, 0xdf, 0x8b, 0x95, 0x6b, 0xdc, 0xad, 0xdc, 0x9f, 0x44, 0x28, 0x26, 0x94,
+	0x0a, 0xcf, 0x3d, 0x2a, 0x7c, 0x86, 0x93, 0x89, 0x37, 0x80, 0x08, 0x93, 0xac, 0x07, 0x64, 0xf4,
+	0x69, 0x4b, 0x0e, 0x73, 0xd0, 0x1a, 0xa0, 0xcf, 0xda, 0x10, 0x50, 0x4e, 0x62, 0x60, 0xc0, 0x13,
+	0xfb, 0xdd, 0xee, 0xae, 0x86, 0x66, 0xfb, 0x25, 0x6a, 0xfd, 0x41, 0x0d, 0x39, 0x8b, 0xc9, 0x04,
+	0x2b, 0x08, 0x42, 0xe0, 0x82, 0xd9, 0x95, 0x5c, 0x36, 0xaa, 0x97, 0x69, 0x2f, 0x0f, 0xad, 0x63,
+	0xd4, 0x18, 0x03, 0x04, 0x12, 0x62, 0x02, 0x3c, 0xc1, 0x11, 0xd8, 0xef, 0x77, 0xff, 0x67, 0x7d,
+	0x0c, 0x30, 0x7c, 0x26, 0xad, 0x03, 0x84, 0x18, 0x9e, 0x07, 0x6a, 0x26, 0xe5, 0x34, 0xb3, 0x3f,
+	0x68, 0xcf, 0xaf, 0xad, 0xe7, 0xfb, 0x6b, 0x4f, 0x9f, 0x27, 0xa3, 0x1a, 0xc3, 0xf3, 0x13, 0xdd,
+	0xb7, 0x5c, 0xf4, 0x31, 0x84, 0x34, 0xc0, 0x61, 0x18, 0x83, 0x52, 0x76, 0x55, 0xbf, 0x16, 0x85,
+	0x90, 0x1e, 0x16, 0xc9, 0x7e, 0xfb, 0xf1, 0xda, 0x35, 0x2f, 0x1e, 0x6e, 0xfe, 0xfd, 0x28, 0xd7,
+	0x9d, 0xbf, 0xec, 0x5b, 0xac, 0xd1, 0xfd, 0xbf, 0x58, 0x3b, 0xe6, 0x72, 0xed, 0x98, 0xf7, 0x6b,
+	0xc7, 0xbc, 0xdc, 0x38, 0xc6, 0x72, 0xe3, 0x18, 0xb7, 0x1b, 0xc7, 0x38, 0xb5, 0xdf, 0x80, 0x92,
+	0x4c, 0x82, 0x3a, 0xab, 0xea, 0x4d, 0xf7, 0x9e, 0x02, 0x00, 0x00, 0xff, 0xff, 0x41, 0xab, 0xb3,
+	0x61, 0x35, 0x02, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -98,6 +139,24 @@ func (this *Params) Equal(that interface{}) bool {
 	if that1 == nil {
 		return this == nil
 	} else if this == nil {
+		return false
+	}
+	if !this.InitialPrice.Equal(that1.InitialPrice) {
+		return false
+	}
+	if !this.PriceIncrement.Equal(that1.PriceIncrement) {
+		return false
+	}
+	if this.PurchaseDenom != that1.PurchaseDenom {
+		return false
+	}
+	if !this.FeePercentage.Equal(that1.FeePercentage) {
+		return false
+	}
+	if !this.MaxSupply.Equal(that1.MaxSupply) {
+		return false
+	}
+	if this.DevAddress != that1.DevAddress {
 		return false
 	}
 	return true
@@ -122,6 +181,60 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.DevAddress) > 0 {
+		i -= len(m.DevAddress)
+		copy(dAtA[i:], m.DevAddress)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.DevAddress)))
+		i--
+		dAtA[i] = 0x32
+	}
+	{
+		size := m.MaxSupply.Size()
+		i -= size
+		if _, err := m.MaxSupply.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	{
+		size := m.FeePercentage.Size()
+		i -= size
+		if _, err := m.FeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	if len(m.PurchaseDenom) > 0 {
+		i -= len(m.PurchaseDenom)
+		copy(dAtA[i:], m.PurchaseDenom)
+		i = encodeVarintParams(dAtA, i, uint64(len(m.PurchaseDenom)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	{
+		size := m.PriceIncrement.Size()
+		i -= size
+		if _, err := m.PriceIncrement.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size := m.InitialPrice.Size()
+		i -= size
+		if _, err := m.InitialPrice.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -142,6 +255,22 @@ func (m *Params) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = m.InitialPrice.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.PriceIncrement.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = len(m.PurchaseDenom)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
+	l = m.FeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MaxSupply.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = len(m.DevAddress)
+	if l > 0 {
+		n += 1 + l + sovParams(uint64(l))
+	}
 	return n
 }
 
@@ -180,6 +309,206 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InitialPrice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.InitialPrice.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceIncrement", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.PriceIncrement.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PurchaseDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PurchaseDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxSupply", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaxSupply.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipParams(dAtA[iNdEx:])

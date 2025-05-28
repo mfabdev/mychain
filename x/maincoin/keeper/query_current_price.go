@@ -14,7 +14,12 @@ func (q queryServer) CurrentPrice(ctx context.Context, req *types.QueryCurrentPr
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	// TODO: Process the query
+	currentPrice, err := q.k.CurrentPrice.Get(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-	return &types.QueryCurrentPriceResponse{}, nil
+	return &types.QueryCurrentPriceResponse{
+		Price: currentPrice,
+	}, nil
 }

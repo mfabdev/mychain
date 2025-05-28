@@ -10,4 +10,34 @@ option go_package = "mychain/x/maincoin/types";
 message Params {
   option (amino.name) = "mychain/x/maincoin/Params";
   option (gogoproto.equal) = true;
+  
+  // initial_price is the starting price of the maincoin
+  string initial_price = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // price_increment is the price increase per token bought
+  string price_increment = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // purchase_denom is the denomination used to buy maincoin (e.g., "testusd")
+  string purchase_denom = 3;
+  
+  // fee_percentage is the trading fee percentage (e.g., 0.01 for 1%)
+  string fee_percentage = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // max_supply is the maximum supply of maincoin (0 for unlimited)
+  string max_supply = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // dev_address is the address that receives dev allocation
+  string dev_address = 6;
 }
