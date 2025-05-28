@@ -55,7 +55,10 @@ message MsgBuyMaincoin {
 }
 
 // MsgBuyMaincoinResponse defines the MsgBuyMaincoinResponse message.
-message MsgBuyMaincoinResponse {}
+message MsgBuyMaincoinResponse {
+  // amount of maincoin purchased
+  cosmos.base.v1beta1.Coin amount_purchased = 1 [(gogoproto.nullable) = false];
+}
 
 // MsgSellMaincoin defines the MsgSellMaincoin message.
 message MsgSellMaincoin {
@@ -65,4 +68,7 @@ message MsgSellMaincoin {
 }
 
 // MsgSellMaincoinResponse defines the MsgSellMaincoinResponse message.
-message MsgSellMaincoinResponse {}
+message MsgSellMaincoinResponse {
+  // amount of testusd refunded
+  cosmos.base.v1beta1.Coin amount_refunded = 1 [(gogoproto.nullable) = false];
+}

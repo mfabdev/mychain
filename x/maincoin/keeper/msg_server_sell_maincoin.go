@@ -108,5 +108,7 @@ func (k msgServer) SellMaincoin(ctx context.Context, msg *types.MsgSellMaincoin)
 		),
 	)
 
-	return &types.MsgSellMaincoinResponse{}, nil
+	return &types.MsgSellMaincoinResponse{
+		AmountRefunded: refundCoin,
+	}, nil
 }
