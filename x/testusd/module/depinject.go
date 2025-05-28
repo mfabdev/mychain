@@ -7,7 +7,6 @@ import (
         "cosmossdk.io/depinject"
         "cosmossdk.io/depinject/appconfig"
         "cosmossdk.io/log"
-        storetypes "cosmossdk.io/store/types"
         "cosmossdk.io/core/event"
         "github.com/cosmos/cosmos-sdk/codec"
         authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -34,7 +33,6 @@ type ModuleInputs struct {
 
         Config       *types.Module
         StoreService store.KVStoreService
-        StoreKey     *storetypes.KVStoreKey
         Cdc          codec.Codec
         AddressCodec address.Codec
         Logger       log.Logger
@@ -61,7 +59,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
         k := keeper.NewKeeper(
                 in.Cdc,
                 in.StoreService,
-                in.StoreKey,
                 in.Logger,
                 authority.String(),
                 in.AddressCodec,

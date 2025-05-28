@@ -1,22 +1,26 @@
 package keeper
 
 import (
+    "context"
+    
     "cosmossdk.io/math"
-    sdk "github.com/cosmos/cosmos-sdk/types"
     
     "mychain/x/testusd/types"
 )
 
 // GetTotalBridged returns the total amount of USDC bridged
-func (k Keeper) GetTotalBridged(ctx sdk.Context) math.Int {
-    store := ctx.KVStore(k.storeKey)
-    bz := store.Get(types.TotalBridgedKey)
+func (k Keeper) GetTotalBridged(ctx context.Context) math.Int {
+    store := k.storeService.OpenKVStore(ctx)
+    bz, err := store.Get(types.TotalBridgedKey)
+    if err != nil {
+        panic(err)
+    }
     if bz == nil {
         return math.ZeroInt()
     }
     
     var totalBridged math.Int
-    err := totalBridged.Unmarshal(bz)
+    err = totalBridged.Unmarshal(bz)
     if err != nil {
         panic(err)
     }
@@ -25,25 +29,31 @@ func (k Keeper) GetTotalBridged(ctx sdk.Context) math.Int {
 }
 
 // SetTotalBridged sets the total amount of USDC bridged
-func (k Keeper) SetTotalBridged(ctx sdk.Context, amount math.Int) {
-    store := ctx.KVStore(k.storeKey)
+func (k Keeper) SetTotalBridged(ctx context.Context, amount math.Int) {
+    store := k.storeService.OpenKVStore(ctx)
     bz, err := amount.Marshal()
     if err != nil {
         panic(err)
     }
-    store.Set(types.TotalBridgedKey, bz)
+    err = store.Set(types.TotalBridgedKey, bz)
+    if err != nil {
+        panic(err)
+    }
 }
 
 // GetTotalSupply returns the total supply of TestUSD
-func (k Keeper) GetTotalSupply(ctx sdk.Context) math.Int {
-    store := ctx.KVStore(k.storeKey)
-    bz := store.Get(types.TotalSupplyKey)
+func (k Keeper) GetTotalSupply(ctx context.Context) math.Int {
+    store := k.storeService.OpenKVStore(ctx)
+    bz, err := store.Get(types.TotalSupplyKey)
+    if err != nil {
+        panic(err)
+    }
     if bz == nil {
         return math.ZeroInt()
     }
     
     var totalSupply math.Int
-    err := totalSupply.Unmarshal(bz)
+    err = totalSupply.Unmarshal(bz)
     if err != nil {
         panic(err)
     }
@@ -52,19 +62,25 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) math.Int {
 }
 
 // SetTotalSupply sets the total supply of TestUSD
-func (k Keeper) SetTotalSupply(ctx sdk.Context, amount math.Int) {
-    store := ctx.KVStore(k.storeKey)
+func (k Keeper) SetTotalSupply(ctx context.Context, amount math.Int) {
+    store := k.storeService.OpenKVStore(ctx)
     bz, err := amount.Marshal()
     if err != nil {
         panic(err)
     }
-    store.Set(types.TotalSupplyKey, bz)
+    err = store.Set(types.TotalSupplyKey, bz)
+    if err != nil {
+        panic(err)
+    }
 }
 
 // GetBridgeStatistics returns the bridge statistics
-func (k Keeper) GetBridgeStatistics(ctx sdk.Context) types.BridgeStatistics {
-    store := ctx.KVStore(k.storeKey)
-    bz := store.Get(types.BridgeStatisticsKey)
+func (k Keeper) GetBridgeStatistics(ctx context.Context) types.BridgeStatistics {
+    store := k.storeService.OpenKVStore(ctx)
+    bz, err := store.Get(types.BridgeStatisticsKey)
+    if err != nil {
+        panic(err)
+    }
     if bz == nil {
         return types.BridgeStatistics{}
     }
@@ -75,8 +91,11 @@ func (k Keeper) GetBridgeStatistics(ctx sdk.Context) types.BridgeStatistics {
 }
 
 // SetBridgeStatistics sets the bridge statistics
-func (k Keeper) SetBridgeStatistics(ctx sdk.Context, stats types.BridgeStatistics) {
-    store := ctx.KVStore(k.storeKey)
+func (k Keeper) SetBridgeStatistics(ctx context.Context, stats types.BridgeStatistics) {
+    store := k.storeService.OpenKVStore(ctx)
     bz := k.cdc.MustMarshal(&stats)
-    store.Set(types.BridgeStatisticsKey, bz)
+    err := store.Set(types.BridgeStatisticsKey, bz)
+    if err != nil {
+        panic(err)
+    }
 }

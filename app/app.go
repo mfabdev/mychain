@@ -185,7 +185,6 @@ func New(
 		&app.TestusdKeeper,
 		&app.MaincoinKeeper,
 		&app.DexKeeper,
-		&app.TestusdKeeper,
 	); err != nil {
 		panic(err)
 	}
