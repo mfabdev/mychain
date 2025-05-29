@@ -24,5 +24,30 @@
         }
       ]
     }
+  },
+  "maincoin": {
+    "params": {
+      "initial_price": "0.1",
+      "price_increment": "0.001",
+      "max_supply": "1000000000000",
+      "purchase_denom": "utestusd",
+      "fee_percentage": "0.0001",
+      "dev_address": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4"
+    },
+    "current_epoch": "1",
+    "current_price": "0.1",
+    "total_supply": "100000000000",
+    "reserve_balance": "1000000",
+    "dev_allocation_total": "0"
+  },
+  "dex": {
+    "params": {
+      "lc_denom": "alc",
+      "lc_initial_supply": "100000000000",
+      "lc_exchange_rate": "0.1",
+      "base_reward_rate": "100000000",
+      "min_order_amount": "1000000",
+      "base_transfer_fee_percentage": "0.005"
+    }
   }
 }

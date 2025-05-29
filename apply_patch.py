@@ -52,8 +52,8 @@ patch = {
         },
         "maincoin": {
             "params": {
-                "initial_price": "0.1",
-                "price_increment": "0.001",
+                "initial_price": "0.0001",
+                "price_increment": "0.00001",
                 "max_supply": "0",
                 "purchase_denom": "utestusd",
                 "fee_percentage": "0.0001",
@@ -63,14 +63,14 @@ patch = {
                 "total_supply": "100000000000",
                 "reserve_balance": "1000000",
                 "current_epoch": "1",
-                "current_price": "0.1"
+                "current_price": "0.0001"
             }
         },
         "dex": {
             "params": {
                 "lc_denom": "alc",
                 "lc_initial_supply": "100000000000",
-                "lc_exchange_rate": "0.1",
+                "lc_exchange_rate": "0.0001",
                 "base_reward_rate": "100000000",
                 "min_order_amount": "1000000",
                 "base_transfer_fee_percentage": "0.005"
@@ -97,7 +97,7 @@ print("✅ Genesis patch applied successfully!")
 print(f"   📊 LiquidityCoin: 100,000.000000 ALC total (100,000,000,000 uALC)")
 print(f"   🔒 Staked: 90,000.000000 ALC (90,000,000,000 uALC) - 90%")
 print(f"   💰 Available: 10,000.000000 ALC (10,000,000,000 uALC) - 10%")
-print(f"   💵 TestUSD: 1.000000 TestUSD reserves (1,000,000 uTestUSD)")
+print(f"   💵 TestUSD: 1,001.000000 TestUSD total (1,000 admin + 1 reserves)")
 print(f"   🪙 MainCoin: 100,000.000000 MC (100,000,000,000 uMainCoin)")
 print(f"   💲 MainCoin price: $0.0001 per MC (0.1 uTestUSD per uMainCoin)")
 print(f"   📈 Total MC value: 100,000.000000 MC × $0.0001 = $10.00")

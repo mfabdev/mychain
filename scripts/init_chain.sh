@@ -36,7 +36,7 @@ echo -e "${GREEN}Admin address: $ADMIN_ADDR${NC}"
 
 # Add genesis account with correct balances
 echo "💰 Setting up genesis accounts..."
-mychaind genesis add-genesis-account admin 100000000000alc,1000000utestusd,100000000000maincoin --keyring-backend test
+mychaind genesis add-genesis-account admin 100000000000alc,1001000000utestusd,100000000000maincoin --keyring-backend test
 
 # Create validator
 echo "🏛️ Creating validator..."
@@ -67,7 +67,7 @@ echo -e "${GREEN}✨ Blockchain initialized successfully!${NC}"
 echo ""
 echo "📊 Economic Model:"
 echo "   • LiquidityCoin: 100,000 ALC (90,000 staked)"
-echo "   • TestUSD: 1.000000 TestUSD reserves"
+echo "   • TestUSD: 1,001.000000 TestUSD total (1,000 for admin, 1 for reserves)"
 echo "   • MainCoin: 100,000 MC @ \$0.0001 each"
 echo ""
 echo "🚀 To start the node, run:"
