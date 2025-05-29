@@ -6,7 +6,7 @@ MyChain is a custom Cosmos SDK blockchain featuring an innovative three-token ec
 
 ## 🏗️ Architecture
 
-MyChain is built on the **Cosmos SDK framework** with three custom modules:
+MyChain is built on the **Cosmos SDK v0.53.0** framework with three custom modules:
 
 1. **TestUSD Module** - Stablecoin bridge system
 2. **MainCoin Module** - Dynamic bonding curve token
@@ -16,212 +16,266 @@ MyChain is built on the **Cosmos SDK framework** with three custom modules:
 
 ### 1. LiquidityCoin (ALC) - The Foundation Token
 
-**Purpose**: Network security and liquidity rewards
-**Genesis**: 100,000 ALC created at launch
+**Purpose**: Network security and liquidity rewards  
+**Genesis**: 100,000 ALC created at launch  
+**Current Supply**: 100,000+ ALC (growing from 13% annual inflation)  
 **Distribution**: 
 - 90,000 ALC (90%) - Staked for block production and validation
-- 10,000 ALC (10%) - Liquid for transactions and rewards
+- 10,000 ALC (10%) - Liquid for transactions and trading
+- Additional ALC - Created through block rewards
 
 #### How LiquidityCoin Works:
-- **Block Production**: Validators stake ALC to secure the network
-- **Inflation**: New ALC tokens are minted as block rewards (~13% annually)
-- **Reward Distribution**: Block rewards go to validators and delegators
-- **Burning Mechanism**: Transaction fees are burned, creating deflationary pressure
-- **Price Discovery**: Market-driven based on utility and staking yields
+- **Block Production**: Single validator stakes 90,000 ALC to secure network
+- **Inflation**: New ALC tokens minted as block rewards (13% annually)
+- **Reward Distribution**: Staking rewards distributed every block (~5 seconds)
+- **Price Discovery**: Initially 0.0001 MC per LC, then market-driven on DEX
+- **USD Value**: $0.00000001 initially (0.0001 MC × $0.0001/MC)
 
 #### Economic Mechanics:
 ```
-Block Reward = Base Reward + Transaction Fees
-Validator Share = Block Reward × Commission Rate
-Delegator Share = Block Reward × (1 - Commission Rate) × Stake Ratio
+Annual Inflation Rate = 13%
+Daily Reward ≈ (90,000 × 0.13) / 365 ≈ 32 ALC
+Block Reward ≈ 32 ALC / (86,400 seconds / 5 seconds per block)
 ```
 
 ### 2. MainCoin (MC) - The Growth Token
 
-**Purpose**: Value appreciation through algorithmic bonding curve
-**Genesis**: 100,000 MC created at $0.0001 each ($10 total value)
-**Max Supply**: Unlimited (but controlled by bonding curve)
+**Purpose**: Value appreciation through algorithmic bonding curve  
+**Genesis**: 100,000 MC created at $0.0001 each ($10 total value)  
+**Current State**: Segment 1 - Price $0.0001001 (0.1% above initial)  
+**Max Supply**: No hard cap (controlled by bonding curve economics)
 
 #### How MainCoin Works:
-- **Bonding Curve Pricing**: Price increases algorithmically with supply
+- **Bonding Curve Pricing**: Price increases 0.001% per segment
 - **Purchase Mechanism**: Buy MC with TestUSD at current curve price
-- **Burning on Sale**: When MC is sold, tokens are burned (deflationary)
-- **Segmented Growth**: Price increases in segments as supply grows
+- **Burning on Sale**: When MC is sold, tokens are burned permanently
+- **Reserve Backing**: TestUSD in reserves backs MC value
 
 #### Pricing Formula:
 ```
-Price = Initial Price × (1 + Price Increment)^Segment Number
-Segment = Floor(Current Supply / Segment Size)
+Price = $0.0001 × (1.00001)^Segment
+Segment = Floor(TestUSD in Reserve / 1 TestUSD)
 
-Current Configuration:
-- Initial Price: $0.0001
-- Price Increment: 0.00001 (0.001% per segment)
-- Segment Size: Configurable (affects price sensitivity)
+Current State (Segment 1):
+- Initial Price: $0.0001000
+- Current Price: $0.0001001
+- Reserve Balance: 1 TestUSD
+- Next Segment: After 1 more TestUSD purchase
 ```
 
-#### Economic Mechanics:
+#### Economic Flow:
 ```
-Buy Order: User sends TestUSD → Receives MC at current price
-Sell Order: User sends MC → Receives TestUSD, MC is burned
-Treasury: TestUSD reserves back the MC supply
-```
+Buy 1,000 MC at Segment 1:
+- Cost: 1,000 × $0.0001001 = $0.1001 TestUSD
+- Reserve increases by $0.1001
+- Price moves toward Segment 2
 
-#### Example Price Evolution:
-- Segment 1: $0.0001 per MC
-- Segment 2: $0.0001001 per MC  
-- Segment 3: $0.0001002 per MC
-- As demand increases, price rises automatically
+Sell 1,000 MC at Segment 1:
+- Receive: ~$0.1001 TestUSD (minus fees)
+- 1,000 MC burned permanently
+- Total MC supply decreases
+```
 
 ### 3. TestUSD (TUSD) - The Stability Token
 
-**Purpose**: Stable medium of exchange and MC backing
-**Genesis**: 1,000 TUSD for trading
+**Purpose**: Stable medium of exchange and MC reserve backing  
+**Total Supply**: 1,001 TUSD (not 1,000!)  
+**Distribution**:
+- 1,000 TUSD - Admin account (available for trading)
+- 1 TUSD - Locked in MainCoin reserves (from Segment 0→1 transition)
 **Peg**: 1:1 with USD through bridge mechanism
 
 #### How TestUSD Works:
 - **Bridge In**: Convert external USDC to TestUSD (1:1 ratio)
 - **Bridge Out**: Convert TestUSD back to USDC (1:1 ratio)
-- **Stability**: Maintained through arbitrage and bridge operations
+- **Stability**: Maintained through arbitrage opportunities
 - **Utility**: Primary currency for MainCoin purchases and DEX trading
+- **Precision**: 6 decimals (1 TUSD = 1,000,000 utestusd)
 
-#### Bridge Mechanics:
+#### Supply Accounting:
 ```
-Bridge In: USDC (external) → TestUSD (on-chain)
-Bridge Out: TestUSD (on-chain) → USDC (external)
-Peg Maintenance: Arbitrage keeps price at $1.00
+Total Minted: 1,001 TestUSD
+Admin Balance: 1,000 TestUSD
+Reserve Locked: 1 TestUSD (from initial MC purchase)
+Circulating: 1,000 TestUSD
 ```
 
 ## 🔄 Inter-Token Relationships
 
-### The Economic Flywheel:
+### Current Economic State:
 
-1. **TestUSD** provides stability and purchasing power
-2. **MainCoin** appreciates through bonding curve as demand grows
-3. **LiquidityCoin** rewards market makers and validators
-4. **DEX** facilitates trading between all tokens
+| Token | Supply | Price | Market Cap | Status |
+|-------|--------|-------|------------|--------|
+| **ALC** | 100,000+ | $0.00000001 | ~$1.00+ | Growing from staking |
+| **MC** | 100,000 | $0.0001001 | $10.01 | Segment 1 active |
+| **TUSD** | 1,001 | $1.00 | $1,001 | 1 in reserves |
 
-### Cross-Token Utilities:
-
+### Token Interactions:
 ```
-TestUSD → MainCoin: Purchase at bonding curve price
-MainCoin → TestUSD: Sell back to bonding curve (with burning)
-ALC ↔ MainCoin: Trade on DEX for liquidity rewards
-ALC ↔ TestUSD: Trade on DEX for arbitrage opportunities
+TestUSD → MainCoin: Buy at bonding curve price ($0.0001001)
+MainCoin → TestUSD: Sell with token burning
+ALC ↔ MainCoin: Trade on DEX (when active)
+ALC ↔ TestUSD: Trade on DEX (when active)
 ```
 
-## 📈 Price Control Mechanisms
+### LC Price Mechanism:
+- **Initial Exchange Rate**: 0.0001 MC per LC (set in genesis)
+- **Market Discovery**: Price will float based on DEX trading
+- **Not Fixed**: LC price independent of MC price movements
+- **Current USD Value**: $0.00000001 (until DEX trading begins)
 
-### MainCoin Price Control:
-- **Algorithmic**: Bonding curve ensures predictable price increases
-- **Supply Elastic**: More buyers = higher price + more supply
-- **Burn Deflationary**: Selling burns tokens, reducing supply
-- **Treasury Backed**: TestUSD reserves provide price floor
+## 📈 Price Dynamics
 
-### LiquidityCoin Price Control:
-- **Utility Driven**: Value from staking rewards and DEX participation
-- **Inflation vs Burns**: Block rewards vs transaction fee burning
-- **Market Discovery**: Free market trading on DEX
+### MainCoin Bonding Curve Progress:
+```
+Segment 0: $0.0001000 (initial) - COMPLETED
+Segment 1: $0.0001001 (current) ← We are here
+Segment 2: $0.0001002 (next, after 1 more TUSD)
+...
+Segment 10: $0.0001010 (+1.0%)
+Segment 100: $0.0001100 (+10.0%)
+Segment 1000: $0.0001105 (+10.5%)
+```
 
-### TestUSD Price Control:
-- **Bridge Arbitrage**: External USDC bridge maintains $1 peg
-- **Reserve Backing**: Backed by external USD reserves
-- **Market Forces**: Depegging triggers arbitrage opportunities
+### Why We're in Segment 1:
+- Genesis created 100,000 MC at Segment 0 price
+- 1 TestUSD was used to "purchase" initial supply
+- This moved us from Segment 0 → Segment 1
+- Price increased from $0.0001000 → $0.0001001
 
 ## 🔥 Token Burning Mechanisms
 
 ### MainCoin Burning:
-```solidity
-// When users sell MainCoin
-function sellMainCoin(amount) {
-    uint256 testusdToReturn = calculateSellPrice(amount);
-    burnMainCoin(amount);  // Reduces total supply
+```typescript
+// When users sell MainCoin back to bonding curve
+function sellMainCoin(amount: number) {
+    const testusdToReturn = calculateSellReturn(amount);
+    burnMainCoin(amount);  // Permanently reduces supply
     transferTestUSD(user, testusdToReturn);
 }
 ```
 
-### LiquidityCoin Burning:
-```solidity
-// Transaction fees are burned
-function processTransaction(fee) {
-    burnALC(fee);  // Deflationary pressure
+### LiquidityCoin Fee Burning:
+```typescript
+// Transaction fees are burned (when implemented)
+function processTransaction(fee: number) {
+    burnALC(fee);  // Creates deflationary pressure
     executeTransaction();
 }
 ```
 
 ### No TestUSD Burning:
-- TestUSD maintains stable supply
-- Backed by external reserves
+- TestUSD maintains stable 1,001 supply
 - No burning ensures peg stability
+- Bridge operations maintain 1:1 backing
 
-## 🎯 Economic Incentives
+## 🎯 Economic Incentives & Reality
 
-### For Validators:
-- **Block Rewards**: Earn ALC for securing network
-- **Commission**: Take percentage of delegator rewards
-- **MEV**: Potential value from transaction ordering
+### For Validators (Current):
+- **Single Validator**: 90,000 ALC staked
+- **Block Rewards**: ~5.4 ALC per hour from inflation
+- **No Competition**: 100% of rewards (centralized for now)
+- **Future**: Multi-validator support planned
 
-### For Liquidity Providers:
-- **DEX Rewards**: Earn ALC for providing liquidity
-- **Trading Fees**: Share of DEX transaction fees
-- **Arbitrage**: Profit from price differences
+### For Liquidity Providers (Future):
+- **DEX Not Active**: Order book endpoints not implemented
+- **LC Trading**: Will enable price discovery
+- **Rewards Pool**: Ready for activation
+- **Trading Fees**: 0.5% base fee configured
 
-### For MainCoin Holders:
-- **Price Appreciation**: Benefit from bonding curve growth
-- **Early Adoption**: Lower entry prices in early segments
-- **Scarcity Value**: Burning on sales creates scarcity
+### For MainCoin Holders (Active):
+- **Current Price**: $0.0001001 (0.1% gain from initial)
+- **Next Price**: $0.0001002 (after 1 TUSD purchase)
+- **Compound Growth**: Each segment builds on previous
+- **Burn Deflation**: Selling reduces total supply
 
-### For Traders:
-- **Arbitrage**: Profit from price inefficiencies
-- **Speculation**: Trade on price movements
-- **Yield Farming**: Combine strategies for maximum returns
+## 🚀 Genesis Economics vs Current State
 
-## 🚀 Launch Economics
-
-### Genesis State:
+### Genesis Configuration:
 ```yaml
-Total Value: $10 USD
-Distribution:
-  - LiquidityCoin: 100,000 ALC (staking/rewards)
+Planned Total Value: $10 USD
+Initial Distribution:
+  - LiquidityCoin: 100,000 ALC (90k staked, 10k liquid)
   - MainCoin: 100,000 MC @ $0.0001 = $10
-  - TestUSD: 1,000 TUSD (trading capital)
-
-Initial Market Caps:
-  - ALC: Market determined
-  - MainCoin: $10 (bonding curve)
-  - TestUSD: $1,000 (stable)
+  - TestUSD: 1,001 TUSD (1,000 admin + 1 reserve)
 ```
 
-### Growth Projections:
-As the ecosystem grows:
-- **More TestUSD**: Bridged in for MainCoin purchases
-- **Higher MC Prices**: Bonding curve drives appreciation
-- **ALC Appreciation**: Increased utility and scarcity
-- **Network Effects**: More users → more value → more users
+### Current Reality:
+```yaml
+Actual State:
+  - ALC Supply: 100,000+ (growing ~32 ALC/day)
+  - ALC Staked: 90,000 (securing network)
+  - MC Price: $0.0001001 (Segment 1)
+  - MC Market Cap: $10.01
+  - TUSD in Admin: 1,000
+  - TUSD in Reserve: 1
+  - Total Network Value: ~$1,011.01
+```
 
-## 🔒 Security & Sustainability
+## 🔒 Security & Implementation Status
 
-### Economic Security:
-- **Aligned Incentives**: All participants benefit from network growth
-- **Multiple Revenue Streams**: Staking, trading, arbitrage
-- **Deflationary Mechanisms**: Burning creates scarcity value
+### What's Working:
+- ✅ Basic token creation and distribution
+- ✅ Staking and block production
+- ✅ MainCoin bonding curve math
+- ✅ TestUSD bridge structure
+- ✅ Web dashboard with Keplr
 
-### Long-term Sustainability:
-- **Self-Reinforcing**: Success attracts more participants
-- **Adaptive Pricing**: Bonding curve responds to demand
-- **Diversified Utility**: Multiple use cases for each token
+### What's Not Implemented:
+- ❌ DEX order matching engine
+- ❌ Module state query endpoints
+- ❌ LC market price discovery
+- ❌ Fee burning mechanism
+- ❌ Multi-validator support
 
-## 🎮 Real-World Example
+### Known Issues:
+1. **API Returns Zeros**: Module parameters not properly exposed
+2. **Single Validator**: Centralization risk
+3. **No Order Book**: DEX trading not active
+4. **State Sync**: Some values hardcoded in genesis
 
-**Scenario**: New user joins the ecosystem
+## 🎮 Real User Experience
 
-1. **Entry**: Bridge $100 USDC → 100 TestUSD
-2. **Investment**: Buy MainCoin with 50 TestUSD at current price
-3. **Liquidity**: Provide ALC/TestUSD liquidity for rewards
-4. **Growth**: MainCoin price rises as more users join
-5. **Exit**: Sell MainCoin back for profit (burning reduces supply)
+**Current User Journey**:
+1. Import test mnemonic to Keplr
+2. Connect to dashboard at localhost:3000
+3. See balances: 100k+ ALC, 100k MC, 1k TUSD
+4. Buy MC with CLI (dashboard trading not implemented)
+5. Watch ALC balance grow from staking rewards
+6. See price updates in dashboard
 
-This creates a **positive feedback loop** where growth attracts more users, increasing prices and rewards for existing participants.
+**What Users Can Do Now**:
+- ✅ View real-time balances
+- ✅ Monitor block production
+- ✅ Track staking rewards
+- ✅ Buy/sell MC via CLI
+- ✅ Bridge TUSD in/out via CLI
+
+**What Users Can't Do Yet**:
+- ❌ Trade on DEX (no order matching)
+- ❌ See live LC market price
+- ❌ Complex DeFi strategies
+- ❌ Governance participation
+
+## 📊 Economic Projections
+
+### Short Term (Days):
+- ALC supply grows ~32/day from staking
+- MC price increases with each purchase
+- TUSD remains stable at $1
+
+### Medium Term (Weeks):
+- Implement DEX trading
+- LC price discovery begins
+- More MainCoin segments reached
+
+### Long Term (Months):
+- Multi-validator decentralization
+- IBC integration
+- Cross-chain liquidity
 
 ---
 
-*This economic model creates a sustainable, growth-oriented blockchain ecosystem where each token serves a specific purpose while contributing to the overall network value.*
+**Important**: This is a development blockchain with known limitations. The economic model is sound but implementation is incomplete. Always use test funds only!
+
+*Built with Cosmos SDK v0.53.0 - A work in progress toward a fully decentralized economic system*

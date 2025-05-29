@@ -54,10 +54,10 @@ export const API_ENDPOINTS = {
   balance: (address: string) => `/cosmos/bank/v1beta1/balances/${address}`,
   totalSupply: '/cosmos/bank/v1beta1/supply',
   
-  // Custom module endpoints
-  maincoinPrice: '/mychain/maincoin/v1/current_price',
-  maincoinSegment: '/mychain/maincoin/v1/segment_info',
-  dexOrderBook: (pairId: string) => `/mychain/dex/v1/order_book/${pairId}`,
+  // Custom module endpoints (only existing ones)
+  // maincoinPrice: '/mychain/maincoin/v1/current_price', // Not implemented
+  // maincoinSegment: '/mychain/maincoin/v1/segment_info', // Not implemented  
+  // dexOrderBook: (pairId: string) => `/mychain/dex/v1/order_book/${pairId}`, // Not implemented
   dexUserRewards: (address: string) => `/mychain/dex/v1/user_rewards/${address}`,
-  dexTierInfo: '/mychain/dex/v1/tier_info',
+  // dexTierInfo: '/mychain/dex/v1/tier_info', // Not implemented
 };

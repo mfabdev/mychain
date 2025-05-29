@@ -44,7 +44,7 @@ export const CoinCard: React.FC<CoinCardProps> = ({
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Price</span>
             <span className="text-sm font-medium text-gray-800">
-              ${price.toFixed(4)}
+              ${price < 0.01 ? price.toFixed(8) : price.toFixed(4)}
             </span>
           </div>
         )}
@@ -53,7 +53,10 @@ export const CoinCard: React.FC<CoinCardProps> = ({
           <div className="flex justify-between">
             <span className="text-sm text-gray-600">Market Cap</span>
             <span className="text-sm font-medium text-gray-800">
-              ${((parseInt(totalSupply) / Math.pow(10, decimals)) * price).toLocaleString()}
+              ${((parseInt(totalSupply) / Math.pow(10, decimals)) * price).toLocaleString('en-US', { 
+                minimumFractionDigits: price < 0.01 ? 8 : 2,
+                maximumFractionDigits: price < 0.01 ? 8 : 2
+              })}
             </span>
           </div>
         )}
