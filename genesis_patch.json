@@ -1,0 +1,28 @@
+{
+  "staking": {
+    "params": {
+      "bond_denom": "alc"
+    }
+  },
+  "mint": {
+    "params": {
+      "mint_denom": "alc"
+    }
+  },
+  "gov": {
+    "params": {
+      "min_deposit": [
+        {
+          "denom": "alc",
+          "amount": "10000000"
+        }
+      ],
+      "expedited_min_deposit": [
+        {
+          "denom": "alc",
+          "amount": "50000000"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"3ic7ugPeWp5sSgBHSPFZKR6ZVWhlkmA/dVTYNCvyVPY="},
+  "amount": "1000000alc",
+  "moniker": "admin-node",
+  "identity": "",
+  "website": "",
+  "security": "",
+  "details": "",
+  "commission-rate": "0.1",
+  "commission-max-rate": "0.2",
+  "commission-max-change-rate": "0.01",
+  "min-self-delegation": "1"
+}
