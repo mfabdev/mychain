@@ -54,10 +54,28 @@ message MsgBuyMaincoin {
   cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false];
 }
 
+// SegmentPurchase represents a purchase within a single segment
+message SegmentPurchase {
+  uint64 segment_number = 1;
+  string tokens_bought = 2;
+  string price_per_token = 3;
+  string segment_cost = 4;
+}
+
 // MsgBuyMaincoinResponse defines the MsgBuyMaincoinResponse message.
 message MsgBuyMaincoinResponse {
-  // amount of maincoin purchased
-  cosmos.base.v1beta1.Coin amount_purchased = 1 [(gogoproto.nullable) = false];
+  // total tokens bought across all segments
+  string total_tokens_bought = 1;
+  // total amount paid
+  string total_paid = 2;
+  // average price per token
+  string average_price = 3;
+  // breakdown by segment
+  repeated SegmentPurchase segments = 4;
+  // remaining funds returned (if hit segment limit)
+  string remaining_funds = 5;
+  // informational message
+  string message = 6;
 }
 
 // MsgSellMaincoin defines the MsgSellMaincoin message.

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"mychain/x/maincoin/types"
 
@@ -9,6 +10,8 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+const MaxSegmentsPerPurchase = 25
 
 func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
 	buyerAddr, err := k.addressCodec.StringToBytes(msg.Buyer)
@@ -44,8 +47,15 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 	// Process the purchase across potentially multiple segments
 	remainingFunds := math.LegacyNewDecFromInt(msg.Amount.Amount)
 	totalMaincoinPurchased := math.ZeroInt()
+	totalSpent := math.ZeroInt()
+	segmentCount := 0
+	segments := []*types.SegmentPurchase{}
 	
-	for remainingFunds.IsPositive() {
+	// Track tokens sold in current segment for dev allocation
+	currentSegmentTokensSold := math.ZeroInt()
+	currentSegmentStartEpoch := uint64(0)
+	
+	for remainingFunds.IsPositive() && segmentCount < MaxSegmentsPerPurchase {
 		// Get current state
 		currentPrice, err := k.CurrentPrice.Get(ctx)
 		if err != nil {
@@ -55,6 +65,59 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		currentEpoch, err := k.CurrentEpoch.Get(ctx)
 		if err != nil {
 			return nil, err
+		}
+		
+		// Track if this is a new segment
+		if currentSegmentStartEpoch != currentEpoch {
+			// If not the first segment, process dev allocation for previous segment
+			if currentSegmentStartEpoch > 0 && currentSegmentTokensSold.IsPositive() {
+				devAllocationDec := math.LegacyNewDecFromInt(currentSegmentTokensSold).Mul(params.FeePercentage)
+				devAllocation := devAllocationDec.TruncateInt()
+				
+				if devAllocation.IsPositive() {
+					// Update total supply with dev allocation
+					totalSupply, err := k.TotalSupply.Get(ctx)
+					if err != nil {
+						return nil, err
+					}
+					
+					newTotalSupply := totalSupply.Add(devAllocation)
+					if err := k.TotalSupply.Set(ctx, newTotalSupply); err != nil {
+						return nil, err
+					}
+					
+					// Update dev allocation total
+					devTotal, err := k.DevAllocationTotal.Get(ctx)
+					if err != nil {
+						return nil, err
+					}
+					
+					if err := k.DevAllocationTotal.Set(ctx, devTotal.Add(devAllocation)); err != nil {
+						return nil, err
+					}
+					
+					// Mint and send dev allocation
+					if params.DevAddress != "" {
+						devAddr, err := sdk.AccAddressFromBech32(params.DevAddress)
+						if err != nil {
+							return nil, err
+						}
+						
+						devCoins := sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, devAllocation))
+						if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, devCoins); err != nil {
+							return nil, err
+						}
+						
+						if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, devAddr, devCoins); err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
+			
+			// Reset for new segment
+			currentSegmentTokensSold = math.ZeroInt()
+			currentSegmentStartEpoch = currentEpoch
 		}
 		
 		// Calculate tokens available in current segment
@@ -78,10 +141,21 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		
 		// Calculate cost for these tokens
 		cost := currentPrice.Mul(math.LegacyNewDecFromInt(tokensToBuy))
+		costInt := cost.TruncateInt()
 		
 		// Update totals
 		totalMaincoinPurchased = totalMaincoinPurchased.Add(tokensToBuy)
+		totalSpent = totalSpent.Add(costInt)
 		remainingFunds = remainingFunds.Sub(cost)
+		currentSegmentTokensSold = currentSegmentTokensSold.Add(tokensToBuy)
+		
+		// Record segment purchase
+		segments = append(segments, &types.SegmentPurchase{
+			SegmentNumber: currentEpoch,
+			TokensBought:  tokensToBuy.String(),
+			PricePerToken: currentPrice.String(),
+			SegmentCost:   costInt.String(),
+		})
 		
 		// Update reserve balance
 		currentReserve, err := k.ReserveBalance.Get(ctx)
@@ -89,62 +163,76 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 			return nil, err
 		}
 		
-		newReserve := currentReserve.Add(cost.TruncateInt())
+		newReserve := currentReserve.Add(costInt)
 		if err := k.ReserveBalance.Set(ctx, newReserve); err != nil {
 			return nil, err
 		}
 		
-		// Update total supply
+		// Update total supply (without dev allocation yet)
 		totalSupply, err := k.TotalSupply.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
 		
-		// Calculate dev allocation for this purchase
-		devAllocationDec := math.LegacyNewDecFromInt(tokensToBuy).Mul(params.FeePercentage)
-		devAllocation := devAllocationDec.TruncateInt()
-		
-		newTotalSupply := totalSupply.Add(tokensToBuy).Add(devAllocation)
+		newTotalSupply := totalSupply.Add(tokensToBuy)
 		if err := k.TotalSupply.Set(ctx, newTotalSupply); err != nil {
 			return nil, err
 		}
 		
-		// Update dev allocation total
-		if devAllocation.IsPositive() {
-			devTotal, err := k.DevAllocationTotal.Get(ctx)
-			if err != nil {
-				return nil, err
-			}
-			
-			if err := k.DevAllocationTotal.Set(ctx, devTotal.Add(devAllocation)); err != nil {
-				return nil, err
-			}
-			
-			// Mint and send dev allocation
-			if params.DevAddress != "" {
-				devAddr, err := sdk.AccAddressFromBech32(params.DevAddress)
-				if err != nil {
-					return nil, err
-				}
-				
-				devCoins := sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, devAllocation))
-				if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, devCoins); err != nil {
-					return nil, err
-				}
-				
-				if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, devAddr, devCoins); err != nil {
-					return nil, err
-				}
-			}
-		}
-		
-		// Check if we need to move to next epoch
+		// Check if segment is complete
 		newTokensNeeded, err := k.CalculateTokensNeeded(ctx)
 		if err != nil {
 			return nil, err
 		}
 		
-		if newTokensNeeded.IsPositive() {
+		// If segment is complete (reached 1:10 balance)
+		if newTokensNeeded.IsZero() || newTokensNeeded.IsNegative() {
+			// Calculate and apply dev allocation for this segment
+			if currentSegmentTokensSold.IsPositive() {
+				devAllocationDec := math.LegacyNewDecFromInt(currentSegmentTokensSold).Mul(params.FeePercentage)
+				devAllocation := devAllocationDec.TruncateInt()
+				
+				if devAllocation.IsPositive() {
+					// Update total supply with dev allocation
+					totalSupply, err = k.TotalSupply.Get(ctx)
+					if err != nil {
+						return nil, err
+					}
+					
+					newTotalSupply = totalSupply.Add(devAllocation)
+					if err := k.TotalSupply.Set(ctx, newTotalSupply); err != nil {
+						return nil, err
+					}
+					
+					// Update dev allocation total
+					devTotal, err := k.DevAllocationTotal.Get(ctx)
+					if err != nil {
+						return nil, err
+					}
+					
+					if err := k.DevAllocationTotal.Set(ctx, devTotal.Add(devAllocation)); err != nil {
+						return nil, err
+					}
+					
+					// Mint and send dev allocation
+					if params.DevAddress != "" {
+						devAddr, err := sdk.AccAddressFromBech32(params.DevAddress)
+						if err != nil {
+							return nil, err
+						}
+						
+						devCoins := sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, devAllocation))
+						if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, devCoins); err != nil {
+							return nil, err
+						}
+						
+						if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, devAddr, devCoins); err != nil {
+							return nil, err
+						}
+					}
+				}
+			}
+			
 			// Move to next epoch
 			if err := k.CurrentEpoch.Set(ctx, currentEpoch+1); err != nil {
 				return nil, err
@@ -155,6 +243,32 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 			if err := k.CurrentPrice.Set(ctx, newPrice); err != nil {
 				return nil, err
 			}
+			
+			// Mark that we're in a new segment
+			currentSegmentTokensSold = math.ZeroInt()
+			currentSegmentStartEpoch = currentEpoch + 1
+		}
+		
+		segmentCount++
+	}
+	
+	// Return any remaining funds to buyer
+	remainingAmount := math.ZeroInt()
+	message := ""
+	if remainingFunds.IsPositive() && segmentCount >= MaxSegmentsPerPurchase {
+		remainingAmount = remainingFunds.TruncateInt()
+		if remainingAmount.IsPositive() {
+			returnCoins := sdk.NewCoins(sdk.NewCoin(params.PurchaseDenom, remainingAmount))
+			if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+				ctx,
+				types.ModuleName,
+				sdk.AccAddress(buyerAddr),
+				returnCoins,
+			); err != nil {
+				return nil, err
+			}
+			message = fmt.Sprintf("Purchase completed across %d segments (maximum limit). %s %s returned.", 
+				MaxSegmentsPerPurchase, remainingAmount.String(), params.PurchaseDenom)
 		}
 	}
 	
@@ -175,18 +289,32 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		}
 	}
 	
+	// Calculate average price
+	averagePrice := "0"
+	if totalMaincoinPurchased.IsPositive() {
+		avgPriceDec := math.LegacyNewDecFromInt(totalSpent).Quo(math.LegacyNewDecFromInt(totalMaincoinPurchased))
+		averagePrice = avgPriceDec.String()
+	}
+	
 	// Emit event
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			"buy_maincoin",
 			sdk.NewAttribute("buyer", msg.Buyer),
-			sdk.NewAttribute("amount_spent", msg.Amount.String()),
+			sdk.NewAttribute("amount_spent", totalSpent.String()),
 			sdk.NewAttribute("maincoin_received", totalMaincoinPurchased.String()),
+			sdk.NewAttribute("segments_processed", fmt.Sprintf("%d", segmentCount)),
+			sdk.NewAttribute("average_price", averagePrice),
 		),
 	)
 
 	return &types.MsgBuyMaincoinResponse{
-		AmountPurchased: sdk.NewCoin(types.MainCoinDenom, totalMaincoinPurchased),
+		TotalTokensBought: totalMaincoinPurchased.String(),
+		TotalPaid:         totalSpent.String(),
+		AveragePrice:      averagePrice,
+		Segments:          segments,
+		RemainingFunds:    remainingAmount.String(),
+		Message:           message,
 	}, nil
 }

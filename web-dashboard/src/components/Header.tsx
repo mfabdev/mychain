@@ -14,23 +14,25 @@ export const Header: React.FC<HeaderProps> = ({
   onDisconnect 
 }) => {
   return (
-    <header className="bg-dark text-white shadow-lg">
+    <header className="bg-gray-800 text-white shadow-lg border-b border-gray-700">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold">MyChain Dashboard</h1>
-            <span className="text-sm text-gray-300">Blockchain Explorer</span>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+              MyChain Dashboard
+            </h1>
+            <span className="text-sm text-gray-400">Blockchain Explorer</span>
           </div>
           
           <div className="flex items-center space-x-4">
             {isConnected ? (
               <>
-                <span className="text-sm">
+                <span className="text-sm font-mono bg-gray-700 px-3 py-1 rounded">
                   {address.slice(0, 10)}...{address.slice(-8)}
                 </span>
                 <button
                   onClick={onDisconnect}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-lg"
                 >
                   Disconnect
                 </button>
@@ -38,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={onConnect}
-                className="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-lg"
               >
                 Connect Wallet
               </button>

@@ -40,7 +40,7 @@
           },
           {
             "denom": "maincoin",
-            "amount": "100000000000"
+            "amount": "100010000000"
           }
         ]
       }
@@ -56,13 +56,13 @@
       },
       {
         "denom": "maincoin", 
-        "amount": "100000000000"
+        "amount": "100010000000"
       }
     ]
   },
   "maincoin": {
     "params": {
-      "initial_price": "0.1",
+      "initial_price": "0.0001",
       "price_increment": "0.001",
       "max_supply": "0",
       "purchase_denom": "utestusd",
@@ -70,10 +70,10 @@
       "dev_address": "cosmos1x34g70ykz8z605hdxedsnk2d9qvhs29p4eqfzc"
     },
     "state": {
-      "total_supply": "100000000000",
+      "total_supply": "100010000000",
       "reserve_balance": "1000000",
       "current_epoch": "1",
-      "current_price": "0.1"
+      "current_price": "0.0001001"
     }
   },
   "dex": {

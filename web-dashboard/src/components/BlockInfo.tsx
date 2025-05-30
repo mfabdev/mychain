@@ -1,46 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import { fetchLatestBlock } from '../utils/api';
+import React, { useEffect, useState } from 'react';
+import { fetchAPI } from '../utils/api';
+
+interface BlockData {
+  height: string;
+  time: string;
+  proposer: string;
+  hash: string;
+  num_txs: string;
+}
+
+interface ChainData {
+  chainId: string;
+  blockTime: number;
+  totalValidators: number;
+  totalTransactions: number;
+}
+
+interface SupplyData {
+  alc: string;
+  maincoin: string;
+  testusd: string;
+}
 
 export const BlockInfo: React.FC = () => {
-  const [blockHeight, setBlockHeight] = useState<string>('0');
-  const [blockTime, setBlockTime] = useState<string>('');
+  const [blockData, setBlockData] = useState<BlockData | null>(null);
+  const [chainData, setChainData] = useState<ChainData | null>(null);
+  const [supplyData, setSupplyData] = useState<SupplyData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBlock = async () => {
+    const fetchData = async () => {
       try {
-        const data = await fetchLatestBlock();
-        setBlockHeight(data.block.header.height);
-        setBlockTime(new Date(data.block.header.time).toLocaleString());
-        setLoading(false);
+        // Fetch latest block
+        const blockResponse = await fetchAPI('/cosmos/base/tendermint/v1beta1/blocks/latest');
+        const block = blockResponse.block;
+        
+        setBlockData({
+          height: block.header.height,
+          time: block.header.time,
+          proposer: block.header.proposer_address,
+          hash: blockResponse.block_id.hash,
+          num_txs: block.data.txs?.length || '0',
+        });
+
+        // Fetch node info for chain ID
+        const nodeInfo = await fetchAPI('/cosmos/base/tendermint/v1beta1/node_info');
+        
+        // Fetch validators
+        const validators = await fetchAPI('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED');
+        
+        setChainData({
+          chainId: nodeInfo.default_node_info.network,
+          blockTime: 5, // Average block time in seconds
+          totalValidators: validators.validators?.length || 0,
+          totalTransactions: 0, // Will be updated with actual count
+        });
+
+        // Fetch total supply
+        const supply = await fetchAPI('/cosmos/bank/v1beta1/supply');
+        const supplyMap: SupplyData = {
+          alc: '0',
+          maincoin: '0',
+          testusd: '0',
+        };
+
+        supply.supply?.forEach((coin: any) => {
+          if (coin.denom === 'alc') {
+            supplyMap.alc = (parseInt(coin.amount) / 1000000).toFixed(2);
+          } else if (coin.denom === 'maincoin') {
+            supplyMap.maincoin = (parseInt(coin.amount) / 1000000).toFixed(2);
+          } else if (coin.denom === 'utestusd') {
+            supplyMap.testusd = (parseInt(coin.amount) / 1000000).toFixed(2);
+          }
+        });
+
+        setSupplyData(supplyMap);
       } catch (error) {
-        console.error('Error fetching block:', error);
+        console.error('Error fetching blockchain data:', error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchBlock();
-    const interval = setInterval(fetchBlock, 5000); // Update every 5 seconds
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-24 rounded-lg"></div>;
+    return <div className="text-gray-400">Loading blockchain data...</div>;
   }
 
   return (
-    <div className="bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Latest Block</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-sm opacity-80">Height</p>
-          <p className="text-2xl font-bold">#{blockHeight}</p>
+    <div className="space-y-6">
+      {/* Blockchain Overview */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4">Blockchain Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-gray-700/50 rounded p-4">
+            <div className="text-gray-400 text-sm">Chain ID</div>
+            <div className="text-xl font-semibold">{chainData?.chainId || 'mychain_100-1'}</div>
+          </div>
+          <div className="bg-gray-700/50 rounded p-4">
+            <div className="text-gray-400 text-sm">Active Validators</div>
+            <div className="text-xl font-semibold">{chainData?.totalValidators || 0}</div>
+          </div>
+          <div className="bg-gray-700/50 rounded p-4">
+            <div className="text-gray-400 text-sm">Average Block Time</div>
+            <div className="text-xl font-semibold">{chainData?.blockTime || 5}s</div>
+          </div>
         </div>
-        <div>
-          <p className="text-sm opacity-80">Time</p>
-          <p className="text-sm font-medium">{blockTime}</p>
-        </div>
+      </div>
+
+      {/* Latest Block */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4">Latest Block</h2>
+        {blockData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-400">Height:</span>
+                <span className="font-mono text-lg">#{blockData.height}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-400">Time:</span>
+                <span>{new Date(blockData.time).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-400">Transactions:</span>
+                <span>{blockData.num_txs}</span>
+              </div>
+            </div>
+            <div>
+              <div className="py-2">
+                <div className="text-gray-400 mb-1">Block Hash:</div>
+                <div className="font-mono text-sm break-all text-gray-300">{blockData.hash}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Token Supply */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4">Token Supply</h2>
+        {supplyData && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 rounded p-4 border border-blue-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-blue-400 font-semibold">LiquidityCoin (ALC)</span>
+                <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs">Native</span>
+              </div>
+              <div className="text-2xl font-bold">{supplyData.alc} ALC</div>
+              <div className="text-gray-400 text-sm mt-1">Total Supply</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 rounded p-4 border border-purple-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-purple-400 font-semibold">MAINCOIN</span>
+                <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs">Bonding</span>
+              </div>
+              <div className="text-2xl font-bold">{supplyData.maincoin}</div>
+              <div className="text-gray-400 text-sm mt-1">Total Supply</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 rounded p-4 border border-green-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-400 font-semibold">TESTUSD</span>
+                <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs">Stable</span>
+              </div>
+              <div className="text-2xl font-bold">{supplyData.testusd}</div>
+              <div className="text-gray-400 text-sm mt-1">Total Supply</div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

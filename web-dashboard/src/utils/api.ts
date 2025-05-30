@@ -127,3 +127,9 @@ export const formatAmount = (amount: string, decimals: number = 6): string => {
   const value = parseInt(amount) / Math.pow(10, decimals);
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 };
+
+// Generic API fetch function for components
+export const fetchAPI = async (endpoint: string) => {
+  const response = await api.get(endpoint);
+  return response.data;
+};
