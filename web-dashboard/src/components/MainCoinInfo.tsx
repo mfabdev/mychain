@@ -37,7 +37,15 @@ export const MainCoinInfo: React.FC = () => {
         // Try to fetch segment info (contains reserves, price, etc.)
         try {
           const segmentResponse = await fetchAPI('/mychain/maincoin/v1/segment_info');
-          setMainCoinData(segmentResponse);
+          // Map snake_case API response to camelCase component state
+          setMainCoinData({
+            currentPrice: segmentResponse.current_price,
+            totalSupply: segmentResponse.total_supply,
+            reserveBalance: segmentResponse.reserve_balance,
+            tokensNeeded: segmentResponse.tokens_needed,
+            reserveRatio: segmentResponse.reserve_ratio,
+            currentEpoch: parseInt(segmentResponse.current_epoch)
+          });
         } catch (segmentError) {
           console.log('Segment info not available, using default values');
           // Use correct default values for 1:10 reserve ratio

@@ -43,16 +43,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:      true, // skipped because authority gated
 				},
 				{
-					RpcMethod:      "BuyMaincoin",
-					Use:            "buy-maincoin [amount]",
-					Short:          "Send a buy-maincoin tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "amount"}},
+					RpcMethod: "BuyMaincoin",
+					Skip:      true, // using custom handler
 				},
 				{
-					RpcMethod:      "SellMaincoin",
-					Use:            "sell-maincoin [amount]",
-					Short:          "Send a sell-maincoin tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "amount"}},
+					RpcMethod: "SellMaincoin",
+					Skip:      true, // using custom handler
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

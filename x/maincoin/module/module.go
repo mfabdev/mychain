@@ -9,10 +9,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"mychain/x/maincoin/client/cli"
 	"mychain/x/maincoin/keeper"
 	"mychain/x/maincoin/types"
 )
@@ -97,13 +100,23 @@ func (am AppModule) ValidateGenesis(bz json.RawMessage) error {
 
 // InitGenesis performs the module's genesis initialization. It returns no validator updates.
 func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
+	fmt.Printf("MAINCOIN MODULE DEBUG: InitGenesis called\n")
+	
 	var genState types.GenesisState
 	// Initialize global index to index in genesis state
 	if err := am.cdc.UnmarshalJSON(gs, &genState); err != nil {
+		fmt.Printf("MAINCOIN MODULE DEBUG: Failed to unmarshal: %v\n", err)
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
-
-	return am.keeper.InitGenesis(ctx, genState)
+	
+	fmt.Printf("MAINCOIN MODULE DEBUG: About to call keeper InitGenesis\n")
+	err := am.keeper.InitGenesis(ctx, genState)
+	if err != nil {
+		fmt.Printf("MAINCOIN MODULE DEBUG: Keeper InitGenesis failed: %v\n", err)
+	} else {
+		fmt.Printf("MAINCOIN MODULE DEBUG: Keeper InitGenesis completed successfully\n")
+	}
+	return err
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
@@ -123,12 +136,23 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
-func (am AppModule) BeginBlock(_ context.Context) error {
-	return nil
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return am.keeper.EnsureInitialized(sdkCtx)
 }
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 func (am AppModule) EndBlock(_ context.Context) error {
 	return nil
+}
+
+// GetTxCmd returns the root tx command for the module.
+func (AppModule) GetTxCmd() *cobra.Command {
+	return cli.GetTxCmd()
+}
+
+// GetQueryCmd returns the root query command for the module.
+func (AppModule) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd(types.StoreKey)
 }

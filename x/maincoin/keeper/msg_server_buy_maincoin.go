@@ -14,6 +14,12 @@ import (
 const MaxSegmentsPerPurchase = 25
 
 func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
+	// Ensure all collections are initialized
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := k.EnsureInitialized(sdkCtx); err != nil {
+		return nil, errorsmod.Wrap(err, "failed to initialize state")
+	}
+	
 	buyerAddr, err := k.addressCodec.StringToBytes(msg.Buyer)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid buyer address")
@@ -297,7 +303,6 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 	}
 	
 	// Emit event
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			"buy_maincoin",

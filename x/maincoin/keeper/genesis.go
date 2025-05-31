@@ -2,40 +2,59 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"mychain/x/maincoin/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {
+	// Write to stderr so we can see it in logs
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: InitGenesis called\n")
+	
 	if err := genState.Validate(); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Validation failed: %v\n", err)
 		return err
 	}
 
 	if err := k.Params.Set(ctx, genState.Params); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set Params: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Params set successfully\n")
 	
 	if err := k.CurrentEpoch.Set(ctx, genState.CurrentEpoch); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set CurrentEpoch: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: CurrentEpoch set to %d\n", genState.CurrentEpoch)
 	
 	if err := k.CurrentPrice.Set(ctx, genState.CurrentPrice); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set CurrentPrice: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: CurrentPrice set to %s\n", genState.CurrentPrice.String())
 	
 	if err := k.TotalSupply.Set(ctx, genState.TotalSupply); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set TotalSupply: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: TotalSupply set to %s\n", genState.TotalSupply.String())
 	
 	if err := k.ReserveBalance.Set(ctx, genState.ReserveBalance); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set ReserveBalance: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: ReserveBalance set to %s\n", genState.ReserveBalance.String())
 	
 	if err := k.DevAllocationTotal.Set(ctx, genState.DevAllocationTotal); err != nil {
+		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set DevAllocationTotal: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: DevAllocationTotal set to %s\n", genState.DevAllocationTotal.String())
 	
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: InitGenesis completed successfully\n")
 	return nil
 }
 

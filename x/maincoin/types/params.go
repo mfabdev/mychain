@@ -9,7 +9,7 @@ const (
 	// Default parameters
 	DefaultInitialPrice    = "0.0001"
 	DefaultPriceIncrement  = "0.001" // 0.1%
-	DefaultPurchaseDenom   = "testusd"
+	DefaultPurchaseDenom   = "utestusd"
 	DefaultFeePercentage   = "0.0001" // 0.01% dev fee
 	DefaultMaxSupply       = "0" // unlimited
 	DefaultDevAddress      = "" // must be set in genesis

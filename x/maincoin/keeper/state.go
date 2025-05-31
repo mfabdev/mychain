@@ -28,15 +28,19 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 	
 	// Required reserve is 10% of total value
 	requiredReserveDec := totalValueDec.Quo(math.LegacyNewDec(10))
-	requiredReserve := requiredReserveDec.TruncateInt()
 	
-	// Calculate reserve needed
-	reserveNeeded := requiredReserve.Sub(reserveBalance)
+	// Calculate reserve needed with decimal precision
+	reserveBalanceDec := math.LegacyNewDecFromInt(reserveBalance)
+	reserveNeededDec := requiredReserveDec.Sub(reserveBalanceDec)
 	
-	if reserveNeeded.IsPositive() {
+	// Check if we need more reserves (with a small epsilon for rounding)
+	// Using 2 utestusd as epsilon (0.000002 TESTUSD) to handle precision issues
+	epsilon := math.LegacyNewDecWithPrec(2, 0) // 2 utestusd
+	if reserveNeededDec.GT(epsilon) {
 		// Calculate tokens needed at current price
-		tokensNeededDec := math.LegacyNewDecFromInt(reserveNeeded).Quo(currentPrice)
-		return tokensNeededDec.TruncateInt(), nil
+		tokensNeededDec := reserveNeededDec.Quo(currentPrice)
+		// Round up to ensure we meet the requirement
+		return tokensNeededDec.Ceil().TruncateInt(), nil
 	}
 	
 	return math.ZeroInt(), nil

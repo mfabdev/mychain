@@ -90,6 +90,7 @@ moduleAccPerms = []*authmodulev1.ModuleAccountPermission{
 {Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 {Account: icatypes.ModuleName},
 {Account: testusdmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+{Account: maincoinmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 // this line is used by starport scaffolding # stargate/app/maccPerms
 }
 

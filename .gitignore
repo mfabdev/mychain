@@ -8,3 +8,16 @@ release/
 *.log
 *.ign
 mychaind
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+package.json
+
+# Terminal server files
+terminal-server*.js
+cors-proxy.js
+simple-cors-proxy.js
+
+# Test files
+test_tx.json

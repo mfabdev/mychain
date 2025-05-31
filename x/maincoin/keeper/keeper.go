@@ -76,3 +76,69 @@ func NewKeeper(
 func (k Keeper) GetAuthority() []byte {
 	return k.authority
 }
+
+// EnsureInitialized ensures all collections have values, setting defaults if needed
+func (k Keeper) EnsureInitialized(ctx sdk.Context) error {
+	fmt.Printf("MAINCOIN DEBUG: EnsureInitialized called at height %d\n", ctx.BlockHeight())
+	
+	// Check if Params exists and has valid values, if not set defaults
+	params, err := k.Params.Get(ctx)
+	fmt.Printf("MAINCOIN DEBUG: Params get result - err: %v, params: %+v\n", err, params)
+	
+	if err != nil || params.PurchaseDenom == "" || params.InitialPrice.IsZero() {
+		fmt.Printf("MAINCOIN DEBUG: Setting default params\n")
+		// Set default params
+		defaultParams := types.DefaultParams()
+		fmt.Printf("MAINCOIN DEBUG: Default params: %+v\n", defaultParams)
+		if err := k.Params.Set(ctx, defaultParams); err != nil {
+			fmt.Printf("MAINCOIN DEBUG: Failed to set params: %v\n", err)
+			return err
+		}
+		params = defaultParams
+		fmt.Printf("MAINCOIN DEBUG: Successfully set default params\n")
+	}
+	
+	// Check if CurrentEpoch exists, if not set to 1
+	_, err = k.CurrentEpoch.Get(ctx)
+	if err != nil {
+		if err := k.CurrentEpoch.Set(ctx, 1); err != nil {
+			return err
+		}
+	}
+	
+	// Check if CurrentPrice exists, if not set to initial price from params
+	_, err = k.CurrentPrice.Get(ctx)
+	if err != nil {
+		// Calculate price for epoch 1 (initial_price * 1.001)
+		price := params.InitialPrice.Mul(math.LegacyNewDecWithPrec(1001, 3))
+		if err := k.CurrentPrice.Set(ctx, price); err != nil {
+			return err
+		}
+	}
+	
+	// Check if TotalSupply exists, if not set to 100000000000 (100000 * 10^6)
+	_, err = k.TotalSupply.Get(ctx)
+	if err != nil {
+		if err := k.TotalSupply.Set(ctx, math.NewInt(100000000000)); err != nil {
+			return err
+		}
+	}
+	
+	// Check if ReserveBalance exists, if not set to 1000000 (1 * 10^6)
+	_, err = k.ReserveBalance.Get(ctx)
+	if err != nil {
+		if err := k.ReserveBalance.Set(ctx, math.NewInt(1000000)); err != nil {
+			return err
+		}
+	}
+	
+	// Check if DevAllocationTotal exists, if not set to 0
+	_, err = k.DevAllocationTotal.Get(ctx)
+	if err != nil {
+		if err := k.DevAllocationTotal.Set(ctx, math.ZeroInt()); err != nil {
+			return err
+		}
+	}
+	
+	return nil
+}
