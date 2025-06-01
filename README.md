@@ -23,14 +23,14 @@ MyChain is an innovative Cosmos SDK blockchain that implements a sophisticated e
 
 ### One-Command Setup
 ```bash
-git clone https://github.com/mfabdev/LQC.git && cd LQC && ./scripts/complete_setup.sh
+git clone https://github.com/YOUR_USERNAME/mychain.git && cd mychain && ./scripts/complete_setup.sh
 ```
 
 ### Manual Setup
 ```bash
 # 1. Clone and build
-git clone https://github.com/mfabdev/LQC.git
-cd LQC
+git clone https://github.com/YOUR_USERNAME/mychain.git
+cd mychain
 make install
 
 # 2. Initialize blockchain with correct genesis
@@ -46,6 +46,15 @@ cd web-dashboard && npm install && npm start
 **Dashboard**: http://localhost:3000  
 **API**: http://localhost:1317  
 **RPC**: http://localhost:26657
+
+### AWS Deployment
+For deploying to AWS EC2, see the [AWS Deployment Guide](AWS_DEPLOYMENT_GUIDE.md) or use the quick deploy script:
+```bash
+# On your EC2 instance (Ubuntu 22.04)
+wget https://raw.githubusercontent.com/YOUR_USERNAME/mychain/main/scripts/aws-quick-deploy.sh
+chmod +x aws-quick-deploy.sh
+./aws-quick-deploy.sh
+```
 
 ## 📖 How It Works
 

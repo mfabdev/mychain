@@ -1,6 +1,7 @@
 vue/node_modules
 vue/dist
 release/
+build/
 .idea/
 .vscode/
 .DS_Store
@@ -21,3 +22,42 @@ simple-cors-proxy.js
 
 # Test files
 test_tx.json
+
+# Temporary or generated files
+*.swp
+*.swo
+*~
+.#*
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Cosmos SDK specific
+.mychain/
+.mychaind/
+
+# Environment files
+.env
+.env.local
+
+# Editor directories
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Nested repositories
+mychain-fresh-start/
+
+# Scripts with sensitive information
+push-with-token.sh
+*-token.sh
