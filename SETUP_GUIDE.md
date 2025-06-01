@@ -24,7 +24,7 @@ Before starting, ensure you have:
 
 **Option 1: Complete Automated Setup**
 ```bash
-git clone https://github.com/mfabdev/LQC.git && cd LQC && ./scripts/complete_setup.sh
+git clone https://github.com/mfabdev/mychain.git && cd mychain && ./scripts/complete_setup.sh
 ```
 
 This will:
@@ -41,7 +41,7 @@ This will:
 ```bash
 # Clone the repository
 git clone https://github.com/mfabdev/LQC.git
-cd LQC
+cd mychain
 
 # Build the blockchain binary
 make install
@@ -408,7 +408,7 @@ rm -rf web-dashboard/node_modules
 ## 📁 Project Structure
 
 ```
-LQC/
+mychain/
 ├── scripts/                    # Management scripts
 │   ├── complete_setup.sh      # One-command setup
 │   ├── init_chain.sh         # Initialize genesis
@@ -437,7 +437,7 @@ If you encounter issues:
 1. **Check Logs**: `tail -f node.log`
 2. **Verify Status**: `mychaind status`
 3. **Browser Console**: F12 for JavaScript errors
-4. **GitHub Issues**: [Report bugs](https://github.com/mfabdev/LQC/issues)
+4. **GitHub Issues**: [Report bugs](https://github.com/mfabdev/mychain/issues)
 5. **Complete Reset**: When all else fails
 
 ## 🎉 Success Checklist

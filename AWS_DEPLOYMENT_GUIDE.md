@@ -86,11 +86,10 @@ npm --version
 ```bash
 # Clone the repository
 cd ~
-git clone https://github.com/mfabdev/StartLQC.git
-cd StartLQC
+git clone https://github.com/mfabdev/mychain.git
+cd mychain
 
 # Build the blockchain
-cd /path/to/mychain  # Adjust path to your blockchain source
 make install
 
 # Verify installation
@@ -100,8 +99,8 @@ mychaind version
 ## Step 5: Deploy with Fresh Start Script
 
 ```bash
-# Navigate to StartLQC directory
-cd ~/StartLQC
+# Navigate to mychain directory
+cd ~/mychain
 
 # Make scripts executable
 chmod +x setup.sh
@@ -196,7 +195,7 @@ sudo systemctl status mychaind
 
 ```bash
 # Navigate to dashboard
-cd ~/StartLQC/web-dashboard  # Adjust path as needed
+cd ~/mychain/web-dashboard  # Adjust path as needed
 npm install
 
 # Create dashboard service
@@ -212,7 +211,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/StartLQC/web-dashboard
+WorkingDirectory=/home/ubuntu/mychain/web-dashboard
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=3
@@ -361,7 +360,7 @@ sudo systemctl restart mychaind
 sudo journalctl -u mychain-dashboard -n 100
 
 # Rebuild dashboard
-cd ~/StartLQC/web-dashboard
+cd ~/mychain/web-dashboard
 npm install
 sudo systemctl restart mychain-dashboard
 ```
@@ -376,7 +375,7 @@ sudo systemctl restart mychain-dashboard
 
 ### Update Blockchain
 ```bash
-cd ~/StartLQC
+cd ~/mychain
 git pull
 # Rebuild if needed
 make install

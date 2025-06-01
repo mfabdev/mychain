@@ -377,6 +377,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ using Cosmos SDK v0.53.0**
 
-🌐 **Repository**: [github.com/mfabdev/LQC](https://github.com/mfabdev/LQC)  
-🐛 **Issues**: [GitHub Issues](https://github.com/mfabdev/LQC/issues)  
-💬 **Discussions**: [GitHub Discussions](https://github.com/mfabdev/LQC/discussions)
+🌐 **Repository**: [github.com/mfabdev/mychain](https://github.com/mfabdev/mychain)  
+🐛 **Issues**: [GitHub Issues](https://github.com/mfabdev/mychain/issues)  
+💬 **Discussions**: [GitHub Discussions](https://github.com/mfabdev/mychain/discussions)
