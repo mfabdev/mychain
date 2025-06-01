@@ -1,12 +1,14 @@
 package app
 
 import (
+	"fmt"
 	"io"
 
 	clienthelpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	circuitkeeper "cosmossdk.io/x/circuit/keeper"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
@@ -40,6 +42,7 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
 	icahostkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
@@ -216,6 +219,22 @@ func New(
 	// Manually set the module version map as shown below.
 	// The upgrade module will automatically handle de-duplication of the module version map.
 	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+		// Set custom power reduction for staking
+		// This allows validators with smaller amounts of ALC
+		if app.StakingKeeper != nil {
+			stakingParams, err := app.StakingKeeper.GetParams(ctx)
+			if err != nil {
+				// If params don't exist yet, use defaults
+				stakingParams = stakingtypes.DefaultParams()
+			}
+			// Set power reduction to 1 million (instead of default ~824 billion)
+			// This means minimum stake for a validator is 1 ALC (1,000,000 uALC)
+			stakingParams.PowerReduction = math.NewInt(1_000_000)
+			if err := app.StakingKeeper.SetParams(ctx, stakingParams); err != nil {
+				return nil, fmt.Errorf("failed to set staking params: %w", err)
+			}
+		}
+
 		if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
 			return nil, err
 		}
