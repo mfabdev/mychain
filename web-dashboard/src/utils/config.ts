@@ -4,7 +4,7 @@ export const CHAIN_INFO: ChainInfo = {
   chainId: 'mychain',
   chainName: 'MyChain',
   rpc: 'http://localhost:26657',
-  rest: 'http://localhost:1328',
+  rest: 'http://localhost:1317',
   bip44: {
     coinType: 118,
   },
