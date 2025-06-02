@@ -53,7 +53,7 @@ export const MainCoinPage: React.FC = () => {
           requiredReserve: epochResponse.requiredReserve || '1.001',
           currentReserve: epochResponse.currentReserve || '1.0',
           reserveNeeded: epochResponse.reserveNeeded || '0.001',
-          tokensNeeded: epochResponse.tokensNeeded || '10.99',
+          tokensNeeded: epochResponse.tokensNeeded || '9.99',
           usdcCollected: epochResponse.usdcCollected || '0'
         });
       }
@@ -66,10 +66,10 @@ export const MainCoinPage: React.FC = () => {
         devAllocation: '0',
         totalSupply: '100000',
         totalValue: '10.01',
-        requiredReserve: '10.01',
+        requiredReserve: '1.001',
         currentReserve: '1.0',
-        reserveNeeded: '9.01',
-        tokensNeeded: '10.99',
+        reserveNeeded: '0.001',
+        tokensNeeded: '9.99',
         usdcCollected: '0'
       });
     }
@@ -696,9 +696,9 @@ Alternative commands to open terminal:
                   <td className="p-2 text-right">-</td>
                   <td className="p-2 text-right">0</td>
                   <td className="p-2 text-right">0</td>
-                  <td className="p-2 text-right">100,010</td>
-                  <td className="p-2 text-right">$10.001</td>
-                  <td className="p-2 text-right">$1.0001</td>
+                  <td className="p-2 text-right">100,000</td>
+                  <td className="p-2 text-right">$10.00</td>
+                  <td className="p-2 text-right">$1.00</td>
                   <td className="p-2 text-right text-green-400">1:10 ✅</td>
                 </tr>
                 
@@ -707,12 +707,12 @@ Alternative commands to open terminal:
                   <td className="p-2 font-semibold text-green-400">1 🔄</td>
                   <td className="p-2 text-right">$0.0001001</td>
                   <td className="p-2 text-right">100,000</td>
-                  <td className="p-2 text-right">10</td>
-                  <td className="p-2 text-right">10.99</td>
-                  <td className="p-2 text-right">20.99</td>
-                  <td className="p-2 text-right">100,020.99</td>
-                  <td className="p-2 text-right">$10.0121</td>
-                  <td className="p-2 text-right">$1.00121</td>
+                  <td className="p-2 text-right">0</td>
+                  <td className="p-2 text-right">9.99</td>
+                  <td className="p-2 text-right">9.99</td>
+                  <td className="p-2 text-right">100,009.99</td>
+                  <td className="p-2 text-right">$10.01</td>
+                  <td className="p-2 text-right">$1.001</td>
                   <td className="p-2 text-right text-yellow-400">~1:10</td>
                 </tr>
                 
