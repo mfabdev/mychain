@@ -47,13 +47,13 @@ export const MainCoinPage: React.FC = () => {
           currentEpoch: epochResponse.currentEpoch,
           currentPrice: epochResponse.currentPrice || '0.0001001',
           supplyBeforeDev: epochResponse.supplyBeforeDev || '100000',
-          devAllocation: epochResponse.devAllocation || '0',
-          totalSupply: epochResponse.totalSupply || '100000',
-          totalValue: epochResponse.totalValue || '10.01',
-          requiredReserve: epochResponse.requiredReserve || '1.001',
+          devAllocation: epochResponse.devAllocation || '10',
+          totalSupply: epochResponse.totalSupply || '100010',
+          totalValue: epochResponse.totalValue || '10.011001',
+          requiredReserve: epochResponse.requiredReserve || '1.0011001',
           currentReserve: epochResponse.currentReserve || '1.0',
-          reserveNeeded: epochResponse.reserveNeeded || '0.001',
-          tokensNeeded: epochResponse.tokensNeeded || '9.99',
+          reserveNeeded: epochResponse.reserveNeeded || '0.0011001',
+          tokensNeeded: epochResponse.tokensNeeded || '10.99',
           usdcCollected: epochResponse.usdcCollected || '0'
         });
       }
@@ -63,13 +63,13 @@ export const MainCoinPage: React.FC = () => {
         currentEpoch: 1,
         currentPrice: '0.0001001',
         supplyBeforeDev: '100000',
-        devAllocation: '0',
-        totalSupply: '100000',
-        totalValue: '10.01',
-        requiredReserve: '1.001',
+        devAllocation: '10',
+        totalSupply: '100010',
+        totalValue: '10.011001',
+        requiredReserve: '1.0011001',
         currentReserve: '1.0',
-        reserveNeeded: '0.001',
-        tokensNeeded: '9.99',
+        reserveNeeded: '0.0011001',
+        tokensNeeded: '10.99',
         usdcCollected: '0'
       });
     }
@@ -576,8 +576,8 @@ Alternative commands to open terminal:
               <h3 className="font-semibold mb-2 text-green-400">🚀 Epoch 1 (Current)</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'}</li>
-                <li>• Supply: {epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,000'} MC</li>
-                <li>• Dev allocation: {epochInfo ? epochInfo.devAllocation : '0'} MC</li>
+                <li>• Supply: {epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'} MC</li>
+                <li>• Dev allocation: {epochInfo ? epochInfo.devAllocation : '10'} MC</li>
                 <li>• USDC collected: ${epochInfo ? epochInfo.usdcCollected : '0.000000'}</li>
                 <li>• 📊 Ready for new sales</li>
               </ul>
@@ -588,8 +588,8 @@ Alternative commands to open terminal:
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Target ratio: 1:10 (reserves:MC value)</li>
                 <li>• Current: ${epochInfo ? epochInfo.currentReserve : '1.000000'} reserves</li>
-                <li>• Required: ${epochInfo ? epochInfo.requiredReserve : '1.00001'} reserves</li>
-                <li>• Need: {epochInfo ? epochInfo.tokensNeeded : '0.99'} MC sales</li>
+                <li>• Required: ${epochInfo ? epochInfo.requiredReserve : '1.0011001'} reserves</li>
+                <li>• Need: {epochInfo ? epochInfo.tokensNeeded : '10.99'} MC sales</li>
                 <li>• 🔄 Nearly balanced system</li>
               </ul>
             </div>
@@ -707,12 +707,12 @@ Alternative commands to open terminal:
                   <td className="p-2 font-semibold text-green-400">1 🔄</td>
                   <td className="p-2 text-right">$0.0001001</td>
                   <td className="p-2 text-right">100,000</td>
-                  <td className="p-2 text-right">0</td>
-                  <td className="p-2 text-right">9.99</td>
-                  <td className="p-2 text-right">9.99</td>
-                  <td className="p-2 text-right">100,009.99</td>
-                  <td className="p-2 text-right">$10.01</td>
-                  <td className="p-2 text-right">$1.001</td>
+                  <td className="p-2 text-right">10</td>
+                  <td className="p-2 text-right">10.99</td>
+                  <td className="p-2 text-right">20.99</td>
+                  <td className="p-2 text-right">100,020.99</td>
+                  <td className="p-2 text-right">$10.0121</td>
+                  <td className="p-2 text-right">$1.00121</td>
                   <td className="p-2 text-right text-yellow-400">~1:10</td>
                 </tr>
                 
