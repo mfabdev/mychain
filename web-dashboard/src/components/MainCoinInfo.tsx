@@ -50,12 +50,12 @@ export const MainCoinInfo: React.FC = () => {
           console.log('Segment info not available, using default values');
           // Use correct default values for 1:10 reserve ratio
           setMainCoinData({
-            currentPrice: '0.000100000000000000', // $0.0001 per MainCoin for 10% reserve ratio
-            totalSupply: '100000000000', // 100,000 MainCoin (with 6 decimals)
+            currentPrice: '0.000100100000000000', // $0.0001001 per MainCoin
+            totalSupply: '100010000000', // 100,010 MainCoin (with 6 decimals) - includes 10 MC dev allocation
             reserveBalance: '1000000', // 1 TestUSD reserve (with 6 decimals)
-            tokensNeeded: '0',
-            reserveRatio: '0.100000000000000000', // 10% reserve ratio
-            currentEpoch: 0
+            tokensNeeded: '10990000', // 10.99 MainCoin needed (with 6 decimals)
+            reserveRatio: '0.099900000000000000', // Current reserve ratio
+            currentEpoch: 1
           });
         }
 
