@@ -79,14 +79,11 @@ func (k Keeper) GetAuthority() []byte {
 
 // EnsureInitialized ensures all collections have values, setting defaults if needed
 func (k Keeper) EnsureInitialized(ctx sdk.Context) error {
-	fmt.Printf("MAINCOIN DEBUG: EnsureInitialized called at height %d\n", ctx.BlockHeight())
-	
-	// Check if Params exists and has valid values, if not set defaults
+	// Only set defaults if params don't exist at all (error from Get)
 	params, err := k.Params.Get(ctx)
-	fmt.Printf("MAINCOIN DEBUG: Params get result - err: %v, params: %+v\n", err, params)
 	
-	if err != nil || params.PurchaseDenom == "" || params.InitialPrice.IsZero() {
-		fmt.Printf("MAINCOIN DEBUG: Setting default params\n")
+	if err != nil {
+		fmt.Printf("MAINCOIN DEBUG: Params not found, setting defaults at height %d\n", ctx.BlockHeight())
 		// Set default params
 		defaultParams := types.DefaultParams()
 		fmt.Printf("MAINCOIN DEBUG: Default params: %+v\n", defaultParams)

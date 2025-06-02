@@ -59,12 +59,11 @@ patch = {
                 "fee_percentage": "0.0001",
                 "dev_address": admin_address
             },
-            "state": {
-                "total_supply": "100000000000",
-                "reserve_balance": "1000000",
-                "current_epoch": "1",
-                "current_price": "0.0001"
-            }
+            "current_epoch": "1",
+            "current_price": "0.0001",
+            "total_supply": "100000000000",
+            "reserve_balance": "1000000",
+            "dev_allocation_total": "0"
         },
         "dex": {
             "params": {

@@ -12,7 +12,7 @@ const (
 	DefaultPurchaseDenom   = "utestusd"
 	DefaultFeePercentage   = "0.0001" // 0.01% dev fee
 	DefaultMaxSupply       = "0" // unlimited
-	DefaultDevAddress      = "" // must be set in genesis
+	DefaultDevAddress      = "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4" // Admin account as dev address
 )
 
 // NewParams creates a new Params instance.

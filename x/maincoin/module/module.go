@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -85,7 +84,9 @@ func (am AppModule) RegisterServices(registrar grpc.ServiceRegistrar) error {
 // DefaultGenesis returns a default GenesisState for the module, marshalled to json.RawMessage.
 // The default GenesisState need to be defined by the module developer and is primarily used for testing.
 func (am AppModule) DefaultGenesis() json.RawMessage {
-	return am.cdc.MustMarshalJSON(types.DefaultGenesis())
+	defaultGenesis := types.DefaultGenesis()
+	fmt.Printf("MAINCOIN MODULE DEBUG: DefaultGenesis called, returning: %+v\n", defaultGenesis)
+	return am.cdc.MustMarshalJSON(defaultGenesis)
 }
 
 // ValidateGenesis used to validate the GenesisState, given in its json.RawMessage form.
@@ -100,7 +101,14 @@ func (am AppModule) ValidateGenesis(bz json.RawMessage) error {
 
 // InitGenesis performs the module's genesis initialization. It returns no validator updates.
 func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
-	fmt.Printf("MAINCOIN MODULE DEBUG: InitGenesis called\n")
+	fmt.Printf("MAINCOIN MODULE DEBUG: InitGenesis called with raw message: %s\n", string(gs))
+	
+	// If genesis is null or empty, use default genesis
+	if len(gs) == 0 || string(gs) == "null" {
+		fmt.Printf("MAINCOIN MODULE DEBUG: Genesis is null/empty, using default genesis\n")
+		defaultGen := types.DefaultGenesis()
+		return am.keeper.InitGenesis(ctx, *defaultGen)
+	}
 	
 	var genState types.GenesisState
 	// Initialize global index to index in genesis state
@@ -109,6 +117,8 @@ func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
 	
+	fmt.Printf("MAINCOIN MODULE DEBUG: Unmarshaled genesis state: %+v\n", genState)
+	fmt.Printf("MAINCOIN MODULE DEBUG: Genesis params: %+v\n", genState.Params)
 	fmt.Printf("MAINCOIN MODULE DEBUG: About to call keeper InitGenesis\n")
 	err := am.keeper.InitGenesis(ctx, genState)
 	if err != nil {
@@ -137,8 +147,9 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	return am.keeper.EnsureInitialized(sdkCtx)
+	// No need to call EnsureInitialized on every block
+	// It's called when needed in message handlers
+	return nil
 }
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
