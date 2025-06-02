@@ -12,7 +12,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Hardcode the validator address since there's only one
-  const VALIDATOR_ADDRESS = 'cosmosvaloper15seuuelcs4s5nqwlzgq0kur09fx5mxukgry88t';
+  const VALIDATOR_ADDRESS = 'cosmosvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0ae5egnx';
 
   const handleStake = async () => {
     if (!window.keplr || !amount || parseFloat(amount) <= 0) return;
@@ -23,11 +23,11 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
     try {
       // First, add the chain to Keplr if it doesn't exist
       try {
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       } catch (error) {
         // Chain not found, add it
         await window.keplr.experimentalSuggestChain({
-          chainId: 'mychain_100-1',
+          chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
           rest: 'http://localhost:1317',
@@ -72,10 +72,10 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
         });
         
         // Try enabling again after adding the chain
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain_100-1');
+      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner

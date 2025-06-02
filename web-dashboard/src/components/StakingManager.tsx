@@ -95,11 +95,11 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
     try {
       // First, add the chain to Keplr if it doesn't exist
       try {
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       } catch (error) {
         // Chain not found, add it
         await window.keplr.experimentalSuggestChain({
-          chainId: 'mychain_100-1',
+          chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
           rest: 'http://localhost:1317',
@@ -141,10 +141,10 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         });
         
         // Try enabling again after adding the chain
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain_100-1');
+      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner
@@ -191,11 +191,11 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
     try {
       // First, add the chain to Keplr if it doesn't exist
       try {
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       } catch (error) {
         // Chain not found, add it
         await window.keplr.experimentalSuggestChain({
-          chainId: 'mychain_100-1',
+          chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
           rest: 'http://localhost:1317',
@@ -237,10 +237,10 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         });
         
         // Try enabling again after adding the chain
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain_100-1');
+      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner
@@ -290,11 +290,11 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
     try {
       // First, add the chain to Keplr if it doesn't exist
       try {
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       } catch (error) {
         // Chain not found, add it
         await window.keplr.experimentalSuggestChain({
-          chainId: 'mychain_100-1',
+          chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
           rest: 'http://localhost:1317',
@@ -336,10 +336,10 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         });
         
         // Try enabling again after adding the chain
-        await window.keplr.enable('mychain_100-1');
+        await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain_100-1');
+      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner

@@ -100,7 +100,7 @@ export const BlockInfo: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-gray-700/50 rounded p-4">
             <div className="text-gray-400 text-sm">Chain ID</div>
-            <div className="text-xl font-semibold">{chainData?.chainId || 'mychain_100-1'}</div>
+            <div className="text-xl font-semibold">{chainData?.chainId || 'mychain'}</div>
           </div>
           <div className="bg-gray-700/50 rounded p-4">
             <div className="text-gray-400 text-sm">Active Validators</div>
