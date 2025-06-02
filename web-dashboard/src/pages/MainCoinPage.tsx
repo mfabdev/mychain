@@ -63,14 +63,14 @@ export const MainCoinPage: React.FC = () => {
         currentEpoch: 1,
         currentPrice: '0.0001001',
         supplyBeforeDev: '100000',
-        devAllocation: '10',
-        totalSupply: '100010',
-        totalValue: '10.001',
-        requiredReserve: '1.0001',
-        currentReserve: '1.000',
-        reserveNeeded: '0.0001',
-        tokensNeeded: '10.99',
-        usdcCollected: '0.001099'
+        devAllocation: '0',
+        totalSupply: '100000',
+        totalValue: '10.01',
+        requiredReserve: '10.01',
+        currentReserve: '1.0',
+        reserveNeeded: '9.01',
+        tokensNeeded: '9990.01',
+        usdcCollected: '0'
       });
     }
   };
