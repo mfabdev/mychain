@@ -46,15 +46,15 @@ export const MainCoinPage: React.FC = () => {
         setEpochInfo({
           currentEpoch: epochResponse.currentEpoch,
           currentPrice: epochResponse.currentPrice || '0.0001001',
-          supplyBeforeDev: epochResponse.supplyBeforeDev || '100010',
-          devAllocation: epochResponse.devAllocation || '0.001099',
-          totalSupply: epochResponse.totalSupply || '100021.991099',
-          totalValue: epochResponse.totalValue || '10.01222425',
-          requiredReserve: epochResponse.requiredReserve || '1.001222425',
-          currentReserve: epochResponse.currentReserve || '0.001099',
-          reserveNeeded: epochResponse.reserveNeeded || '0.000123425',
-          tokensNeeded: epochResponse.tokensNeeded || '12.33',
-          usdcCollected: epochResponse.usdcCollected || '0.001234'
+          supplyBeforeDev: epochResponse.supplyBeforeDev || '100000',
+          devAllocation: epochResponse.devAllocation || '0',
+          totalSupply: epochResponse.totalSupply || '100000',
+          totalValue: epochResponse.totalValue || '10.01',
+          requiredReserve: epochResponse.requiredReserve || '1.001',
+          currentReserve: epochResponse.currentReserve || '1.0',
+          reserveNeeded: epochResponse.reserveNeeded || '0.001',
+          tokensNeeded: epochResponse.tokensNeeded || '10.99',
+          usdcCollected: epochResponse.usdcCollected || '0'
         });
       }
     } catch (error) {
@@ -69,7 +69,7 @@ export const MainCoinPage: React.FC = () => {
         requiredReserve: '10.01',
         currentReserve: '1.0',
         reserveNeeded: '9.01',
-        tokensNeeded: '9990.01',
+        tokensNeeded: '10.99',
         usdcCollected: '0'
       });
     }
@@ -280,8 +280,8 @@ Alternative commands to open terminal:
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">Tokens Needed</p>
-                <p className="text-2xl font-bold text-purple-400">{epochInfo.tokensNeeded}</p>
-                <p className="text-xs text-gray-500">for balance</p>
+                <p className="text-2xl font-bold text-purple-400">{epochInfo.tokensNeeded} MC</p>
+                <p className="text-xs text-gray-500">to achieve 1:10 balance</p>
               </div>
             </div>
           </div>

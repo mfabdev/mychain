@@ -148,9 +148,9 @@ export const MainCoinInfo: React.FC = () => {
         <div className="bg-gray-700/30 rounded-lg p-4">
           <p className="text-sm text-gray-400 mb-2">Tokens Needed</p>
           <p className="text-lg font-bold text-orange-400">
-            {mainCoinData ? formatAmount(mainCoinData.tokensNeeded) : '0.00'} TestUSD
+            {mainCoinData ? formatAmount(mainCoinData.tokensNeeded) : '0.00'} MainCoin
           </p>
-          <p className="text-xs text-gray-500">To maintain peg</p>
+          <p className="text-xs text-gray-500">To achieve 1:10 balance</p>
         </div>
       </div>
 
