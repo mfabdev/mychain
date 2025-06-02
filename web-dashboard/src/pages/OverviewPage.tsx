@@ -36,7 +36,7 @@ export const OverviewPage: React.FC = () => {
           
           <div className="bg-gray-800 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-2">💵 TestUSD</h3>
-            <p className="text-2xl font-bold text-purple-400">1,000,000</p>
+            <p className="text-2xl font-bold text-purple-400">1,001</p>
             <p className="text-sm text-gray-400">Bridge Token</p>
             <Link to="/testusd" className="text-purple-400 hover:text-purple-300 text-sm">
               Bridge →
@@ -161,7 +161,7 @@ export const OverviewPage: React.FC = () => {
             <div className="text-center">
               <div className="text-2xl mb-2">🔗</div>
               <div className="text-sm text-gray-400">Chain ID</div>
-              <div className="font-semibold text-xs">mychain_100-1</div>
+              <div className="font-semibold text-xs">mychain</div>
             </div>
           </div>
         </div>
