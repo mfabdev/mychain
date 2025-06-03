@@ -105,7 +105,7 @@ export const MainCoinInfo: React.FC = () => {
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">MainCoin Information</h2>
-        <span className="text-sm text-gray-400">Epoch #{mainCoinData?.currentEpoch || 0}</span>
+        <span className="text-sm text-gray-400">Segment #{mainCoinData?.currentEpoch || 0}</span>
       </div>
 
       {/* Price and Supply Overview */}
