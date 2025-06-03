@@ -25,8 +25,8 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 	}
 	
 	// Calculate total value of current supply
-	// Convert totalSupply from umc to MC (divide by 100,000,000)
-	totalSupplyInMC := math.LegacyNewDecFromInt(totalSupply).Quo(math.LegacyNewDec(100000000))
+	// Convert totalSupply from smallest unit to MC (divide by 1,000,000 for 6 decimals)
+	totalSupplyInMC := math.LegacyNewDecFromInt(totalSupply).Quo(math.LegacyNewDec(1000000))
 	// currentPrice is in TESTUSD per MC, but we need utestusd
 	// 0.0001 TESTUSD = 100 utestusd
 	currentPriceInUtestusd := currentPrice.Mul(math.LegacyNewDec(1000000))
@@ -57,8 +57,8 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 		// Calculate tokens needed at current price
 		// reserveNeededDec is in utestusd, currentPriceInUtestusd is utestusd per MC
 		tokensNeededInMC := reserveNeededDec.Quo(currentPriceInUtestusd)
-		// Convert from MC to umc
-		tokensNeededDec := tokensNeededInMC.Mul(math.LegacyNewDec(100000000))
+		// Convert from MC to smallest unit (multiply by 1,000,000 for 6 decimals)
+		tokensNeededDec := tokensNeededInMC.Mul(math.LegacyNewDec(1000000))
 		// Round up to ensure we meet the requirement
 		tokensNeeded := tokensNeededDec.Ceil().TruncateInt()
 		

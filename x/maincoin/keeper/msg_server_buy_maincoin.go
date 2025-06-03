@@ -156,16 +156,16 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		currentPriceInUtestusd := currentPrice.Mul(math.LegacyNewDec(1000000))
 		// Calculate MC we can buy
 		mainCoinsToBuy := remainingFunds.Quo(currentPriceInUtestusd)
-		// Convert to umc
-		tokensToBuy := mainCoinsToBuy.Mul(math.LegacyNewDec(100000000)).TruncateInt()
+		// Convert to smallest_unit
+		tokensToBuy := mainCoinsToBuy.Mul(math.LegacyNewDec(1000000)).TruncateInt()
 		
 		// Debug: Log calculation details
 		sdkCtx.Logger().Info("Token calculation",
-			"tokensNeeded_umc", tokensNeeded.String(),
-			"tokensToBuy_umc", tokensToBuy.String(),
+			"tokensNeeded_smallest_unit", tokensNeeded.String(),
+			"tokensToBuy_smallest_unit", tokensToBuy.String(),
 			"mainCoinsToBuy_MC", mainCoinsToBuy.String(),
 			"currentPriceInUtestusd", currentPriceInUtestusd.String(),
-			"calculation", fmt.Sprintf("%s utestusd / %s utestusd/MC = %s MC = %s umc", 
+			"calculation", fmt.Sprintf("%s utestusd / %s utestusd/MC = %s MC = %s smallest_unit", 
 				remainingFunds.String(), currentPriceInUtestusd.String(), mainCoinsToBuy.String(), tokensToBuy.String()),
 		)
 		
@@ -185,15 +185,15 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		}
 		
 		// Calculate cost for these tokens
-		// tokensToBuy is in umc, need to convert to MC
-		tokensToBuyInMC := math.LegacyNewDecFromInt(tokensToBuy).Quo(math.LegacyNewDec(100000000))
+		// tokensToBuy is in smallest_unit, need to convert to MC
+		tokensToBuyInMC := math.LegacyNewDecFromInt(tokensToBuy).Quo(math.LegacyNewDec(1000000))
 		// currentPriceInUtestusd is already in utestusd per MC
 		cost := currentPriceInUtestusd.Mul(tokensToBuyInMC)
 		costInt := cost.TruncateInt()
 		
 		// Debug: Log cost calculation
 		sdkCtx.Logger().Info("Cost calculation",
-			"tokensToBuy_umc", tokensToBuy.String(),
+			"tokensToBuy_smallest_unit", tokensToBuy.String(),
 			"tokensToBuyInMC", tokensToBuyInMC.String(),
 			"currentPriceInUtestusd", currentPriceInUtestusd.String(),
 			"cost", cost.String(),
