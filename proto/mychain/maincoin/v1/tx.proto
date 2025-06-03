@@ -60,6 +60,11 @@ message SegmentPurchase {
   string tokens_bought = 2;
   string price_per_token = 3;
   string segment_cost = 4;
+  string dev_allocation = 5;
+  string user_tokens = 6;
+  bool is_complete = 7;
+  string tokens_in_segment = 8;
+  string tokens_needed_to_complete = 9;
 }
 
 // MsgBuyMaincoinResponse defines the MsgBuyMaincoinResponse message.

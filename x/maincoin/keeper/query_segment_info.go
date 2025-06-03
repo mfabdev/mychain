@@ -43,6 +43,12 @@ func (q queryServer) SegmentInfo(ctx context.Context, req *types.QuerySegmentInf
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	
+	devAllocationTotal, err := q.k.DevAllocationTotal.Get(ctx)
+	if err != nil {
+		// Default to zero if not set
+		devAllocationTotal = math.ZeroInt()
+	}
+	
 	// Calculate tokens needed
 	tokensNeeded, err := q.k.CalculateTokensNeeded(ctx)
 	if err != nil {
@@ -63,11 +69,12 @@ func (q queryServer) SegmentInfo(ctx context.Context, req *types.QuerySegmentInf
 	}
 
 	return &types.QuerySegmentInfoResponse{
-		CurrentEpoch:   currentEpoch,
-		CurrentPrice:   currentPrice,
-		TotalSupply:    totalSupply,
-		ReserveBalance: reserveBalance,
-		TokensNeeded:   tokensNeeded,
-		ReserveRatio:   reserveRatio,
+		CurrentEpoch:       currentEpoch,
+		CurrentPrice:       currentPrice,
+		TotalSupply:        totalSupply,
+		ReserveBalance:     reserveBalance,
+		TokensNeeded:       tokensNeeded,
+		ReserveRatio:       reserveRatio,
+		DevAllocationTotal: devAllocationTotal,
 	}, nil
 }

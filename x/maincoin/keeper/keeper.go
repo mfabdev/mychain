@@ -31,6 +31,10 @@ type Keeper struct {
 	ReserveBalance     collections.Item[math.Int]
 	DevAllocationTotal collections.Item[math.Int]
 	
+	// Segment history tracking
+	SegmentHistories collections.Map[uint64, types.SegmentHistory]
+	UserHistories    collections.Map[string, types.UserPurchaseHistory]
+	
 	// Expected keepers
 	bankKeeper types.BankKeeper
 }
@@ -61,6 +65,8 @@ func NewKeeper(
 		TotalSupply:        collections.NewItem(sb, types.TotalSupplyKey, "total_supply", sdk.IntValue),
 		ReserveBalance:     collections.NewItem(sb, types.ReserveBalanceKey, "reserve_balance", sdk.IntValue),
 		DevAllocationTotal: collections.NewItem(sb, types.DevAllocationTotalKey, "dev_allocation_total", sdk.IntValue),
+		SegmentHistories:   collections.NewMap(sb, collections.NewPrefix(8), "segment_histories", collections.Uint64Key, codec.CollValue[types.SegmentHistory](cdc)),
+		UserHistories:      collections.NewMap(sb, collections.NewPrefix(9), "user_histories", collections.StringKey, codec.CollValue[types.UserPurchaseHistory](cdc)),
 	}
 
 	schema, err := sb.Build()

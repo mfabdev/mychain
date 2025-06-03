@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package mychain.maincoin.v1;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "mychain/x/maincoin/types";
+
+// SegmentPurchaseRecord stores details of tokens bought within a specific segment
+message SegmentPurchaseRecord {
+  uint64 segment_number = 1;
+  string buyer = 2;
+  string tokens_bought = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string user_tokens = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string dev_allocation = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string price_per_token = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string cost = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  bool is_complete = 8;
+  string tx_hash = 9;
+  int64 block_height = 10;
+  google.protobuf.Timestamp timestamp = 11 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+}
+
+// SegmentHistory stores all purchases for a specific segment
+message SegmentHistory {
+  uint64 segment_number = 1;
+  repeated SegmentPurchaseRecord purchases = 2 [(gogoproto.nullable) = false];
+  string total_tokens_sold = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_dev_allocation = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_revenue = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  bool is_complete = 6;
+  int64 completed_at_height = 7;
+  google.protobuf.Timestamp completed_at = 8 [(gogoproto.stdtime) = true];
+}
+
+// UserPurchaseHistory stores all purchases made by a specific user
+message UserPurchaseHistory {
+  string address = 1;
+  repeated SegmentPurchaseRecord purchases = 2 [(gogoproto.nullable) = false];
+  string total_tokens_bought = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_spent = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}

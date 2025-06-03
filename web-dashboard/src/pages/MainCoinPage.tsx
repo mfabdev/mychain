@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionDetails } from '../components/TransactionDetails';
 import { TransactionHistory } from '../components/TransactionHistory';
+import { SegmentPurchaseDetails } from '../components/SegmentPurchaseDetails';
+import { DevAllocationTracker } from '../components/DevAllocationTracker';
+import { SegmentProgressionChart } from '../components/SegmentProgressionChart';
+import { SegmentHistoryViewer } from '../components/SegmentHistoryViewer';
+import { UserPurchaseHistory } from '../components/UserPurchaseHistory';
 import { fetchAPI } from '../utils/api';
 import { useKeplr } from '../hooks/useKeplr';
 
@@ -16,6 +21,7 @@ interface EpochInfo {
   reserveNeeded: string;
   tokensNeeded: string;
   usdcCollected: string;
+  devAllocationFromAPI?: string;
 }
 
 export const MainCoinPage: React.FC = () => {
@@ -28,6 +34,7 @@ export const MainCoinPage: React.FC = () => {
   const [txStatus, setTxStatus] = useState<string>('');
   const [txHash, setTxHash] = useState<string>('');
   const [useDirectExecution, setUseDirectExecution] = useState(true);
+  const [lastPurchaseDetails, setLastPurchaseDetails] = useState<any>(null);
   const { address, isConnected, client } = useKeplr();
 
   useEffect(() => {
@@ -43,16 +50,22 @@ export const MainCoinPage: React.FC = () => {
       const epochResponse = await fetchAPI('/mychain/maincoin/v1/segment_info');
       
       if (epochResponse && epochResponse.current_epoch !== undefined) {
-        // Parse the total supply and add 10 MC for dev allocation from Segment 0
+        // Parse the total supply from API
         const totalSupplyFromAPI = parseFloat(epochResponse.total_supply) / 1000000; // Convert from smallest unit
-        const correctedTotalSupply = totalSupplyFromAPI + 10; // Add 10 MC dev allocation from Segment 0
+        
+        // Get dev allocation from API if available
+        const devAllocationFromAPI = epochResponse.dev_allocation_total ? 
+          parseFloat(epochResponse.dev_allocation_total) / 1000000 : 0;
+        
+        // Total supply already includes dev allocation
+        const correctedTotalSupply = totalSupplyFromAPI;
         
         // Log the calculation for debugging
         console.log('MainCoin API Response:', epochResponse);
         console.log('MainCoin calculation debug:', {
           totalSupplyFromAPI,
+          devAllocationFromAPI,
           correctedTotalSupply,
-          devAllocation: 10,
           apiResponse: epochResponse
         });
         
@@ -75,15 +88,16 @@ export const MainCoinPage: React.FC = () => {
         setEpochInfo({
           currentEpoch: parseInt(epochResponse.current_epoch),
           currentPrice: epochResponse.current_price || '0.0001001',
-          supplyBeforeDev: totalSupplyFromAPI.toFixed(0), // Use actual supply before dev
-          devAllocation: '10', // Still hardcoded as we don't track cumulative dev allocations
+          supplyBeforeDev: (totalSupplyFromAPI - devAllocationFromAPI).toFixed(0),
+          devAllocation: devAllocationFromAPI.toFixed(0),
           totalSupply: correctedTotalSupply.toFixed(0),
           totalValue: totalValue.toFixed(7),
           requiredReserve: requiredReserve.toFixed(7),
           currentReserve: currentReserve.toFixed(6),
           reserveNeeded: reserveNeeded.toFixed(7),
           tokensNeeded: tokensNeeded.toFixed(2),
-          usdcCollected: epochResponse.usdcCollected || '0'
+          usdcCollected: epochResponse.usdcCollected || '0',
+          devAllocationFromAPI: devAllocationFromAPI.toFixed(0)
         });
       }
     } catch (error) {
@@ -132,6 +146,17 @@ export const MainCoinPage: React.FC = () => {
         if (result.success) {
           setTxStatus('✅ Transaction submitted successfully!');
           setTxHash(result.txHash || '');
+          
+          // Parse segment details if available
+          if (result.segments) {
+            setLastPurchaseDetails({
+              segments: result.segments,
+              totalUserTokens: result.totalTokensBought || '0',
+              totalDevAllocation: result.totalDevAllocation || '0',
+              totalCost: result.totalPaid || '0'
+            });
+          }
+          
           // Immediately refresh the epoch info
           fetchEpochInfo();
           setBuyAmount('');
@@ -629,9 +654,39 @@ Alternative commands to open terminal:
           </div>
         </div>
 
+        {/* Dev Allocation Tracker */}
+        {epochInfo && (
+          <DevAllocationTracker
+            totalDevAllocation={epochInfo.devAllocationFromAPI || epochInfo.devAllocation}
+            currentPrice={epochInfo.currentPrice}
+            percentOfSupply={
+              (parseFloat(epochInfo.devAllocationFromAPI || epochInfo.devAllocation) / 
+               parseFloat(epochInfo.totalSupply)) * 100
+            }
+          />
+        )}
+
+        {/* Segment Progression Chart */}
+        {epochInfo && (
+          <SegmentProgressionChart
+            currentSegment={epochInfo.currentEpoch}
+            currentPrice={epochInfo.currentPrice}
+          />
+        )}
+
         {/* Transaction Details */}
         {txHash && (
           <TransactionDetails txHash={txHash} />
+        )}
+
+        {/* Segment Purchase Details */}
+        {lastPurchaseDetails && (
+          <SegmentPurchaseDetails
+            segments={lastPurchaseDetails.segments}
+            totalUserTokens={lastPurchaseDetails.totalUserTokens}
+            totalDevAllocation={lastPurchaseDetails.totalDevAllocation}
+            totalCost={lastPurchaseDetails.totalCost}
+          />
         )}
 
         {/* Iterative Segment Calculation System */}
@@ -644,7 +699,7 @@ Alternative commands to open terminal:
               <li>**Calculate:** How many MC needed to reach 1:10 balance at current price</li>
               <li>**Sell:** That exact amount of MC to user</li>
               <li>**Trigger:** 1:10 balance achieved → segment closes</li>
-              <li>**Dev Allocation:** 0.01% of sold tokens minted & added to dev</li>
+              <li>**Dev Allocation:** 0.01% of sold tokens allocated to dev</li>
               <li>**Price Increase:** New segment starts at 0.1% higher price</li>
               <li>**Recalculate:** How many MC needed at NEW price for 1:10 balance</li>
               <li>**Repeat:** Until user's purchase amount is fulfilled</li>
@@ -938,6 +993,14 @@ Alternative commands to open terminal:
             <p className="mt-3 text-blue-400">To advance through more segments, you need purchases that add significant reserves relative to the total MainCoin value.</p>
           </div>
         </div>
+
+        {/* Segment Purchase History */}
+        {epochInfo && (
+          <SegmentHistoryViewer currentSegment={epochInfo.currentEpoch} />
+        )}
+
+        {/* User Purchase History */}
+        <UserPurchaseHistory />
       </div>
     </div>
   );

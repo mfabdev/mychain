@@ -14,8 +14,8 @@ import (
 const MaxSegmentsPerPurchase = 25 // Limit to prevent gas issues
 
 func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
-	// Use the analytical approach for better accuracy and efficiency
-	return k.BuyMaincoinAnalytical(ctx, msg)
+	// Use the analytical approach with dev allocation tracking
+	return k.BuyMaincoinWithDev(ctx, msg)
 }
 
 // BuyMaincoinIterative is the original iterative implementation (kept for reference)

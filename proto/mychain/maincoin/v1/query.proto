@@ -7,6 +7,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "mychain/maincoin/v1/params.proto";
+import "mychain/maincoin/v1/segment_history.proto";
 
 option go_package = "mychain/x/maincoin/types";
 
@@ -25,6 +26,16 @@ service Query {
   // SegmentInfo Queries a list of SegmentInfo items.
   rpc SegmentInfo(QuerySegmentInfoRequest) returns (QuerySegmentInfoResponse) {
     option (google.api.http).get = "/mychain/maincoin/v1/segment_info";
+  }
+  
+  // SegmentHistory queries purchase history for a specific segment
+  rpc SegmentHistory(QuerySegmentHistoryRequest) returns (QuerySegmentHistoryResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/segment_history/{segment_number}";
+  }
+  
+  // UserPurchaseHistory queries purchase history for a specific user
+  rpc UserPurchaseHistory(QueryUserPurchaseHistoryRequest) returns (QueryUserPurchaseHistoryResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/user_history/{address}";
   }
 }
 
@@ -77,4 +88,32 @@ message QuerySegmentInfoResponse {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
+  string dev_allocation_total = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// QuerySegmentHistoryRequest is the request type for Query/SegmentHistory
+message QuerySegmentHistoryRequest {
+  uint64 segment_number = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QuerySegmentHistoryResponse is the response type for Query/SegmentHistory
+message QuerySegmentHistoryResponse {
+  SegmentHistory segment_history = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryUserPurchaseHistoryRequest is the request type for Query/UserPurchaseHistory
+message QueryUserPurchaseHistoryRequest {
+  string address = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryUserPurchaseHistoryResponse is the response type for Query/UserPurchaseHistory
+message QueryUserPurchaseHistoryResponse {
+  UserPurchaseHistory user_history = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

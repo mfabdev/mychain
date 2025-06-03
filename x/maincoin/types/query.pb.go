@@ -7,7 +7,7 @@ import (
 	context "context"
 	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-sdk/types/query"
+	query "github.com/cosmos/cosmos-sdk/types/query"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
@@ -229,12 +229,13 @@ var xxx_messageInfo_QuerySegmentInfoRequest proto.InternalMessageInfo
 
 // QuerySegmentInfoResponse defines the QuerySegmentInfoResponse message.
 type QuerySegmentInfoResponse struct {
-	CurrentEpoch   uint64                      `protobuf:"varint,1,opt,name=current_epoch,json=currentEpoch,proto3" json:"current_epoch,omitempty"`
-	CurrentPrice   cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=current_price,json=currentPrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"current_price"`
-	TotalSupply    cosmossdk_io_math.Int       `protobuf:"bytes,3,opt,name=total_supply,json=totalSupply,proto3,customtype=cosmossdk.io/math.Int" json:"total_supply"`
-	ReserveBalance cosmossdk_io_math.Int       `protobuf:"bytes,4,opt,name=reserve_balance,json=reserveBalance,proto3,customtype=cosmossdk.io/math.Int" json:"reserve_balance"`
-	TokensNeeded   cosmossdk_io_math.Int       `protobuf:"bytes,5,opt,name=tokens_needed,json=tokensNeeded,proto3,customtype=cosmossdk.io/math.Int" json:"tokens_needed"`
-	ReserveRatio   cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=reserve_ratio,json=reserveRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"reserve_ratio"`
+	CurrentEpoch       uint64                      `protobuf:"varint,1,opt,name=current_epoch,json=currentEpoch,proto3" json:"current_epoch,omitempty"`
+	CurrentPrice       cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=current_price,json=currentPrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"current_price"`
+	TotalSupply        cosmossdk_io_math.Int       `protobuf:"bytes,3,opt,name=total_supply,json=totalSupply,proto3,customtype=cosmossdk.io/math.Int" json:"total_supply"`
+	ReserveBalance     cosmossdk_io_math.Int       `protobuf:"bytes,4,opt,name=reserve_balance,json=reserveBalance,proto3,customtype=cosmossdk.io/math.Int" json:"reserve_balance"`
+	TokensNeeded       cosmossdk_io_math.Int       `protobuf:"bytes,5,opt,name=tokens_needed,json=tokensNeeded,proto3,customtype=cosmossdk.io/math.Int" json:"tokens_needed"`
+	ReserveRatio       cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=reserve_ratio,json=reserveRatio,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"reserve_ratio"`
+	DevAllocationTotal cosmossdk_io_math.Int       `protobuf:"bytes,7,opt,name=dev_allocation_total,json=devAllocationTotal,proto3,customtype=cosmossdk.io/math.Int" json:"dev_allocation_total"`
 }
 
 func (m *QuerySegmentInfoResponse) Reset()         { *m = QuerySegmentInfoResponse{} }
@@ -277,6 +278,218 @@ func (m *QuerySegmentInfoResponse) GetCurrentEpoch() uint64 {
 	return 0
 }
 
+// QuerySegmentHistoryRequest is the request type for Query/SegmentHistory
+type QuerySegmentHistoryRequest struct {
+	SegmentNumber uint64             `protobuf:"varint,1,opt,name=segment_number,json=segmentNumber,proto3" json:"segment_number,omitempty"`
+	Pagination    *query.PageRequest `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QuerySegmentHistoryRequest) Reset()         { *m = QuerySegmentHistoryRequest{} }
+func (m *QuerySegmentHistoryRequest) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentHistoryRequest) ProtoMessage()    {}
+func (*QuerySegmentHistoryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{6}
+}
+func (m *QuerySegmentHistoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentHistoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentHistoryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentHistoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentHistoryRequest.Merge(m, src)
+}
+func (m *QuerySegmentHistoryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentHistoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentHistoryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentHistoryRequest proto.InternalMessageInfo
+
+func (m *QuerySegmentHistoryRequest) GetSegmentNumber() uint64 {
+	if m != nil {
+		return m.SegmentNumber
+	}
+	return 0
+}
+
+func (m *QuerySegmentHistoryRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QuerySegmentHistoryResponse is the response type for Query/SegmentHistory
+type QuerySegmentHistoryResponse struct {
+	SegmentHistory *SegmentHistory     `protobuf:"bytes,1,opt,name=segment_history,json=segmentHistory,proto3" json:"segment_history,omitempty"`
+	Pagination     *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QuerySegmentHistoryResponse) Reset()         { *m = QuerySegmentHistoryResponse{} }
+func (m *QuerySegmentHistoryResponse) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentHistoryResponse) ProtoMessage()    {}
+func (*QuerySegmentHistoryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{7}
+}
+func (m *QuerySegmentHistoryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentHistoryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentHistoryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentHistoryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentHistoryResponse.Merge(m, src)
+}
+func (m *QuerySegmentHistoryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentHistoryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentHistoryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentHistoryResponse proto.InternalMessageInfo
+
+func (m *QuerySegmentHistoryResponse) GetSegmentHistory() *SegmentHistory {
+	if m != nil {
+		return m.SegmentHistory
+	}
+	return nil
+}
+
+func (m *QuerySegmentHistoryResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryUserPurchaseHistoryRequest is the request type for Query/UserPurchaseHistory
+type QueryUserPurchaseHistoryRequest struct {
+	Address    string             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Pagination *query.PageRequest `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryUserPurchaseHistoryRequest) Reset()         { *m = QueryUserPurchaseHistoryRequest{} }
+func (m *QueryUserPurchaseHistoryRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryUserPurchaseHistoryRequest) ProtoMessage()    {}
+func (*QueryUserPurchaseHistoryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{8}
+}
+func (m *QueryUserPurchaseHistoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryUserPurchaseHistoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryUserPurchaseHistoryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryUserPurchaseHistoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryUserPurchaseHistoryRequest.Merge(m, src)
+}
+func (m *QueryUserPurchaseHistoryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryUserPurchaseHistoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryUserPurchaseHistoryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryUserPurchaseHistoryRequest proto.InternalMessageInfo
+
+func (m *QueryUserPurchaseHistoryRequest) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+func (m *QueryUserPurchaseHistoryRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryUserPurchaseHistoryResponse is the response type for Query/UserPurchaseHistory
+type QueryUserPurchaseHistoryResponse struct {
+	UserHistory *UserPurchaseHistory `protobuf:"bytes,1,opt,name=user_history,json=userHistory,proto3" json:"user_history,omitempty"`
+	Pagination  *query.PageResponse  `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryUserPurchaseHistoryResponse) Reset()         { *m = QueryUserPurchaseHistoryResponse{} }
+func (m *QueryUserPurchaseHistoryResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryUserPurchaseHistoryResponse) ProtoMessage()    {}
+func (*QueryUserPurchaseHistoryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{9}
+}
+func (m *QueryUserPurchaseHistoryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryUserPurchaseHistoryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryUserPurchaseHistoryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryUserPurchaseHistoryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryUserPurchaseHistoryResponse.Merge(m, src)
+}
+func (m *QueryUserPurchaseHistoryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryUserPurchaseHistoryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryUserPurchaseHistoryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryUserPurchaseHistoryResponse proto.InternalMessageInfo
+
+func (m *QueryUserPurchaseHistoryResponse) GetUserHistory() *UserPurchaseHistory {
+	if m != nil {
+		return m.UserHistory
+	}
+	return nil
+}
+
+func (m *QueryUserPurchaseHistoryResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "mychain.maincoin.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "mychain.maincoin.v1.QueryParamsResponse")
@@ -284,50 +497,71 @@ func init() {
 	proto.RegisterType((*QueryCurrentPriceResponse)(nil), "mychain.maincoin.v1.QueryCurrentPriceResponse")
 	proto.RegisterType((*QuerySegmentInfoRequest)(nil), "mychain.maincoin.v1.QuerySegmentInfoRequest")
 	proto.RegisterType((*QuerySegmentInfoResponse)(nil), "mychain.maincoin.v1.QuerySegmentInfoResponse")
+	proto.RegisterType((*QuerySegmentHistoryRequest)(nil), "mychain.maincoin.v1.QuerySegmentHistoryRequest")
+	proto.RegisterType((*QuerySegmentHistoryResponse)(nil), "mychain.maincoin.v1.QuerySegmentHistoryResponse")
+	proto.RegisterType((*QueryUserPurchaseHistoryRequest)(nil), "mychain.maincoin.v1.QueryUserPurchaseHistoryRequest")
+	proto.RegisterType((*QueryUserPurchaseHistoryResponse)(nil), "mychain.maincoin.v1.QueryUserPurchaseHistoryResponse")
 }
 
 func init() { proto.RegisterFile("mychain/maincoin/v1/query.proto", fileDescriptor_3da961af857ffeef) }
 
 var fileDescriptor_3da961af857ffeef = []byte{
-	// 601 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0x4f, 0x6b, 0x13, 0x41,
-	0x18, 0xc6, 0xb3, 0xfd, 0x13, 0xe8, 0x34, 0x55, 0x9c, 0x56, 0xdc, 0x6e, 0xec, 0xa6, 0x6e, 0x04,
-	0x6b, 0xb0, 0x3b, 0x24, 0x9e, 0xbc, 0x88, 0xc4, 0x3f, 0x58, 0x10, 0xa9, 0x5b, 0xf4, 0xe0, 0x25,
-	0x4c, 0x36, 0xd3, 0xcd, 0xd2, 0xec, 0xcc, 0x76, 0x67, 0x12, 0xcc, 0x4d, 0xfc, 0x04, 0x82, 0x78,
-	0xf0, 0xe8, 0xcd, 0xa3, 0x9f, 0xc0, 0x73, 0x8f, 0x05, 0x2f, 0xe2, 0xa1, 0x48, 0x22, 0xf8, 0x35,
-	0x64, 0x67, 0x66, 0x69, 0x43, 0x36, 0x18, 0x2f, 0x61, 0x79, 0xe7, 0xf9, 0x3d, 0xef, 0x33, 0x33,
-	0xef, 0x04, 0x54, 0xa2, 0xa1, 0xdf, 0xc5, 0x21, 0x45, 0x11, 0x0e, 0xa9, 0xcf, 0x42, 0x8a, 0x06,
-	0x75, 0x74, 0xdc, 0x27, 0xc9, 0xd0, 0x8d, 0x13, 0x26, 0x18, 0x5c, 0xd7, 0x02, 0x37, 0x13, 0xb8,
-	0x83, 0xba, 0x75, 0x05, 0x47, 0x21, 0x65, 0x48, 0xfe, 0x2a, 0x9d, 0x55, 0xf3, 0x19, 0x8f, 0x18,
-	0x47, 0x6d, 0xcc, 0x89, 0x32, 0x40, 0x83, 0x7a, 0x9b, 0x08, 0x5c, 0x47, 0x31, 0x0e, 0x42, 0x8a,
-	0x45, 0xc8, 0xa8, 0xd6, 0x6e, 0x04, 0x2c, 0x60, 0xf2, 0x13, 0xa5, 0x5f, 0xba, 0x7a, 0x3d, 0x60,
-	0x2c, 0xe8, 0x11, 0x84, 0xe3, 0x10, 0x61, 0x4a, 0x99, 0x90, 0x08, 0xd7, 0xab, 0xdb, 0x79, 0x41,
-	0x63, 0x9c, 0xe0, 0x48, 0x2b, 0x9c, 0x0d, 0x00, 0x5f, 0xa4, 0x7d, 0xf7, 0x65, 0xd1, 0x23, 0xc7,
-	0x7d, 0xc2, 0x85, 0xf3, 0x12, 0xac, 0x4f, 0x54, 0x79, 0xcc, 0x28, 0x27, 0xf0, 0x3e, 0x28, 0x2a,
-	0xd8, 0x34, 0xb6, 0x8d, 0x9d, 0xd5, 0x46, 0xd9, 0xcd, 0xd9, 0xa7, 0xab, 0xa0, 0xe6, 0xca, 0xc9,
-	0x59, 0xa5, 0xf0, 0xe5, 0xcf, 0xd7, 0x9a, 0xe1, 0x69, 0xca, 0xb1, 0x80, 0x29, 0x6d, 0x1f, 0xf6,
-	0x93, 0x84, 0x50, 0xb1, 0x9f, 0x84, 0x3e, 0xc9, 0x5a, 0xbe, 0x02, 0x9b, 0x39, 0x6b, 0xba, 0xf1,
-	0x3d, 0xb0, 0x1c, 0xa7, 0x05, 0xd9, 0x77, 0xa5, 0x59, 0x4d, 0xad, 0x7f, 0x9e, 0x55, 0xca, 0xea,
-	0xf8, 0x78, 0xe7, 0xc8, 0x0d, 0x19, 0x8a, 0xb0, 0xe8, 0xba, 0xcf, 0x48, 0x80, 0xfd, 0xe1, 0x23,
-	0xe2, 0x7b, 0x8a, 0x70, 0x36, 0xc1, 0x35, 0xe9, 0x7b, 0x40, 0x82, 0x88, 0x50, 0xb1, 0x47, 0x0f,
-	0x59, 0xd6, 0xf2, 0xf3, 0xa2, 0xce, 0x33, 0xb1, 0xa6, 0x5b, 0x56, 0xc1, 0x9a, 0xaf, 0xa2, 0xb4,
-	0x48, 0xcc, 0xfc, 0xae, 0x6c, 0xbd, 0xe4, 0x95, 0x74, 0xf1, 0x71, 0x5a, 0x83, 0x4f, 0xcf, 0x45,
-	0x2a, 0xdf, 0xc2, 0xfc, 0xf9, 0x32, 0x27, 0xb9, 0x53, 0xf8, 0x00, 0x94, 0x04, 0x13, 0xb8, 0xd7,
-	0xe2, 0xfd, 0x38, 0xee, 0x0d, 0xcd, 0x45, 0x69, 0xb4, 0xa5, 0x8d, 0xae, 0x4e, 0x1b, 0xed, 0x51,
-	0xe1, 0xad, 0x4a, 0xe4, 0x40, 0x12, 0xf0, 0x09, 0xb8, 0x9c, 0x10, 0x4e, 0x92, 0x01, 0x69, 0xb5,
-	0x71, 0x0f, 0x53, 0x9f, 0x98, 0x4b, 0xf3, 0x98, 0x5c, 0xd2, 0x54, 0x53, 0x41, 0xb0, 0x09, 0xd6,
-	0x04, 0x3b, 0x22, 0x94, 0xb7, 0x28, 0x21, 0x1d, 0xd2, 0x31, 0x97, 0xe7, 0x71, 0x29, 0x29, 0xe6,
-	0xb9, 0x44, 0xd2, 0x73, 0xc9, 0xb2, 0x24, 0xe9, 0x40, 0x9a, 0xc5, 0xff, 0x38, 0x17, 0x4d, 0x7a,
-	0x29, 0xd8, 0xf8, 0xb6, 0x08, 0x96, 0xe5, 0x1d, 0xc1, 0xb7, 0x06, 0x28, 0xaa, 0xd1, 0x82, 0xb7,
-	0x72, 0xe7, 0x6e, 0x7a, 0x8e, 0xad, 0x9d, 0x7f, 0x0b, 0xd5, 0x75, 0x3b, 0xd5, 0x77, 0xdf, 0x7f,
-	0x7f, 0x58, 0xd8, 0x82, 0x65, 0x34, 0xfb, 0xc9, 0xc0, 0x4f, 0x06, 0x28, 0x5d, 0x9c, 0x4f, 0xb8,
-	0x3b, 0xdb, 0x3f, 0x67, 0xc6, 0x2d, 0x77, 0x5e, 0xb9, 0x0e, 0x55, 0x93, 0xa1, 0x6e, 0x42, 0x27,
-	0x37, 0xd4, 0xc4, 0xe4, 0xc1, 0x8f, 0x06, 0x58, 0xbd, 0x30, 0xc7, 0xf0, 0xce, 0xec, 0x5e, 0xd3,
-	0x4f, 0xc1, 0xda, 0x9d, 0x53, 0xad, 0x83, 0xdd, 0x96, 0xc1, 0xaa, 0xf0, 0x46, 0x6e, 0x30, 0xae,
-	0x88, 0x56, 0x48, 0x0f, 0x59, 0xb3, 0x71, 0x32, 0xb2, 0x8d, 0xd3, 0x91, 0x6d, 0xfc, 0x1a, 0xd9,
-	0xc6, 0xfb, 0xb1, 0x5d, 0x38, 0x1d, 0xdb, 0x85, 0x1f, 0x63, 0xbb, 0xf0, 0xda, 0xcc, 0xd8, 0x37,
-	0xe7, 0xb4, 0x18, 0xc6, 0x84, 0xb7, 0x8b, 0xf2, 0xbf, 0xe9, 0xee, 0xdf, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0xd7, 0xd0, 0x35, 0x80, 0x68, 0x05, 0x00, 0x00,
+	// 880 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x41, 0x6f, 0xe3, 0x44,
+	0x14, 0x8e, 0x77, 0xb7, 0x59, 0x75, 0x92, 0x76, 0xc5, 0xb4, 0x08, 0xaf, 0xc3, 0x26, 0xc5, 0x01,
+	0xb6, 0x2d, 0xd4, 0x43, 0x52, 0x2a, 0xc4, 0x01, 0x04, 0x01, 0x4a, 0x2b, 0xaa, 0x12, 0x5c, 0xca,
+	0x81, 0x4b, 0x34, 0x71, 0x06, 0xc7, 0x6a, 0x3c, 0xe3, 0x7a, 0x9c, 0x88, 0xa8, 0xaa, 0x84, 0xe0,
+	0xc8, 0x05, 0x09, 0x71, 0xe0, 0x1f, 0x70, 0x41, 0x42, 0x08, 0x09, 0x7e, 0x42, 0x8f, 0x95, 0xb8,
+	0x20, 0x0e, 0x15, 0x6a, 0x91, 0xb8, 0xf3, 0x0b, 0x90, 0x67, 0xc6, 0x34, 0x49, 0x9d, 0xad, 0x2b,
+	0xf5, 0x12, 0xd9, 0xcf, 0xef, 0xfb, 0xde, 0xf7, 0x9e, 0xe7, 0x7b, 0x0e, 0xa8, 0xf8, 0x43, 0xa7,
+	0x8b, 0x3d, 0x8a, 0x7c, 0xec, 0x51, 0x87, 0x79, 0x14, 0x0d, 0x6a, 0xe8, 0xb0, 0x4f, 0xc2, 0xa1,
+	0x15, 0x84, 0x2c, 0x62, 0x70, 0x41, 0x25, 0x58, 0x49, 0x82, 0x35, 0xa8, 0x19, 0x4f, 0x61, 0xdf,
+	0xa3, 0x0c, 0x89, 0x5f, 0x99, 0x67, 0xac, 0x3a, 0x8c, 0xfb, 0x8c, 0xa3, 0x36, 0xe6, 0x44, 0x12,
+	0xa0, 0x41, 0xad, 0x4d, 0x22, 0x5c, 0x43, 0x01, 0x76, 0x3d, 0x8a, 0x23, 0x8f, 0x51, 0x95, 0xbb,
+	0xe8, 0x32, 0x97, 0x89, 0x4b, 0x14, 0x5f, 0xa9, 0xe8, 0xb3, 0x2e, 0x63, 0x6e, 0x8f, 0x20, 0x1c,
+	0x78, 0x08, 0x53, 0xca, 0x22, 0x01, 0xe1, 0xea, 0xe9, 0x52, 0x9a, 0xd0, 0x00, 0x87, 0xd8, 0x4f,
+	0x32, 0x56, 0xd2, 0x32, 0x38, 0x71, 0x7d, 0x42, 0xa3, 0x56, 0xd7, 0xe3, 0x11, 0x4b, 0x9a, 0x32,
+	0x17, 0x01, 0xfc, 0x28, 0x96, 0xd8, 0x14, 0x78, 0x9b, 0x1c, 0xf6, 0x09, 0x8f, 0xcc, 0x7d, 0xb0,
+	0x30, 0x16, 0xe5, 0x01, 0xa3, 0x9c, 0xc0, 0x37, 0x41, 0x5e, 0xd6, 0xd1, 0xb5, 0x25, 0x6d, 0xb9,
+	0x50, 0x2f, 0x59, 0x29, 0x23, 0xb1, 0x24, 0xa8, 0x31, 0x7b, 0x72, 0x56, 0xc9, 0xfd, 0xf0, 0xcf,
+	0x4f, 0xab, 0x9a, 0xad, 0x50, 0xa6, 0x01, 0x74, 0x41, 0xfb, 0x4e, 0x3f, 0x0c, 0x09, 0x8d, 0x9a,
+	0xa1, 0xe7, 0x90, 0xa4, 0xe4, 0x27, 0xe0, 0x61, 0xca, 0x33, 0x55, 0xf8, 0x75, 0x30, 0x13, 0xc4,
+	0x01, 0x51, 0x77, 0xb6, 0x51, 0x8d, 0xa9, 0xff, 0x3c, 0xab, 0x94, 0xe4, 0xa4, 0x79, 0xe7, 0xc0,
+	0xf2, 0x18, 0xf2, 0x71, 0xd4, 0xb5, 0x76, 0x88, 0x8b, 0x9d, 0xe1, 0xbb, 0xc4, 0xb1, 0x25, 0xc2,
+	0x7c, 0x08, 0x9e, 0x11, 0xbc, 0x7b, 0xb2, 0xfd, 0x6d, 0xfa, 0x19, 0x4b, 0x4a, 0xfe, 0x7b, 0x57,
+	0xe9, 0x19, 0x7b, 0xa6, 0x4a, 0x56, 0xc1, 0x9c, 0x23, 0xa5, 0xb4, 0x48, 0xc0, 0x9c, 0xae, 0x28,
+	0x7d, 0xcf, 0x2e, 0xaa, 0xe0, 0x7b, 0x71, 0x0c, 0x6e, 0x5d, 0x26, 0x49, 0x7d, 0x77, 0xb2, 0xeb,
+	0x4b, 0x98, 0x44, 0xa7, 0xf0, 0x2d, 0x50, 0x8c, 0x58, 0x84, 0x7b, 0x2d, 0xde, 0x0f, 0x82, 0xde,
+	0x50, 0xbf, 0x2b, 0x88, 0x1e, 0x29, 0xa2, 0xa7, 0xaf, 0x12, 0x6d, 0xd3, 0xc8, 0x2e, 0x08, 0xc8,
+	0x9e, 0x40, 0xc0, 0x4d, 0xf0, 0x20, 0x24, 0x9c, 0x84, 0x03, 0xd2, 0x6a, 0xe3, 0x1e, 0xa6, 0x0e,
+	0xd1, 0xef, 0x65, 0x21, 0x99, 0x57, 0xa8, 0x86, 0x04, 0xc1, 0x06, 0x98, 0x8b, 0xd8, 0x01, 0xa1,
+	0xbc, 0x45, 0x09, 0xe9, 0x90, 0x8e, 0x3e, 0x93, 0x85, 0xa5, 0x28, 0x31, 0xbb, 0x02, 0x12, 0xcf,
+	0x25, 0xd1, 0x12, 0xc6, 0x67, 0x57, 0xcf, 0xdf, 0x60, 0x2e, 0x0a, 0x69, 0xc7, 0x40, 0xf8, 0x21,
+	0x58, 0xec, 0x90, 0x41, 0x0b, 0xf7, 0x7a, 0xcc, 0x11, 0x2e, 0x68, 0x89, 0x9e, 0xf5, 0xfb, 0x59,
+	0x44, 0xc1, 0x0e, 0x19, 0xbc, 0xfd, 0x3f, 0xf2, 0xe3, 0x18, 0x68, 0x7e, 0xad, 0x01, 0x63, 0xf4,
+	0xa5, 0x6f, 0x49, 0x3b, 0xa8, 0x33, 0x01, 0x5f, 0x00, 0xf3, 0x89, 0x51, 0x68, 0xdf, 0x6f, 0x93,
+	0x50, 0xbd, 0xf7, 0x39, 0x15, 0xdd, 0x15, 0x41, 0xb8, 0x09, 0xc0, 0xa5, 0x97, 0xc5, 0x5b, 0x2f,
+	0xd4, 0x5f, 0xb4, 0xa4, 0x0a, 0x2b, 0x36, 0xbe, 0x25, 0x37, 0x87, 0x32, 0xbe, 0xd5, 0xc4, 0x6e,
+	0x72, 0xd2, 0xed, 0x11, 0xa4, 0xf9, 0x8b, 0x06, 0x4a, 0xa9, 0x6a, 0xd4, 0x29, 0xdc, 0x01, 0x0f,
+	0x26, 0x7c, 0xab, 0xac, 0x57, 0x4d, 0xb5, 0xde, 0x04, 0x4b, 0xd2, 0x8a, 0xba, 0x87, 0xef, 0xa7,
+	0xa8, 0x7e, 0x7c, 0xad, 0x6a, 0x29, 0x65, 0x4c, 0xf6, 0x57, 0x1a, 0xa8, 0x08, 0xd9, 0xfb, 0x9c,
+	0x84, 0xcd, 0x7e, 0xe8, 0x74, 0x31, 0x27, 0x13, 0x93, 0xd4, 0xc1, 0x7d, 0xdc, 0xe9, 0x84, 0x84,
+	0xcb, 0x6d, 0x31, 0x6b, 0x27, 0xb7, 0xb7, 0x36, 0xbc, 0xdf, 0x34, 0xb0, 0x34, 0x5d, 0x85, 0x9a,
+	0xe0, 0x07, 0xa0, 0xd8, 0xe7, 0x24, 0x9c, 0x18, 0xdf, 0x72, 0xea, 0xf8, 0xd2, 0x78, 0x0a, 0x31,
+	0xfa, 0xb6, 0x07, 0x58, 0xff, 0x31, 0x0f, 0x66, 0x84, 0x74, 0xf8, 0x85, 0x06, 0xf2, 0x72, 0x63,
+	0xc2, 0xc7, 0xa9, 0xa2, 0xae, 0xae, 0x67, 0x63, 0xf9, 0xfa, 0x44, 0x59, 0xd3, 0xac, 0x7e, 0xf9,
+	0xfb, 0xdf, 0xdf, 0xde, 0x79, 0x04, 0x4b, 0x68, 0xfa, 0x47, 0x03, 0x7e, 0xaf, 0x81, 0xe2, 0xe8,
+	0xda, 0x85, 0x6b, 0xd3, 0xf9, 0x53, 0x56, 0xb7, 0x61, 0x65, 0x4d, 0x57, 0xa2, 0x56, 0x85, 0xa8,
+	0xe7, 0xa1, 0x99, 0x2a, 0x6a, 0x6c, 0xa1, 0xc2, 0xef, 0x34, 0x50, 0x18, 0x59, 0xcf, 0xf0, 0xe5,
+	0xe9, 0xb5, 0xae, 0x6e, 0x78, 0x63, 0x2d, 0x63, 0xb6, 0x12, 0xb6, 0x22, 0x84, 0x55, 0xe1, 0x73,
+	0xe8, 0x49, 0x1f, 0x50, 0x2f, 0xd6, 0xf1, 0xb3, 0x06, 0xe6, 0xc7, 0xdd, 0x06, 0xd1, 0xb5, 0xc5,
+	0xc6, 0x1d, 0x62, 0xbc, 0x92, 0x1d, 0xa0, 0x04, 0xbe, 0x21, 0x04, 0xbe, 0x06, 0x37, 0x50, 0x86,
+	0x2f, 0x3c, 0x3a, 0x1a, 0xdf, 0x64, 0xc7, 0xf0, 0x57, 0x0d, 0x2c, 0xa4, 0x9c, 0x71, 0xf8, 0xea,
+	0x74, 0x21, 0xd3, 0x0d, 0x6e, 0x6c, 0xdc, 0x10, 0xa5, 0x7a, 0x58, 0x17, 0x3d, 0xac, 0xc1, 0x97,
+	0x52, 0x7b, 0x18, 0xf5, 0x2a, 0x3a, 0x52, 0x1b, 0xe3, 0xb8, 0x51, 0x3f, 0x39, 0x2f, 0x6b, 0xa7,
+	0xe7, 0x65, 0xed, 0xaf, 0xf3, 0xb2, 0xf6, 0xcd, 0x45, 0x39, 0x77, 0x7a, 0x51, 0xce, 0xfd, 0x71,
+	0x51, 0xce, 0x7d, 0xaa, 0x27, 0x2c, 0x9f, 0x5f, 0xf2, 0x44, 0xc3, 0x80, 0xf0, 0x76, 0x5e, 0xfc,
+	0xc3, 0x59, 0xff, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x56, 0x99, 0xd3, 0x2d, 0xd9, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -348,6 +582,10 @@ type QueryClient interface {
 	CurrentPrice(ctx context.Context, in *QueryCurrentPriceRequest, opts ...grpc.CallOption) (*QueryCurrentPriceResponse, error)
 	// SegmentInfo Queries a list of SegmentInfo items.
 	SegmentInfo(ctx context.Context, in *QuerySegmentInfoRequest, opts ...grpc.CallOption) (*QuerySegmentInfoResponse, error)
+	// SegmentHistory queries purchase history for a specific segment
+	SegmentHistory(ctx context.Context, in *QuerySegmentHistoryRequest, opts ...grpc.CallOption) (*QuerySegmentHistoryResponse, error)
+	// UserPurchaseHistory queries purchase history for a specific user
+	UserPurchaseHistory(ctx context.Context, in *QueryUserPurchaseHistoryRequest, opts ...grpc.CallOption) (*QueryUserPurchaseHistoryResponse, error)
 }
 
 type queryClient struct {
@@ -385,6 +623,24 @@ func (c *queryClient) SegmentInfo(ctx context.Context, in *QuerySegmentInfoReque
 	return out, nil
 }
 
+func (c *queryClient) SegmentHistory(ctx context.Context, in *QuerySegmentHistoryRequest, opts ...grpc.CallOption) (*QuerySegmentHistoryResponse, error) {
+	out := new(QuerySegmentHistoryResponse)
+	err := c.cc.Invoke(ctx, "/mychain.maincoin.v1.Query/SegmentHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) UserPurchaseHistory(ctx context.Context, in *QueryUserPurchaseHistoryRequest, opts ...grpc.CallOption) (*QueryUserPurchaseHistoryResponse, error) {
+	out := new(QueryUserPurchaseHistoryResponse)
+	err := c.cc.Invoke(ctx, "/mychain.maincoin.v1.Query/UserPurchaseHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
@@ -393,6 +649,10 @@ type QueryServer interface {
 	CurrentPrice(context.Context, *QueryCurrentPriceRequest) (*QueryCurrentPriceResponse, error)
 	// SegmentInfo Queries a list of SegmentInfo items.
 	SegmentInfo(context.Context, *QuerySegmentInfoRequest) (*QuerySegmentInfoResponse, error)
+	// SegmentHistory queries purchase history for a specific segment
+	SegmentHistory(context.Context, *QuerySegmentHistoryRequest) (*QuerySegmentHistoryResponse, error)
+	// UserPurchaseHistory queries purchase history for a specific user
+	UserPurchaseHistory(context.Context, *QueryUserPurchaseHistoryRequest) (*QueryUserPurchaseHistoryResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -407,6 +667,12 @@ func (*UnimplementedQueryServer) CurrentPrice(ctx context.Context, req *QueryCur
 }
 func (*UnimplementedQueryServer) SegmentInfo(ctx context.Context, req *QuerySegmentInfoRequest) (*QuerySegmentInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SegmentInfo not implemented")
+}
+func (*UnimplementedQueryServer) SegmentHistory(ctx context.Context, req *QuerySegmentHistoryRequest) (*QuerySegmentHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SegmentHistory not implemented")
+}
+func (*UnimplementedQueryServer) UserPurchaseHistory(ctx context.Context, req *QueryUserPurchaseHistoryRequest) (*QueryUserPurchaseHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserPurchaseHistory not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -467,6 +733,42 @@ func _Query_SegmentInfo_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_SegmentHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySegmentHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SegmentHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.maincoin.v1.Query/SegmentHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SegmentHistory(ctx, req.(*QuerySegmentHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_UserPurchaseHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryUserPurchaseHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).UserPurchaseHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.maincoin.v1.Query/UserPurchaseHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).UserPurchaseHistory(ctx, req.(*QueryUserPurchaseHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "mychain.maincoin.v1.Query",
@@ -483,6 +785,14 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SegmentInfo",
 			Handler:    _Query_SegmentInfo_Handler,
+		},
+		{
+			MethodName: "SegmentHistory",
+			Handler:    _Query_SegmentHistory_Handler,
+		},
+		{
+			MethodName: "UserPurchaseHistory",
+			Handler:    _Query_UserPurchaseHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -645,6 +955,16 @@ func (m *QuerySegmentInfoResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	var l int
 	_ = l
 	{
+		size := m.DevAllocationTotal.Size()
+		i -= size
+		if _, err := m.DevAllocationTotal.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
+	{
 		size := m.ReserveRatio.Size()
 		i -= size
 		if _, err := m.ReserveRatio.MarshalTo(dAtA[i:]); err != nil {
@@ -698,6 +1018,182 @@ func (m *QuerySegmentInfoResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 		i = encodeVarintQuery(dAtA, i, uint64(m.CurrentEpoch))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentHistoryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentHistoryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentHistoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.SegmentNumber != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.SegmentNumber))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentHistoryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentHistoryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentHistoryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.SegmentHistory != nil {
+		{
+			size, err := m.SegmentHistory.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryUserPurchaseHistoryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryUserPurchaseHistoryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryUserPurchaseHistoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryUserPurchaseHistoryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryUserPurchaseHistoryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryUserPurchaseHistoryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.UserHistory != nil {
+		{
+			size, err := m.UserHistory.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -781,6 +1277,75 @@ func (m *QuerySegmentInfoResponse) Size() (n int) {
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.ReserveRatio.Size()
 	n += 1 + l + sovQuery(uint64(l))
+	l = m.DevAllocationTotal.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QuerySegmentHistoryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SegmentNumber != 0 {
+		n += 1 + sovQuery(uint64(m.SegmentNumber))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QuerySegmentHistoryResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SegmentHistory != nil {
+		l = m.SegmentHistory.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryUserPurchaseHistoryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryUserPurchaseHistoryResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.UserHistory != nil {
+		l = m.UserHistory.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
 	return n
 }
 
@@ -1322,6 +1887,507 @@ func (m *QuerySegmentInfoResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.ReserveRatio.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAllocationTotal", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DevAllocationTotal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentHistoryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentHistoryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentHistoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SegmentNumber", wireType)
+			}
+			m.SegmentNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SegmentNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentHistoryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentHistoryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentHistoryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SegmentHistory", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SegmentHistory == nil {
+				m.SegmentHistory = &SegmentHistory{}
+			}
+			if err := m.SegmentHistory.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryUserPurchaseHistoryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryUserPurchaseHistoryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryUserPurchaseHistoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryUserPurchaseHistoryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryUserPurchaseHistoryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryUserPurchaseHistoryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UserHistory", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.UserHistory == nil {
+				m.UserHistory = &UserPurchaseHistory{}
+			}
+			if err := m.UserHistory.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
