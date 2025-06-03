@@ -853,13 +853,13 @@ Alternative commands to open terminal:
           <h2 className="text-xl font-bold mb-4 text-purple-400">⚠️ Important: Understanding Segments</h2>
           <div className="text-sm text-gray-300 space-y-2">
             <p><strong>Segments:</strong> Price levels in the bonding curve. A segment only advances when the 10% reserve ratio is achieved.</p>
-            <p><strong>Transaction Processing:</strong> The system processes up to 25 purchase units per transaction as you buy across segments.</p>
-            <p className="text-yellow-400 font-semibold">Your $1 purchase was processed across 25 units but only advanced from Segment 1 to Segment 9 because:</p>
+            <p><strong>Transaction Processing:</strong> The system processes purchases across segments when the purchase amount exceeds what's available in the current segment. Maximum 25 segments per transaction.</p>
+            <p className="text-yellow-400 font-semibold">Your purchase advanced from Segment 1 to Segment 9 (8 segments total) because:</p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li>The initial 100,000 MainCoin supply required $1 in reserves to balance</li>
               <li>Your purchase added just enough reserves to complete Segment 1</li>
               <li>The remaining purchase amount continued through Segments 2-9</li>
-              <li>Each unit bought small amounts of MainCoin due to the bonding curve calculations</li>
+              <li>Each segment completion triggers a price increase and recalculation of tokens needed</li>
             </ul>
             <p className="mt-3 text-blue-400">To advance through more segments, you need purchases that add significant reserves relative to the total MainCoin value.</p>
           </div>
