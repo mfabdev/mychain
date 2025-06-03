@@ -2,6 +2,13 @@
 
 This guide walks you through deploying the MyChain blockchain on an AWS EC2 Large instance.
 
+## Recent Updates
+
+### MainCoin Dev Address Fix (June 2, 2025)
+- **Commit**: `b8cc026d` - Fix MainCoin dev address initialization and genesis configuration
+- **Impact**: Fixes critical issue where dev allocations weren't working due to empty dev_address parameter
+- **Required Action**: Update existing deployments to include this fix
+
 ## Prerequisites
 
 - AWS Account with EC2 access
@@ -277,7 +284,42 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-## Step 10: Monitoring and Logs
+## Step 10: Apply Latest Updates
+
+### MainCoin Dev Address Fix
+If updating an existing deployment, apply the latest fixes:
+
+```bash
+# Navigate to project directory
+cd ~/mychain
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild the blockchain
+make install
+
+# (Optional) If you want to start fresh with the new genesis:
+./scripts/fresh_start.sh
+
+# Restart services
+sudo systemctl restart mychaind mychain-dashboard
+
+# Verify the fix
+mychaind query maincoin params --output json | grep dev_address
+# Should show: "dev_address": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4"
+```
+
+### Verify Dev Allocations Work
+```bash
+# Make a test purchase to verify dev allocations
+mychaind tx maincoin buy-maincoin 1000utestusd --from admin --keyring-backend test --chain-id mychain -y
+
+# Check if dev fee was allocated
+mychaind query bank balances cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4
+```
+
+## Step 11: Monitoring and Logs
 
 ### View Logs
 ```bash
@@ -303,7 +345,7 @@ mychaind status
 mychaind query bank balances cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4
 ```
 
-## Step 11: Backup and Security
+## Step 12: Backup and Security
 
 ### Backup Keys
 ```bash
@@ -376,10 +418,34 @@ sudo systemctl restart mychain-dashboard
 ### Update Blockchain
 ```bash
 cd ~/mychain
-git pull
-# Rebuild if needed
+git pull origin main
+
+# Always rebuild after pulling updates
 make install
-sudo systemctl restart mychaind
+
+# Restart services
+sudo systemctl restart mychaind mychain-dashboard
+
+# Verify services are running
+sudo systemctl status mychaind
+sudo systemctl status mychain-dashboard
+```
+
+### Rollback Instructions (if needed)
+If an update causes issues:
+
+```bash
+# View recent commits
+git log --oneline -5
+
+# Rollback to previous commit
+git reset --hard <previous-commit-hash>
+
+# Rebuild
+make install
+
+# Restart services
+sudo systemctl restart mychaind mychain-dashboard
 ```
 
 ### Monitor Disk Usage

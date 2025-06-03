@@ -41,7 +41,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address 
         let txData;
         try {
           const response = await fetch(
-            `http://localhost:1328/cosmos/tx/v1beta1/txs?query=message.sender='${address}'`
+            `http://localhost:1317/cosmos/tx/v1beta1/txs?query=message.sender='${address}'`
           );
           if (response.ok) {
             txData = await response.json();

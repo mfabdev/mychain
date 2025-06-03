@@ -59,6 +59,9 @@ sed -i 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' ~/.mychain/c
 # Enable CORS in config.toml
 sed -i 's/cors_allowed_origins = \[\]/cors_allowed_origins = ["*"]/g' ~/.mychain/config/config.toml
 
+# Set minimum gas prices
+sed -i 's/minimum-gas-prices = ""/minimum-gas-prices = "0alc"/g' ~/.mychain/config/app.toml
+
 # Validate genesis
 echo "✅ Validating genesis configuration..."
 mychaind genesis validate

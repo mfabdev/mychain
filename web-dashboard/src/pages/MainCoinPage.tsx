@@ -29,7 +29,7 @@ export const MainCoinPage: React.FC = () => {
   const [txStatus, setTxStatus] = useState<string>('');
   const [txHash, setTxHash] = useState<string>('');
   const [useDirectExecution, setUseDirectExecution] = useState(true);
-  const { address, isConnected } = useKeplr();
+  const { address, isConnected, client } = useKeplr();
 
   useEffect(() => {
     fetchEpochInfo();
@@ -39,7 +39,7 @@ export const MainCoinPage: React.FC = () => {
 
   const fetchEpochInfo = async () => {
     try {
-      // Try to fetch current epoch info from API
+      // Try to fetch current segment info from API
       const epochResponse = await fetchAPI('/mychain/maincoin/v1/segment_info');
       
       if (epochResponse && epochResponse.currentEpoch !== undefined) {
@@ -58,7 +58,7 @@ export const MainCoinPage: React.FC = () => {
         });
       }
     } catch (error) {
-      // Correct values for Epoch 1 with initial dev allocation
+      // Correct values for Segment 1 with initial dev allocation
       setEpochInfo({
         currentEpoch: 1,
         currentPrice: '0.0001001',
@@ -87,14 +87,13 @@ export const MainCoinPage: React.FC = () => {
     
     try {
       if (useDirectExecution) {
-        // Direct execution through enhanced terminal server
+        // Direct execution through terminal server
         const response = await fetch('http://localhost:3003/execute-tx', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'buy',
-            amount: buyAmount,
-            from: 'test_account'
+            amount: buyAmount
           })
         });
         
@@ -113,7 +112,7 @@ export const MainCoinPage: React.FC = () => {
       } else {
         // Generate CLI command
         const amountInMicro = Math.floor(parseFloat(buyAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}testusd --from admin --keyring-backend test --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
+        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utestusd --from admin --keyring-backend test --chain-id mychain --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
         setGeneratedCommand(cliCommand);
         setCommandType('buy');
       }
@@ -138,14 +137,13 @@ export const MainCoinPage: React.FC = () => {
     
     try {
       if (useDirectExecution) {
-        // Direct execution through enhanced terminal server
+        // Direct execution through terminal server
         const response = await fetch('http://localhost:3003/execute-tx', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'sell',
-            amount: sellAmount,
-            from: 'test_account'
+            amount: sellAmount
           })
         });
         
@@ -164,7 +162,7 @@ export const MainCoinPage: React.FC = () => {
       } else {
         // Generate CLI command
         const amountInMicro = Math.floor(parseFloat(sellAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from admin --keyring-backend test --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
+        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from admin --keyring-backend test --chain-id mychain --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
         setGeneratedCommand(cliCommand);
         setCommandType('sell');
       }
@@ -251,17 +249,17 @@ Alternative commands to open terminal:
           <span className="text-sm text-gray-400">Bonding Curve Token</span>
           {epochInfo && (
             <div className="text-lg font-bold text-blue-400">
-              Epoch #{epochInfo.currentEpoch}
+              Segment #{epochInfo.currentEpoch}
             </div>
           )}
         </div>
       </div>
       
       <div className="grid gap-6">
-        {/* Epoch Information */}
+        {/* Segment Information */}
         {epochInfo && (
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Epoch {epochInfo.currentEpoch} Status</h2>
+            <h2 className="text-xl font-bold mb-4">Segment {epochInfo.currentEpoch} Status</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">Current Price</p>
@@ -557,12 +555,12 @@ Alternative commands to open terminal:
           </div>
         )}
 
-        {/* Epoch Process Explanation */}
+        {/* Segment Process Explanation */}
         <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Epoch System & Bonding Curve</h2>
+          <h2 className="text-xl font-bold mb-4">Segment System & Bonding Curve</h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
-              <h3 className="font-semibold mb-2 text-blue-400">🏁 Epoch 0 (Genesis)</h3>
+              <h3 className="font-semibold mb-2 text-blue-400">🏁 Segment 0 (Genesis)</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• $1.00 TestUSD moved to reserves</li>
                 <li>• 100,000 MainCoin generated</li>
@@ -573,7 +571,7 @@ Alternative commands to open terminal:
             </div>
             
             <div className="bg-green-900/20 border border-green-500 rounded-lg p-4">
-              <h3 className="font-semibold mb-2 text-green-400">🚀 Epoch 1 (Current)</h3>
+              <h3 className="font-semibold mb-2 text-green-400">🚀 Segment 1 (Current)</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'}</li>
                 <li>• Supply: {epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'} MC</li>
@@ -675,7 +673,7 @@ Alternative commands to open terminal:
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-600">
-                  <th className="text-left p-2 text-gray-300">Epoch</th>
+                  <th className="text-left p-2 text-gray-300">Segment</th>
                   <th className="text-right p-2 text-gray-300">Price</th>
                   <th className="text-right p-2 text-gray-300">Supply Before Dev</th>
                   <th className="text-right p-2 text-gray-300">Dev from Prev</th>
@@ -825,51 +823,14 @@ Alternative commands to open terminal:
         <div className="bg-gray-800 rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4">MainCoin Transaction History</h2>
           
-          {/* Known Transactions */}
+          {/* Recent Transactions */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-3">Recent MainCoin Transactions</h3>
-            <div className="space-y-3">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-green-400">Buy MainCoin</p>
-                    <p className="text-sm text-gray-400">Height: 577 • 10 utestusd → 99.909 maincoin</p>
-                    <p className="text-xs text-gray-500 mt-1">Triggered epoch advancement from 1 to 2</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Success</p>
-                    <code className="text-xs">21F5C1E7...</code>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-green-400">Buy MainCoin</p>
-                    <p className="text-sm text-gray-400">Height: 130 • 1,000,000 utestusd → 279,720 maincoin</p>
-                    <p className="text-xs text-gray-500 mt-1">Processed 25 segments • 999,972 utestusd refunded</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Success</p>
-                    <code className="text-xs">F131CF71...</code>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-green-400">Buy MainCoin</p>
-                    <p className="text-sm text-gray-400">Height: 18 • 1,000,000 utestusd → 11,358,639 maincoin</p>
-                    <p className="text-xs text-gray-500 mt-1">Processed 25 segments • 998,863 utestusd refunded</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Success</p>
-                    <code className="text-xs">35124680...</code>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-gray-700 rounded-lg p-4">
+              <p className="text-gray-400 text-center">No transactions yet</p>
+              <p className="text-sm text-gray-500 text-center mt-2">
+                MainCoin transactions will appear here once they are submitted.
+              </p>
             </div>
           </div>
 
@@ -887,20 +848,20 @@ Alternative commands to open terminal:
           </div>
         </div>
 
-        {/* Important Note about Segments vs Epochs */}
+        {/* Important Note about Segments */}
         <div className="bg-purple-900/20 border border-purple-500 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-purple-400">⚠️ Important: Segments vs Epochs</h2>
+          <h2 className="text-xl font-bold mb-4 text-purple-400">⚠️ Important: Understanding Segments</h2>
           <div className="text-sm text-gray-300 space-y-2">
-            <p><strong>Segments:</strong> Individual purchase units within a transaction. The system processes up to 25 segments per transaction.</p>
-            <p><strong>Epochs:</strong> Price levels in the bonding curve. An epoch only advances when the 10% reserve ratio is achieved.</p>
-            <p className="text-yellow-400 font-semibold">Your $1 purchase processed 25 segments but only advanced from Epoch 1 to Epoch 2 because:</p>
+            <p><strong>Segments:</strong> Price levels in the bonding curve. A segment only advances when the 10% reserve ratio is achieved.</p>
+            <p><strong>Transaction Processing:</strong> The system processes up to 25 purchase units per transaction as you buy across segments.</p>
+            <p className="text-yellow-400 font-semibold">Your $1 purchase was processed across 25 units but only advanced from Segment 1 to Segment 9 because:</p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li>The initial 100,000 MainCoin supply required $1 in reserves to balance</li>
-              <li>Your purchase added just enough reserves to complete Epoch 1</li>
-              <li>The remaining purchase amount started Epoch 2 but didn't complete it</li>
-              <li>Each segment bought small amounts (~44-399 MainCoin) due to the bonding curve calculations</li>
+              <li>Your purchase added just enough reserves to complete Segment 1</li>
+              <li>The remaining purchase amount continued through Segments 2-9</li>
+              <li>Each unit bought small amounts of MainCoin due to the bonding curve calculations</li>
             </ul>
-            <p className="mt-3 text-blue-400">To advance through more epochs, you need purchases that add significant reserves relative to the total MainCoin value.</p>
+            <p className="mt-3 text-blue-400">To advance through more segments, you need purchases that add significant reserves relative to the total MainCoin value.</p>
           </div>
         </div>
       </div>

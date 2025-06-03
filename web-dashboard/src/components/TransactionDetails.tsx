@@ -23,7 +23,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
   useEffect(() => {
     const fetchTxDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:1328/cosmos/tx/v1beta1/txs/${txHash}`);
+        const response = await fetch(`http://localhost:1317/cosmos/tx/v1beta1/txs/${txHash}`);
         if (!response.ok) throw new Error('Failed to fetch transaction');
         
         const data = await response.json();
