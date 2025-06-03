@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -35,24 +36,46 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 	// Required reserve is 10% of total value
 	requiredReserveDec := totalValueDec.Quo(math.LegacyNewDec(10))
 	
+	// Early debug logging
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx.Logger().Debug("CalculateTokensNeeded START",
+		"totalSupply_smallest", totalSupply.String(),
+		"totalSupplyInMC", totalSupplyInMC.String(),
+		"currentPrice", currentPrice.String(),
+		"currentPriceInUtestusd", currentPriceInUtestusd.String(),
+		"totalValueDec_utestusd", totalValueDec.String(),
+		"requiredReserveDec", requiredReserveDec.String(),
+		"reserveBalance", reserveBalance.String(),
+	)
+	
 	// Calculate reserve needed with decimal precision
 	reserveBalanceDec := math.LegacyNewDecFromInt(reserveBalance)
 	reserveNeededDec := requiredReserveDec.Sub(reserveBalanceDec)
 	
-	// Debug logging
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx.Logger().Info("CalculateTokensNeeded",
-		"totalSupply", totalSupply.String(),
-		"currentPrice", currentPrice.String(),
-		"reserveBalance", reserveBalance.String(),
-		"totalValue", totalValueDec.String(),
-		"requiredReserve", requiredReserveDec.String(),
-		"reserveNeeded", reserveNeededDec.String(),
+	// More detailed debug logging
+	sdkCtx.Logger().Info("CalculateTokensNeeded DETAILED",
+		"totalSupply_smallest_unit", totalSupply.String(),
+		"totalSupplyInMC", totalSupplyInMC.String(),
+		"currentPrice_TESTUSD_per_MC", currentPrice.String(),
+		"currentPriceInUtestusd_per_MC", currentPriceInUtestusd.String(),
+		"totalValueDec_utestusd", totalValueDec.String(),
+		"requiredReserveDec_utestusd", requiredReserveDec.String(),
+		"reserveBalance_utestusd", reserveBalance.String(),
+		"reserveBalanceDec_utestusd", reserveBalanceDec.String(),
+		"reserveNeededDec_utestusd", reserveNeededDec.String(),
+		"calculation", fmt.Sprintf("(%s MC * %s utestusd/MC) / 10 - %s utestusd = %s utestusd needed",
+			totalSupplyInMC.String(), currentPriceInUtestusd.String(), reserveBalance.String(), reserveNeededDec.String()),
 	)
 	
 	// Check if we need more reserves (with a small epsilon for rounding)
 	// Using 2 utestusd as epsilon (0.000002 TESTUSD) to handle precision issues
 	epsilon := math.LegacyNewDecWithPrec(2, 0) // 2 utestusd
+	sdkCtx.Logger().Info("CalculateTokensNeeded epsilon check",
+		"epsilon", epsilon.String(),
+		"reserveNeededDec", reserveNeededDec.String(),
+		"reserveNeededDec.GT(epsilon)", reserveNeededDec.GT(epsilon),
+	)
+	
 	if reserveNeededDec.GT(epsilon) {
 		// Calculate tokens needed at current price
 		// reserveNeededDec is in utestusd, currentPriceInUtestusd is utestusd per MC
@@ -62,9 +85,14 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 		// Round up to ensure we meet the requirement
 		tokensNeeded := tokensNeededDec.Ceil().TruncateInt()
 		
-		sdkCtx.Logger().Info("CalculateTokensNeeded result",
-			"tokensNeededDec", tokensNeededDec.String(),
-			"tokensNeeded", tokensNeeded.String(),
+		sdkCtx.Logger().Info("CalculateTokensNeeded result DETAILED",
+			"reserveNeededDec_utestusd", reserveNeededDec.String(),
+			"currentPriceInUtestusd_per_MC", currentPriceInUtestusd.String(),
+			"tokensNeededInMC", tokensNeededInMC.String(),
+			"tokensNeededDec_smallest_unit", tokensNeededDec.String(),
+			"tokensNeeded_smallest_unit", tokensNeeded.String(),
+			"calculation", fmt.Sprintf("%s utestusd / %s utestusd/MC = %s MC = %s smallest_unit",
+				reserveNeededDec.String(), currentPriceInUtestusd.String(), tokensNeededInMC.String(), tokensNeeded.String()),
 		)
 		
 		return tokensNeeded, nil

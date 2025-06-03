@@ -19,28 +19,67 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
   const [details, setDetails] = useState<TxDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryingCount, setRetryingCount] = useState(0);
 
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 2000; // 2 seconds
+    let timeoutId: NodeJS.Timeout;
+
     const fetchTxDetails = async () => {
       try {
         const response = await fetch(`http://localhost:1317/cosmos/tx/v1beta1/txs/${txHash}`);
+        
+        if (response.status === 404 && retryCount < maxRetries) {
+          // Transaction not indexed yet, retry
+          retryCount++;
+          setRetryingCount(retryCount);
+          console.log(`Transaction not found yet, retrying... (${retryCount}/${maxRetries})`);
+          timeoutId = setTimeout(fetchTxDetails, retryDelay);
+          return;
+        }
+        
         if (!response.ok) throw new Error('Failed to fetch transaction');
         
         const data = await response.json();
         setDetails(data.tx_response);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load transaction');
-      } finally {
         setLoading(false);
+      } catch (err) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setRetryingCount(retryCount);
+          console.log(`Error fetching transaction, retrying... (${retryCount}/${maxRetries})`);
+          timeoutId = setTimeout(fetchTxDetails, retryDelay);
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to load transaction');
+          setLoading(false);
+        }
       }
     };
 
     if (txHash) {
       fetchTxDetails();
     }
+
+    // Cleanup function to clear timeout on unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [txHash]);
 
-  if (loading) return <div className="animate-pulse">Loading transaction details...</div>;
+  if (loading) return (
+    <div className="animate-pulse">
+      Loading transaction details...
+      {retryingCount > 0 && (
+        <span className="text-sm text-gray-400 ml-2">
+          (Waiting for indexing... retry {retryingCount}/5)
+        </span>
+      )}
+    </div>
+  );
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!details) return null;
 

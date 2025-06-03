@@ -11,9 +11,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const MaxSegmentsPerPurchase = 25
+const MaxSegmentsPerPurchase = 25 // Limit to prevent gas issues
 
 func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
+	// Use the analytical approach for better accuracy and efficiency
+	return k.BuyMaincoinAnalytical(ctx, msg)
+}
+
+// BuyMaincoinIterative is the original iterative implementation (kept for reference)
+func (k msgServer) BuyMaincoinIterative(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
 	// Ensure all collections are initialized
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := k.EnsureInitialized(sdkCtx); err != nil {
@@ -57,15 +63,6 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 	segmentCount := 0
 	segments := []*types.SegmentPurchase{}
 	
-	// Debug: Log initial purchase details
-	sdkCtx.Logger().Info("Starting MainCoin purchase",
-		"buyer", msg.Buyer,
-		"amount", msg.Amount.String(),
-		"amountInt", msg.Amount.Amount.String(),
-		"remainingFunds", remainingFunds.String(),
-		"purchaseDenom", params.PurchaseDenom,
-		"initialPrice", params.InitialPrice.String(),
-	)
 	
 	// Track tokens sold in current segment for dev allocation
 	currentSegmentTokensSold := math.ZeroInt()
@@ -83,12 +80,26 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 			return nil, err
 		}
 		
+		// Get current total supply and reserve balance for detailed logging
+		totalSupply, err := k.TotalSupply.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		currentReserve, err := k.ReserveBalance.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		
 		// Debug logging
-		sdkCtx.Logger().Info("BuyMaincoin iteration",
+		sdkCtx.Logger().Info("BuyMaincoin iteration START",
 			"iteration", segmentCount+1,
-			"remainingFunds", remainingFunds.String(),
-			"currentPrice", currentPrice.String(),
+			"remainingFunds_utestusd", remainingFunds.String(),
+			"currentPrice_TESTUSD_per_MC", currentPrice.String(),
 			"currentEpoch", currentEpoch,
+			"totalSupply_smallest_unit", totalSupply.String(),
+			"currentReserve_utestusd", currentReserve.String(),
+			"totalMaincoinPurchased_so_far", totalMaincoinPurchased.String(),
+			"totalSpent_so_far", totalSpent.String(),
 		)
 		
 		// Track if this is a new segment
@@ -160,11 +171,15 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		tokensToBuy := mainCoinsToBuy.Mul(math.LegacyNewDec(1000000)).TruncateInt()
 		
 		// Debug: Log calculation details
-		sdkCtx.Logger().Info("Token calculation",
+		sdkCtx.Logger().Info("Token calculation DETAILED",
 			"tokensNeeded_smallest_unit", tokensNeeded.String(),
-			"tokensToBuy_smallest_unit", tokensToBuy.String(),
+			"tokensNeeded_MC", math.LegacyNewDecFromInt(tokensNeeded).Quo(math.LegacyNewDec(1000000)).String(),
+			"remainingFunds_utestusd", remainingFunds.String(),
+			"remainingFunds_TESTUSD", remainingFunds.Quo(math.LegacyNewDec(1000000)).String(),
+			"currentPrice_TESTUSD_per_MC", currentPrice.String(),
+			"currentPriceInUtestusd_per_MC", currentPriceInUtestusd.String(),
 			"mainCoinsToBuy_MC", mainCoinsToBuy.String(),
-			"currentPriceInUtestusd", currentPriceInUtestusd.String(),
+			"tokensToBuy_smallest_unit", tokensToBuy.String(),
 			"calculation", fmt.Sprintf("%s utestusd / %s utestusd/MC = %s MC = %s smallest_unit", 
 				remainingFunds.String(), currentPriceInUtestusd.String(), mainCoinsToBuy.String(), tokensToBuy.String()),
 		)
@@ -173,14 +188,9 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		if tokensNeeded.IsPositive() && tokensToBuy.GT(tokensNeeded) {
 			// Buy only what's needed for this segment
 			tokensToBuy = tokensNeeded
-			sdkCtx.Logger().Info("Limited to tokensNeeded",
-				"originalTokensToBuy", remainingFunds.Quo(currentPrice).TruncateInt().String(),
-				"limitedTokensToBuy", tokensToBuy.String(),
-			)
 		}
 		
 		if tokensToBuy.IsZero() {
-			sdkCtx.Logger().Info("Breaking: tokensToBuy is zero")
 			break
 		}
 		
@@ -192,12 +202,15 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		costInt := cost.TruncateInt()
 		
 		// Debug: Log cost calculation
-		sdkCtx.Logger().Info("Cost calculation",
+		sdkCtx.Logger().Info("Cost calculation DETAILED",
 			"tokensToBuy_smallest_unit", tokensToBuy.String(),
 			"tokensToBuyInMC", tokensToBuyInMC.String(),
-			"currentPriceInUtestusd", currentPriceInUtestusd.String(),
-			"cost", cost.String(),
-			"costInt", costInt.String(),
+			"currentPriceInUtestusd_per_MC", currentPriceInUtestusd.String(),
+			"cost_utestusd_dec", cost.String(),
+			"costInt_utestusd", costInt.String(),
+			"cost_TESTUSD", cost.Quo(math.LegacyNewDec(1000000)).String(),
+			"calculation", fmt.Sprintf("%s MC * %s utestusd/MC = %s utestusd",
+				tokensToBuyInMC.String(), currentPriceInUtestusd.String(), cost.String()),
 		)
 		
 		// Update totals
@@ -223,7 +236,7 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		})
 		
 		// Update reserve balance
-		currentReserve, err := k.ReserveBalance.Get(ctx)
+		currentReserve, err = k.ReserveBalance.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +247,7 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		}
 		
 		// Update total supply (without dev allocation yet)
-		totalSupply, err := k.TotalSupply.Get(ctx)
+		totalSupply, err = k.TotalSupply.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -252,8 +265,11 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		
 		// Debug: Log segment completion check
 		sdkCtx.Logger().Info("Segment completion check",
-			"newTokensNeeded", newTokensNeeded.String(),
+			"newTokensNeeded_smallest_unit", newTokensNeeded.String(),
+			"newTokensNeeded_MC", math.LegacyNewDecFromInt(newTokensNeeded).Quo(math.LegacyNewDec(1000000)).String(),
 			"isComplete", newTokensNeeded.IsZero() || newTokensNeeded.IsNegative(),
+			"newTotalSupply", newTotalSupply.String(),
+			"newReserveBalance", newReserve.String(),
 		)
 		
 		// If segment is complete (reached 1:10 balance)
@@ -319,9 +335,10 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 			sdkCtx.Logger().Info("Segment completed",
 				"oldEpoch", currentEpoch,
 				"newEpoch", currentEpoch+1,
-				"oldPrice", currentPrice.String(),
-				"newPrice", newPrice.String(),
+				"oldPrice_TESTUSD_per_MC", currentPrice.String(),
+				"newPrice_TESTUSD_per_MC", newPrice.String(),
 				"priceIncrement", params.PriceIncrement.String(),
+				"segmentTokensSold_smallest_unit", currentSegmentTokensSold.String(),
 			)
 			
 			// Mark that we're in a new segment
@@ -330,7 +347,33 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 		}
 		
 		segmentCount++
+		
+		// Debug: Log iteration end state
+		sdkCtx.Logger().Info("BuyMaincoin iteration END",
+			"iteration", segmentCount,
+			"newRemainingFunds_utestusd", remainingFunds.String(),
+			"newRemainingFunds_TESTUSD", remainingFunds.Quo(math.LegacyNewDec(1000000)).String(),
+			"totalMaincoinPurchased", totalMaincoinPurchased.String(),
+			"totalSpent_utestusd", totalSpent.String(),
+			"totalSpent_TESTUSD", math.LegacyNewDecFromInt(totalSpent).Quo(math.LegacyNewDec(1000000)).String(),
+			"shouldContinue", remainingFunds.IsPositive() && segmentCount < MaxSegmentsPerPurchase,
+		)
 	}
+	
+	// Debug: Log purchase summary
+	sdkCtx.Logger().Info("MainCoin purchase SUMMARY",
+		"totalIterations", segmentCount,
+		"originalAmount_utestusd", msg.Amount.Amount.String(),
+		"originalAmount_TESTUSD", math.LegacyNewDecFromInt(msg.Amount.Amount).Quo(math.LegacyNewDec(1000000)).String(),
+		"totalSpent_utestusd", totalSpent.String(),
+		"totalSpent_TESTUSD", math.LegacyNewDecFromInt(totalSpent).Quo(math.LegacyNewDec(1000000)).String(),
+		"totalMaincoinPurchased_smallest_unit", totalMaincoinPurchased.String(),
+		"totalMaincoinPurchased_MC", math.LegacyNewDecFromInt(totalMaincoinPurchased).Quo(math.LegacyNewDec(1000000)).String(),
+		"remainingFunds_utestusd", remainingFunds.String(),
+		"remainingFunds_TESTUSD", remainingFunds.Quo(math.LegacyNewDec(1000000)).String(),
+		"stoppedReason", fmt.Sprintf("remainingFunds.IsPositive=%v, segmentCount=%d, MaxSegments=%d", 
+			remainingFunds.IsPositive(), segmentCount, MaxSegmentsPerPurchase),
+	)
 	
 	// Return any remaining funds to buyer
 	remainingAmount := math.ZeroInt()
@@ -347,8 +390,10 @@ func (k msgServer) BuyMaincoin(ctx context.Context, msg *types.MsgBuyMaincoin) (
 			); err != nil {
 				return nil, err
 			}
-			message = fmt.Sprintf("Purchase completed across %d segments (maximum limit). %s %s returned.", 
-				MaxSegmentsPerPurchase, remainingAmount.String(), params.PurchaseDenom)
+			message = fmt.Sprintf("Purchase completed successfully! Processed %d segments (limit reached). Returned %s %s to your account.", 
+				segmentCount, 
+				math.LegacyNewDecFromInt(remainingAmount).Quo(math.LegacyNewDec(1000000)).String(), 
+				"TESTUSD")
 		}
 	}
 	

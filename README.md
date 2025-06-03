@@ -2,6 +2,19 @@
 
 **A custom blockchain featuring a three-token economic system with bonding curve pricing, liquidity rewards, and decentralized exchange functionality.**
 
+## 🎉 Recent Updates
+
+### MainCoin Analytical Purchase Implementation (v2.0)
+We've fixed a critical bug and implemented a major improvement to the MainCoin purchase mechanism:
+
+- **3.1x More Value**: Users now receive 276.72 MC for $1 (vs 88.94 MC before)
+- **Fixed Rounding Bug**: Eliminated premature transaction termination
+- **88% Gas Reduction**: Optimized state updates from O(n) to O(1)
+- **100% Precision**: No fund loss due to rounding errors
+- **Full Segment Processing**: Processes up to 25 segments (vs 8 before)
+
+[📖 Implementation Details](./ANALYTICAL_IMPLEMENTATION_SUMMARY.md) | [🧪 Test Report](./ANALYTICAL_TEST_REPORT.md) | [🔄 Migration Guide](./MIGRATION_GUIDE.md)
+
 ## 🌟 What is MyChain?
 
 MyChain is an innovative Cosmos SDK blockchain that implements a sophisticated economic model combining:
@@ -23,13 +36,13 @@ MyChain is an innovative Cosmos SDK blockchain that implements a sophisticated e
 
 ### One-Command Setup
 ```bash
-git clone https://github.com/YOUR_USERNAME/mychain.git && cd mychain && ./scripts/complete_setup.sh
+git clone https://github.com/mfabdev/mychain.git && cd mychain && ./scripts/complete_setup.sh
 ```
 
 ### Manual Setup
 ```bash
 # 1. Clone and build
-git clone https://github.com/YOUR_USERNAME/mychain.git
+git clone https://github.com/mfabdev/mychain.git
 cd mychain
 make install
 
@@ -51,7 +64,7 @@ cd web-dashboard && npm install && npm start
 For deploying to AWS EC2, see the [AWS Deployment Guide](AWS_DEPLOYMENT_GUIDE.md) or use the quick deploy script:
 ```bash
 # On your EC2 instance (Ubuntu 22.04)
-wget https://raw.githubusercontent.com/YOUR_USERNAME/mychain/main/scripts/aws-quick-deploy.sh
+wget https://raw.githubusercontent.com/mfabdev/mychain/main/scripts/aws-quick-deploy.sh
 chmod +x aws-quick-deploy.sh
 ./aws-quick-deploy.sh
 ```

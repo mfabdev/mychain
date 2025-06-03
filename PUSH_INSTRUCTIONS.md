@@ -13,8 +13,8 @@ You have 1 unpushed commit:
 6. Run this command (replace YOUR_TOKEN with your actual token):
 
 ```bash
-cd /home/dk/go/src/myrollapps/mychain
-git push https://YOUR_TOKEN@github.com/mfabdev/mychain.git main
+cd ~/mychain
+git push https://<YOUR_TOKEN>@github.com/mfabdev/mychain.git main
 ```
 
 ## Method 2: Using SSH Key
@@ -33,7 +33,7 @@ cat ~/.ssh/id_ed25519.pub
 
 4. Change the remote URL:
 ```bash
-cd /home/dk/go/src/myrollapps/mychain
+cd ~/mychain
 git remote set-url origin git@github.com:mfabdev/mychain.git
 ```
 

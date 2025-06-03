@@ -2,10 +2,12 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"mychain/x/maincoin/types"
 
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -15,9 +17,15 @@ func (q queryServer) SegmentInfo(ctx context.Context, req *types.QuerySegmentInf
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
+	// Ensure collections are initialized
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := q.k.EnsureInitialized(sdkCtx); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to initialize: %v", err))
+	}
+
 	currentEpoch, err := q.k.CurrentEpoch.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get current epoch: %v", err))
 	}
 	
 	currentPrice, err := q.k.CurrentPrice.Get(ctx)
