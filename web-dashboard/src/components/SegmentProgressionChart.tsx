@@ -4,19 +4,24 @@ import { ArrowTrendingUpIcon, CurrencyDollarIcon } from '@heroicons/react/24/out
 interface SegmentData {
   segment: number;
   price: number;
-  costToComplete: number;
-  tokensToComplete: number;
-  cumulativeCost: number;
+  costToComplete: number | null;
+  tokensToComplete: number | null;
+  cumulativeCost: number | null;
+  isFuture: boolean;
 }
 
 interface SegmentProgressionChartProps {
   currentSegment: number;
   currentPrice: string;
+  tokensNeeded?: string;
+  reserveNeeded?: string;
 }
 
 export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = ({
   currentSegment,
   currentPrice,
+  tokensNeeded,
+  reserveNeeded,
 }) => {
   // Calculate segment progression data
   const calculateSegmentData = (): SegmentData[] => {
@@ -28,29 +33,44 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
     // Show current segment and next 5
     for (let i = 0; i < 6; i++) {
       const segment = currentSegment + i;
-      const price = basePrice * Math.pow(1.00001, segment);
+      // Each segment increases price by 0.1% (0.001)
+      const price = basePrice * Math.pow(1.001, segment);
       
-      // Rough approximation: each segment needs ~10x more funds than previous
-      // This is simplified - actual calculation depends on supply and reserve state
-      const costToComplete = Math.pow(10, i - 1) * 0.001; // Start at $0.0001 for current segment
-      const tokensToComplete = costToComplete / price;
+      let costToComplete: number;
+      let tokensToComplete: number;
       
-      cumulativeCost += costToComplete;
-      
-      data.push({
-        segment,
-        price,
-        costToComplete,
-        tokensToComplete,
-        cumulativeCost,
-      });
+      if (i === 0 && reserveNeeded && tokensNeeded) {
+        // Use actual blockchain data for current segment
+        costToComplete = parseFloat(reserveNeeded);
+        tokensToComplete = parseFloat(tokensNeeded);
+        cumulativeCost += costToComplete;
+        
+        data.push({
+          segment,
+          price,
+          costToComplete,
+          tokensToComplete,
+          cumulativeCost,
+          isFuture: false,
+        });
+      } else {
+        // Future segments - we can't predict accurately
+        data.push({
+          segment,
+          price,
+          costToComplete: null,
+          tokensToComplete: null,
+          cumulativeCost: null,
+          isFuture: true,
+        });
+      }
     }
     
     return data;
   };
 
   const segmentData = calculateSegmentData();
-  const maxCost = Math.max(...segmentData.map(d => d.costToComplete));
+  const maxCost = Math.max(...segmentData.filter(d => d.costToComplete !== null).map(d => d.costToComplete as number));
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
@@ -67,7 +87,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
       <div className="space-y-3">
         {segmentData.map((data, index) => {
           const isActive = index === 0;
-          const barWidth = (data.costToComplete / maxCost) * 100;
+          const barWidth = data.costToComplete !== null ? (data.costToComplete / maxCost) * 100 : 0;
           
           return (
             <div
@@ -94,7 +114,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
                     ${data.price.toFixed(7)}/MC
                   </div>
                   <div className="text-xs text-gray-500">
-                    +{((data.price / 0.0001 - 1) * 100).toFixed(3)}%
+                    +{(data.segment * 0.1).toFixed(1)}%
                   </div>
                 </div>
               </div>
@@ -102,7 +122,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
               <div className="mb-2">
                 <div className="flex justify-between text-xs text-gray-400 mb-1">
                   <span>Cost to complete</span>
-                  <span>${data.costToComplete.toFixed(6)}</span>
+                  <span>{data.costToComplete !== null ? `$${data.costToComplete.toFixed(6)}` : 'TBD'}</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
@@ -118,13 +138,13 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
                 <div>
                   <span className="text-gray-500">Tokens needed:</span>
                   <span className="ml-1 text-gray-300">
-                    {data.tokensToComplete.toLocaleString(undefined, { maximumFractionDigits: 0 })} MC
+                    {data.tokensToComplete !== null ? `${data.tokensToComplete.toLocaleString(undefined, { maximumFractionDigits: 0 })} MC` : 'TBD'}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-500">Cumulative:</span>
                   <span className="ml-1 text-gray-300">
-                    ${data.cumulativeCost.toFixed(3)}
+                    {data.cumulativeCost !== null ? `$${data.cumulativeCost.toFixed(3)}` : 'TBD'}
                   </span>
                 </div>
               </div>
@@ -136,7 +156,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
                     <span className="text-gray-400">
                       Dev allocation on completion: 
                       <span className="text-purple-400 ml-1">
-                        {(data.tokensToComplete * 0.0001).toFixed(2)} MC (0.01%)
+                        {data.tokensToComplete !== null ? `${(data.tokensToComplete * 0.0001).toFixed(4)} MC (0.01%)` : 'TBD'}
                       </span>
                     </span>
                   </div>
@@ -149,9 +169,9 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
 
       <div className="mt-4 p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
         <p className="text-xs text-orange-300">
-          <strong>Note:</strong> Segment costs grow exponentially due to the 1:10 reserve ratio requirement. 
-          Each segment typically requires ~10x more funds than the previous one. Actual costs depend on 
-          current supply and reserve balance.
+          <strong>Note:</strong> Future segment costs are marked as "TBD" because they depend on the exact 
+          state when each segment is reached. The amount of tokens needed varies based on total supply, 
+          reserves, and dev allocations at that time. Only the current segment shows actual values from the blockchain.
         </p>
       </div>
     </div>

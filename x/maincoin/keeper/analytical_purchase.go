@@ -27,7 +27,7 @@ func (k Keeper) CalculateAnalyticalPurchase(
 	currentReserve sdkmath.Int,
 ) (*AnalyticalPurchase, error) {
 	// Constants
-	reserveRatio := sdkmath.LegacyNewDecWithPrec(1, 1) // 0.1 (1:10 ratio)
+	reserveRatio := sdkmath.LegacyNewDecWithPrec(1, 1) // 0.1 - ratio of reserve to total value
 	microUnit := sdkmath.NewInt(1000000)
 	
 	// Convert funds to decimal for precise calculations
@@ -42,7 +42,7 @@ func (k Keeper) CalculateAnalyticalPurchase(
 	remainingFunds := fundsAvailable
 	
 	// Process up to MaxSegmentsPerPurchase
-	for segmentsProcessed < MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
+	for segmentsProcessed < 25 && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
 		// Calculate current state
 		totalSupplyDec := sdkmath.LegacyNewDecFromInt(currentSupply.Add(totalTokensBought))
 		currentReserveDec := sdkmath.LegacyNewDecFromInt(currentReserve.Add(totalSpent))

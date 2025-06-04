@@ -16,4 +16,4 @@ const (
 )
 
 // ParamsKey is the prefix to retrieve all Params
-var ParamsKey = collections.NewPrefix("p_mychain")
+var ParamsKey = collections.NewPrefix(0) // "p_mychain"

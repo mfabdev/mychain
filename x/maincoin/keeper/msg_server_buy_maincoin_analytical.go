@@ -139,7 +139,7 @@ func (k msgServer) BuyMaincoinAnalytical(ctx context.Context, msg *types.MsgBuyM
 			return nil, err
 		}
 		
-		if result.SegmentsProcessed >= MaxSegmentsPerPurchase {
+		if result.SegmentsProcessed >= 25 {
 			message = fmt.Sprintf("Purchase completed successfully! Processed %d segments (limit reached). Returned %s %s to your account.", 
 				result.SegmentsProcessed, 
 				math.LegacyNewDecFromInt(result.RemainingFunds).Quo(math.LegacyNewDec(1000000)).String(), 

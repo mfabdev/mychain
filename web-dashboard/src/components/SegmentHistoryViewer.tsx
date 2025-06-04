@@ -76,7 +76,9 @@ export const SegmentHistoryViewer: React.FC<SegmentHistoryViewerProps> = ({ curr
   };
 
   const formatNumber = (value: string): string => {
+    if (!value || value === '0') return '0.00';
     const num = parseFloat(value) / 1_000_000;
+    if (isNaN(num)) return '0.00';
     return num.toLocaleString(undefined, { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 6 

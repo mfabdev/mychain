@@ -7,7 +7,7 @@ import { SegmentProgressionChart } from '../components/SegmentProgressionChart';
 import { SegmentHistoryViewer } from '../components/SegmentHistoryViewer';
 import { UserPurchaseHistory } from '../components/UserPurchaseHistory';
 import { fetchAPI } from '../utils/api';
-import { useKeplr } from '../hooks/useKeplr';
+import { SigningStargateClient } from '@cosmjs/stargate';
 
 interface EpochInfo {
   currentEpoch: number;
@@ -24,7 +24,13 @@ interface EpochInfo {
   devAllocationFromAPI?: string;
 }
 
-export const MainCoinPage: React.FC = () => {
+interface MainCoinPageProps {
+  address: string;
+  isConnected: boolean;
+  client: SigningStargateClient | null;
+}
+
+export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected, client }) => {
   const [epochInfo, setEpochInfo] = useState<EpochInfo | null>(null);
   const [buyAmount, setBuyAmount] = useState('');
   const [sellAmount, setSellAmount] = useState('');
@@ -33,9 +39,8 @@ export const MainCoinPage: React.FC = () => {
   const [commandType, setCommandType] = useState('');
   const [txStatus, setTxStatus] = useState<string>('');
   const [txHash, setTxHash] = useState<string>('');
-  const [useDirectExecution, setUseDirectExecution] = useState(true);
+  const [useDirectExecution, setUseDirectExecution] = useState(false);
   const [lastPurchaseDetails, setLastPurchaseDetails] = useState<any>(null);
-  const { address, isConnected, client } = useKeplr();
 
   useEffect(() => {
     fetchEpochInfo();
@@ -69,13 +74,16 @@ export const MainCoinPage: React.FC = () => {
           apiResponse: epochResponse
         });
         
-        // Recalculate values with corrected supply
+        // Use blockchain's calculated values
         const currentPriceNum = parseFloat(epochResponse.current_price);
         const totalValue = correctedTotalSupply * currentPriceNum;
         const requiredReserve = totalValue / 10; // 1:10 ratio
         const currentReserve = parseFloat(epochResponse.reserve_balance) / 1000000; // Convert from utestusd
         const reserveNeeded = requiredReserve - currentReserve;
-        const tokensNeeded = reserveNeeded / currentPriceNum;
+        // Use the blockchain's tokens_needed if available, otherwise calculate
+        const tokensNeeded = epochResponse.tokens_needed ? 
+          parseFloat(epochResponse.tokens_needed) / 1000000 : // Convert from micro units
+          reserveNeeded / currentPriceNum;
         
         console.log('Tokens needed calculation:', {
           totalValue,
@@ -168,11 +176,25 @@ export const MainCoinPage: React.FC = () => {
           setTxStatus(`❌ Transaction failed: ${result.error}`);
         }
       } else {
-        // Generate CLI command
+        // Execute through Keplr
+        console.log('Wallet state check:', { isConnected, hasClient: !!client, address });
+        if (!isConnected || !client || !address) {
+          setTxStatus('❌ Please connect your wallet first');
+          return;
+        }
+
+        // For now, let's alert the user that they need to use the CLI
+        setTxStatus('⚠️ Web transactions for custom messages are not yet supported. Please use the CLI commands shown below.');
+        
+        // Generate the CLI command for the user
         const amountInMicro = Math.floor(parseFloat(buyAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utestusd --from main --keyring-backend test --chain-id mychain --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
+        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utestusd --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000alc --keyring-backend test -y`;
+        
         setGeneratedCommand(cliCommand);
         setCommandType('buy');
+        
+        // Clear the amount
+        setBuyAmount('');
       }
     } catch (error) {
       console.error('Buy transaction failed:', error);
@@ -221,11 +243,24 @@ export const MainCoinPage: React.FC = () => {
           setTxStatus(`❌ Transaction failed: ${result.error}`);
         }
       } else {
-        // Generate CLI command
+        // Execute through Keplr
+        if (!isConnected || !client || !address) {
+          setTxStatus('❌ Please connect your wallet first');
+          return;
+        }
+
+        // For now, let's alert the user that they need to use the CLI
+        setTxStatus('⚠️ Web transactions for custom messages are not yet supported. Please use the CLI commands shown below.');
+        
+        // Generate the CLI command for the user
         const amountInMicro = Math.floor(parseFloat(sellAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from main --keyring-backend test --chain-id mychain --gas auto --gas-adjustment 1.5 --gas-prices 0.025alc -y`;
+        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000alc --keyring-backend test -y`;
+        
         setGeneratedCommand(cliCommand);
         setCommandType('sell');
+        
+        // Clear the amount
+        setSellAmount('');
       }
     } catch (error) {
       console.error('Sell transaction failed:', error);
@@ -493,8 +528,7 @@ Alternative commands to open terminal:
                       : 'bg-green-600 hover:bg-green-700'
                   }`}
                 >
-                  {isLoading ? (useDirectExecution ? 'Executing...' : 'Generating...') : 
-                   (useDirectExecution ? '🚀 Buy MainCoin' : 'Generate Buy Command')}
+                  {isLoading ? 'Processing...' : '🚀 Buy MainCoin'}
                 </button>
               </div>
             </div>
@@ -528,8 +562,7 @@ Alternative commands to open terminal:
                       : 'bg-red-600 hover:bg-red-700'
                   }`}
                 >
-                  {isLoading ? (useDirectExecution ? 'Executing...' : 'Generating...') : 
-                   (useDirectExecution ? '💸 Sell MainCoin' : 'Generate Sell Command')}
+                  {isLoading ? 'Processing...' : '💸 Sell MainCoin'}
                 </button>
               </div>
             </div>
@@ -592,7 +625,9 @@ Alternative commands to open terminal:
             <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500 rounded-lg">
               <h3 className="font-semibold text-blue-400 mb-2">📝 Instructions:</h3>
               <ol className="text-sm text-gray-300 space-y-1 list-decimal list-inside">
-                <li>Click "🖥️ Open Terminal" to auto-open terminal (or open manually)</li>
+                <li>Replace <code className="bg-gray-700 px-1 rounded">[YOUR_KEY_NAME]</code> with your local key name (e.g., 'admin' or 'mykey')</li>
+                <li>If you don't have a local key, create one: <code className="bg-gray-700 px-1 rounded">mychaind keys add mykey --keyring-backend test</code></li>
+                <li>Check available keys: <code className="bg-gray-700 px-1 rounded">mychaind keys list --keyring-backend test</code></li>
                 <li>Copy the command above (click "📋 Copy Command" button)</li>
                 <li>Paste and run the command in your terminal</li>
                 <li>Wait for the transaction to complete</li>
@@ -671,6 +706,8 @@ Alternative commands to open terminal:
           <SegmentProgressionChart
             currentSegment={epochInfo.currentEpoch}
             currentPrice={epochInfo.currentPrice}
+            tokensNeeded={epochInfo.tokensNeeded}
+            reserveNeeded={epochInfo.reserveNeeded}
           />
         )}
 
@@ -815,11 +852,11 @@ Alternative commands to open terminal:
                 <tr className="border-b border-gray-700 bg-green-900/10">
                   <td className="p-2 font-semibold text-green-400">{epochInfo?.currentEpoch || 1} 🔄</td>
                   <td className="p-2 text-right">${epochInfo?.currentPrice || '0.0001001'}</td>
-                  <td className="p-2 text-right">{epochInfo ? (parseFloat(epochInfo.totalSupply) - parseFloat(epochInfo.tokensNeeded)).toLocaleString() : '100,000'}</td>
-                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">{epochInfo?.supplyBeforeDev ? parseFloat(epochInfo.supplyBeforeDev).toLocaleString() : '100,000'}</td>
+                  <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 ? '10' : epochInfo?.devAllocation || '-'}</td>
                   <td className="p-2 text-right">{epochInfo?.tokensNeeded || '10.99'}</td>
-                  <td className="p-2 text-right">-</td>
-                  <td className="p-2 text-right">{epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,020.99'}</td>
+                  <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 ? (10 + parseFloat(epochInfo?.tokensNeeded || '10.99')).toFixed(2) : '-'}</td>
+                  <td className="p-2 text-right">{epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'}</td>
                   <td className="p-2 text-right">${epochInfo?.totalValue || '10.0121'}</td>
                   <td className="p-2 text-right">${epochInfo?.requiredReserve || '1.00121'}</td>
                   <td className="p-2 text-right text-yellow-400">~1:10</td>
@@ -889,53 +926,6 @@ Alternative commands to open terminal:
               </div>
             </div>
             
-            {/* Test Cases */}
-            <div className="bg-gray-700/30 rounded-lg p-4">
-              <h4 className="font-semibold mb-3">📊 Comprehensive Test Results</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-600">
-                      <th className="text-left p-2">Test Case</th>
-                      <th className="text-right p-2">Input</th>
-                      <th className="text-right p-2">MC Received</th>
-                      <th className="text-right p-2">Segments</th>
-                      <th className="text-right p-2">Efficiency</th>
-                      <th className="text-center p-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-700">
-                      <td className="p-2">Large Purchase</td>
-                      <td className="p-2 text-right">$1.00</td>
-                      <td className="p-2 text-right">276.72 MC</td>
-                      <td className="p-2 text-right">25</td>
-                      <td className="p-2 text-right">2.80%</td>
-                      <td className="p-2 text-center">✅</td>
-                    </tr>
-                    <tr className="border-b border-gray-700">
-                      <td className="p-2">Medium Purchase</td>
-                      <td className="p-2 text-right">$0.01</td>
-                      <td className="p-2 text-right">97.06 MC</td>
-                      <td className="p-2 text-right">9</td>
-                      <td className="p-2 text-right">99.97%</td>
-                      <td className="p-2 text-center">✅</td>
-                    </tr>
-                    <tr className="border-b border-gray-700">
-                      <td className="p-2">Tiny Purchase</td>
-                      <td className="p-2 text-right">$0.0001</td>
-                      <td className="p-2 text-right">0.97 MC</td>
-                      <td className="p-2 text-right">1</td>
-                      <td className="p-2 text-right">99.00%</td>
-                      <td className="p-2 text-center">✅</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                * Efficiency = (Amount Spent / Amount Sent) × 100%
-              </p>
-            </div>
           </div>
           
           {/* Current State */}
@@ -982,14 +972,31 @@ Alternative commands to open terminal:
           <div className="text-sm text-gray-300 space-y-2">
             <p><strong>Segments:</strong> Price levels in the bonding curve. A segment only advances when the 10% reserve ratio is achieved.</p>
             <p><strong>Transaction Processing:</strong> The system processes purchases across segments when the purchase amount exceeds what's available in the current segment. Maximum 25 segments per transaction.</p>
-            <p className="text-yellow-400 font-semibold">Your purchase advanced from Segment 1 to Segment {epochInfo?.currentEpoch || 9} ({(epochInfo?.currentEpoch || 9) - 1} segments total) because:</p>
-            <ul className="list-disc list-inside ml-4 space-y-1">
-              <li>The initial 100,000 MainCoin supply required $1 in reserves to balance</li>
-              <li>Your purchase added just enough reserves to complete Segment 1</li>
-              <li>The remaining purchase amount continued through Segments 2-{epochInfo?.currentEpoch || 9}</li>
-              <li>Each segment completion triggers a price increase and recalculation of tokens needed</li>
-              <li>Transaction stopped at segment {epochInfo?.currentEpoch || 9} when your funds were exhausted (not the 25 segment limit)</li>
-            </ul>
+            {lastPurchaseDetails && lastPurchaseDetails.startSegment && lastPurchaseDetails.endSegment ? (
+              <>
+                <p className="text-yellow-400 font-semibold">Your purchase advanced from Segment {lastPurchaseDetails.startSegment} to Segment {lastPurchaseDetails.endSegment} ({lastPurchaseDetails.segmentsProcessed} segments total) because:</p>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Each segment requires reaching a 1:10 reserve ratio to complete</li>
+                  <li>Your purchase of ${lastPurchaseDetails.amountSpent} added reserves across multiple segments</li>
+                  {lastPurchaseDetails.segmentsProcessed > 1 && (
+                    <li>The remaining purchase amount continued through {lastPurchaseDetails.segmentsProcessed} segments</li>
+                  )}
+                  <li>Each segment completion triggers a 0.1% price increase</li>
+                  <li>Transaction stopped at segment {lastPurchaseDetails.endSegment} when your funds were exhausted</li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <p className="text-yellow-400 font-semibold">How segment advancement works:</p>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Each segment requires a 1:10 reserve ratio (reserves = 10% of total MainCoin value)</li>
+                  <li>When a purchase provides enough reserves to reach this ratio, the segment completes</li>
+                  <li>Price increases by 0.1% for each new segment</li>
+                  <li>Large purchases may advance through multiple segments in one transaction</li>
+                  <li>Maximum 25 segments can be processed per transaction</li>
+                </ul>
+              </>
+            )}
             <p className="mt-3 text-blue-400">To advance through more segments, you need purchases that add significant reserves relative to the total MainCoin value.</p>
           </div>
         </div>
@@ -1002,6 +1009,5 @@ Alternative commands to open terminal:
         {/* User Purchase History */}
         <UserPurchaseHistory />
       </div>
-    </div>
   );
 };

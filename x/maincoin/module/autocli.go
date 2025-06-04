@@ -19,14 +19,14 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod:      "CurrentPrice",
-					Use:            "current-price ",
+					Use:            "current-price",
 					Short:          "Query current-price",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
 
 				{
 					RpcMethod:      "SegmentInfo",
-					Use:            "segment-info ",
+					Use:            "segment-info",
 					Short:          "Query segment-info",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},

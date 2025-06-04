@@ -3,6 +3,7 @@ package keeper
 import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"mychain/x/maincoin/types"
 )
 
 // CalculateAnalyticalPurchaseWithDeferredDev implements the CORRECT dev allocation logic
@@ -44,7 +45,7 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 	currentSegmentTokens := sdkmath.ZeroInt()
 	
 	// Process up to MaxSegmentsPerPurchase
-	for segmentsProcessed < MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
+	for segmentsProcessed < types.MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
 		// CRITICAL: First, handle pending dev allocation from previous segment
 		// Dev is distributed at START of segment by ADDING to total balance
 		if pendingDevAllocation.GT(sdkmath.ZeroInt()) && segmentsProcessed == 0 {

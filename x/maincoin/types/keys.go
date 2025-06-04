@@ -16,14 +16,27 @@ const (
 	
 	// MainCoin denomination
 	MainCoinDenom = "maincoin"
+	
+	// TestUSD denomination
+	TestUSDDenom = "utestusd"
+	
+	// Event types
+	EventTypeBuyMaincoin = "buy_maincoin"
+	
+	// Attribute keys
+	AttributeKeyBuyer = "buyer"
+	AttributeKeyAmountSpent = "amount_spent"
+	AttributeKeyTokensBought = "tokens_bought"
+	AttributeKeyUserTokens = "user_tokens"
+	AttributeKeyDevTokens = "dev_tokens"
 )
 
 // Storage keys
 var (
-	ParamsKey             = collections.NewPrefix("p_maincoin")
-	CurrentEpochKey       = collections.NewPrefix("current_epoch")
-	CurrentPriceKey       = collections.NewPrefix("current_price")
-	TotalSupplyKey        = collections.NewPrefix("total_supply")
-	ReserveBalanceKey     = collections.NewPrefix("reserve_balance")
-	DevAllocationTotalKey = collections.NewPrefix("dev_allocation_total")
+	ParamsKey             = collections.NewPrefix(0) // "p_maincoin"
+	CurrentEpochKey       = collections.NewPrefix(1) // "current_epoch"
+	CurrentPriceKey       = collections.NewPrefix(2) // "current_price"
+	TotalSupplyKey        = collections.NewPrefix(3) // "total_supply"
+	ReserveBalanceKey     = collections.NewPrefix(4) // "reserve_balance"
+	DevAllocationTotalKey = collections.NewPrefix(5) // "dev_allocation_total"
 )

@@ -121,11 +121,21 @@ func (k Keeper) EnsureInitialized(ctx sdk.Context) error {
 		}
 	}
 	
-	// Check if TotalSupply exists, if not set to 100000000000 (100000 * 10^6)
+	// Check if TotalSupply exists, if not set based on epoch
 	_, err = k.TotalSupply.Get(ctx)
 	if err != nil {
-		if err := k.TotalSupply.Set(ctx, math.NewInt(100000000000)); err != nil {
-			return err
+		// Check current epoch to determine correct initial supply
+		currentEpoch, _ := k.CurrentEpoch.Get(ctx)
+		if currentEpoch == 1 {
+			// Segment 1: Include the 10 MC dev allocation from Segment 0
+			if err := k.TotalSupply.Set(ctx, math.NewInt(100010000000)); err != nil { // 100,010 MC
+				return err
+			}
+		} else {
+			// Default to genesis supply
+			if err := k.TotalSupply.Set(ctx, math.NewInt(100000000000)); err != nil { // 100,000 MC
+				return err
+			}
 		}
 	}
 	
@@ -137,10 +147,28 @@ func (k Keeper) EnsureInitialized(ctx sdk.Context) error {
 		}
 	}
 	
-	// Check if DevAllocationTotal exists, if not set to 0
+	// Check if DevAllocationTotal exists, if not set based on epoch
 	_, err = k.DevAllocationTotal.Get(ctx)
 	if err != nil {
-		if err := k.DevAllocationTotal.Set(ctx, math.ZeroInt()); err != nil {
+		// Check current epoch to determine dev allocation
+		currentEpoch, _ := k.CurrentEpoch.Get(ctx)
+		if currentEpoch == 1 {
+			// Segment 1: 10 MC dev allocation already distributed
+			if err := k.DevAllocationTotal.Set(ctx, math.NewInt(10000000)); err != nil { // 10 MC
+				return err
+			}
+		} else {
+			if err := k.DevAllocationTotal.Set(ctx, math.ZeroInt()); err != nil {
+				return err
+			}
+		}
+	}
+	
+	// Check if PendingDevAllocation exists, if not set to 0
+	// (Pending is 0 because Segment 0's dev was already distributed when entering Segment 1)
+	_, err = k.PendingDevAllocation.Get(ctx)
+	if err != nil {
+		if err := k.PendingDevAllocation.Set(ctx, math.ZeroInt()); err != nil {
 			return err
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	
 	"mychain/x/maincoin/types"
@@ -15,6 +16,11 @@ import (
 func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k := ms.Keeper
+	
+	// Ensure initialization before any operations
+	if err := k.EnsureInitialized(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ensure initialization: %w", err)
+	}
 	
 	// Validate TestUSD amount
 	if msg.Amount.Denom != types.TestUSDDenom {
@@ -51,7 +57,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 	pendingDev, err := k.PendingDevAllocation.Get(ctx)
 	if err != nil {
 		// If not found, assume zero
-		pendingDev = sdk.ZeroInt()
+		pendingDev = sdkmath.ZeroInt()
 	}
 	
 	// Use the corrected analytical calculation with deferred dev
@@ -129,8 +135,8 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		return nil, fmt.Errorf("failed to update total supply: %w", err)
 	}
 	
-	// Update reserve (10% of purchase goes to reserve)
-	reserveIncrease := result.TotalCost.Quo(sdk.NewInt(10))
+	// Update reserve (100% of purchase goes to reserve)
+	reserveIncrease := result.TotalCost
 	newReserve := reserveBalance.Add(reserveIncrease)
 	if err := k.ReserveBalance.Set(ctx, newReserve); err != nil {
 		return nil, fmt.Errorf("failed to update reserve balance: %w", err)
@@ -191,10 +197,16 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		"pending_dev_for_next", result.PendingDevAllocation.String(),
 	)
 	
+	// Calculate average price
+	avgPrice := sdkmath.LegacyZeroDec()
+	if result.TotalUserTokens.GT(sdkmath.ZeroInt()) {
+		avgPrice = sdkmath.LegacyNewDecFromInt(result.TotalCost).Quo(sdkmath.LegacyNewDecFromInt(result.TotalUserTokens))
+	}
+	
 	return &types.MsgBuyMaincoinResponse{
-		TokensBought: result.TotalUserTokens,
-		AmountSpent:  sdk.NewCoin(types.TestUSDDenom, result.TotalCost),
-		NewPrice:     result.FinalPrice,
-		NewEpoch:     result.FinalEpoch,
+		TotalTokensBought: result.TotalUserTokens.String(),
+		TotalPaid:         result.TotalCost.String(),
+		AveragePrice:      avgPrice.String(),
+		RemainingFunds:    result.RemainingFunds.String(),
 	}, nil
 }

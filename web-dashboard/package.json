@@ -8,6 +8,7 @@
     "@cosmjs/math": "^0.32.2",
     "@cosmjs/proto-signing": "^0.32.4",
     "@cosmjs/stargate": "^0.32.4",
+    "@heroicons/react": "^2.2.0",
     "@keplr-wallet/types": "^0.12.58",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.42",

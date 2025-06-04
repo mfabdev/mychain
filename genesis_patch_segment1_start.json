@@ -1,0 +1,104 @@
+{
+  "bank": {
+    "balances": [
+      {
+        "address": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4",
+        "coins": [
+          {
+            "denom": "alc",
+            "amount": "10000000000"
+          },
+          {
+            "denom": "utestusd",
+            "amount": "1000000000"
+          },
+          {
+            "denom": "maincoin",
+            "amount": "10000000"
+          }
+        ]
+      },
+      {
+        "address": "cosmos1s66hnescxv5ewhhafhk69r2tmk90u40njwpyqr",
+        "coins": [
+          {
+            "denom": "utestusd",
+            "amount": "1000000"
+          },
+          {
+            "denom": "maincoin",
+            "amount": "100000000000"
+          }
+        ]
+      }
+    ],
+    "supply": [
+      {
+        "denom": "alc",
+        "amount": "100000000000"
+      },
+      {
+        "denom": "maincoin",
+        "amount": "100010000000"
+      },
+      {
+        "denom": "utestusd",
+        "amount": "1001000000"
+      }
+    ]
+  },
+  "staking": {
+    "delegations": [
+      {
+        "delegator_address": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4",
+        "validator_address": "cosmosvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0aqqduzh",
+        "shares": "90000000000.000000000000000000"
+      }
+    ]
+  },
+  "maincoin": {
+    "params": {
+      "initial_price": "0.0001",
+      "price_increment": "0.001",
+      "max_supply": "0",
+      "purchase_denom": "utestusd",
+      "fee_percentage": "0.0001",
+      "dev_address": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4"
+    },
+    "current_epoch": "1",
+    "current_price": "0.0001001",
+    "total_supply": "100010000000",
+    "reserve_balance": "1000000",
+    "dev_allocation_total": "10000000"
+  },
+  "dex": {
+    "params": {
+      "lc_denom": "alc",
+      "lc_initial_supply": "100000000000",
+      "lc_exchange_rate": "0.1",
+      "base_reward_rate": "100000000",
+      "reward_decrease_rate": "0.1",
+      "tier_count": "5",
+      "tier_1_required_lc": "100000000",
+      "tier_2_required_lc": "1000000000",
+      "tier_3_required_lc": "10000000000",
+      "tier_4_required_lc": "100000000000",
+      "tier_5_required_lc": "1000000000000",
+      "tier_1_reward_multiplier": "1.0",
+      "tier_2_reward_multiplier": "1.2",
+      "tier_3_reward_multiplier": "1.5",
+      "tier_4_reward_multiplier": "2.0",
+      "tier_5_reward_multiplier": "3.0",
+      "max_order_lifetime": "86400s",
+      "order_fee_percentage": "0.003",
+      "lc_maker_reward_percentage": "0.001",
+      "lc_taker_reward_percentage": "0.001"
+    }
+  },
+  "testusd": {
+    "params": {
+      "bridge_fee": "0.001"
+    },
+    "total_bridged": "1001000000"
+  }
+}

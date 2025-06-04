@@ -17,16 +17,16 @@ const (
 
 // Storage keys
 var (
-	ParamsKey          = collections.NewPrefix("p_dex")
-	NextOrderIDKey     = collections.NewPrefix("next_order_id")
-	OrdersKey          = collections.NewPrefix("orders")
-	TradingPairsKey    = collections.NewPrefix("trading_pairs")
-	UserRewardsKey     = collections.NewPrefix("user_rewards")
-	OrderRewardsKey    = collections.NewPrefix("order_rewards")
-	LiquidityTiersKey  = collections.NewPrefix("liquidity_tiers")
-	VolumeTrackersKey  = collections.NewPrefix("volume_trackers")
-	PriceReferencesKey = collections.NewPrefix("price_references")
-	LCTotalSupplyKey   = collections.NewPrefix("lc_total_supply")
-	UserOrdersKey      = collections.NewPrefix("user_orders")
-	PairOrdersKey      = collections.NewPrefix("pair_orders")
+	ParamsKey          = collections.NewPrefix(0)  // "p_dex"
+	NextOrderIDKey     = collections.NewPrefix(1)  // "next_order_id"
+	OrdersKey          = collections.NewPrefix(2)  // "orders"
+	TradingPairsKey    = collections.NewPrefix(3)  // "trading_pairs"
+	UserRewardsKey     = collections.NewPrefix(4)  // "user_rewards"
+	OrderRewardsKey    = collections.NewPrefix(5)  // "order_rewards"
+	LiquidityTiersKey  = collections.NewPrefix(6)  // "liquidity_tiers"
+	VolumeTrackersKey  = collections.NewPrefix(7)  // "volume_trackers"
+	PriceReferencesKey = collections.NewPrefix(8)  // "price_references"
+	LCTotalSupplyKey   = collections.NewPrefix(9)  // "lc_total_supply"
+	UserOrdersKey      = collections.NewPrefix(10) // "user_orders"
+	PairOrdersKey      = collections.NewPrefix(11) // "pair_orders"
 )

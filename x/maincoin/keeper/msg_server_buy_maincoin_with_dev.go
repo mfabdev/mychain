@@ -192,7 +192,7 @@ func (k msgServer) BuyMaincoinWithDev(ctx context.Context, msg *types.MsgBuyMain
 			return nil, err
 		}
 		
-		if result.SegmentsProcessed >= MaxSegmentsPerPurchase {
+		if result.SegmentsProcessed >= 25 {
 			message = fmt.Sprintf("Purchase completed successfully! Processed %d segments (limit reached). You received %s MC. Dev received %s MC. Returned %s TESTUSD.", 
 				result.SegmentsProcessed,
 				FormatMicroToDisplay(result.TotalUserTokens),
@@ -239,7 +239,7 @@ func (k msgServer) BuyMaincoinWithDev(ctx context.Context, msg *types.MsgBuyMain
 	// Record segment purchases in history
 	txHash := "" // In real implementation, get from transaction context
 	if sdkCtx.TxBytes() != nil {
-		hash := sdk.TxHash(sdkCtx.TxBytes())
+		hash := fmt.Sprintf("%X", sdkCtx.TxBytes())
 		txHash = fmt.Sprintf("%X", hash)
 	}
 	

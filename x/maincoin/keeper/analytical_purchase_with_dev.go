@@ -38,7 +38,7 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 	segmentDetails := []SegmentPurchaseDetail{}
 	
 	// Process up to MaxSegmentsPerPurchase
-	for segmentsProcessed < MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
+	for segmentsProcessed < 25 && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
 		// Calculate current total value and required reserves
 		totalValue := currentSupplyDec.Mul(currentPriceCalc)
 		requiredReserve := totalValue.Mul(reserveRatio)
@@ -127,7 +127,8 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 		
 		// Update state for tracking
 		currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(tokensToBuy))
-		reserveAdded := costDec.Mul(reserveRatio)
+		// 100% of purchase cost goes to reserve
+		reserveAdded := costDec
 		currentReserveDec = currentReserveDec.Add(reserveAdded)
 		
 		// Store segment detail
@@ -172,7 +173,7 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 		FinalPrice:        currentPriceCalc,
 		RemainingFunds:    finalRemaining,
 		TotalDevAllocation: totalDevAllocation,
-		TotalUserTokens:    totalUserTokens,
+		TotalUserTokens:    totalTokensBought.Sub(totalDevAllocation),
 		SegmentDetails:     segmentDetails,
 	}, nil
 }
