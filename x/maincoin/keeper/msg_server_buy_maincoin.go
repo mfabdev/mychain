@@ -17,10 +17,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k := ms.Keeper
 	
-	// Ensure initialization before any operations
-	if err := k.EnsureInitialized(ctx); err != nil {
-		return nil, fmt.Errorf("failed to ensure initialization: %w", err)
-	}
+	// State should be initialized through InitGenesis
 	
 	// Validate TestUSD amount
 	if msg.Amount.Denom != types.TestUSDDenom {

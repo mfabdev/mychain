@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"cosmossdk.io/core/appmodule"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -100,7 +102,10 @@ func (am AppModule) ValidateGenesis(bz json.RawMessage) error {
 }
 
 // InitGenesis performs the module's genesis initialization. It returns no validator updates.
+// This is for the legacy module.AppModule interface
 func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
+	// Write to both stdout and stderr to ensure we see it
+	fmt.Fprintf(os.Stderr, "MAINCOIN MODULE: InitGenesis (legacy) called!!!\n")
 	fmt.Printf("MAINCOIN MODULE DEBUG: InitGenesis called with raw message: %s\n", string(gs))
 	
 	// If genesis is null or empty, use default genesis
@@ -147,8 +152,16 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	// No need to call EnsureInitialized on every block
-	// It's called when needed in message handlers
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	
+	// Initialize on first block if not already initialized
+	if sdkCtx.BlockHeight() == 1 && !am.keeper.IsInitialized(sdkCtx) {
+		fmt.Fprintf(os.Stderr, "MAINCOIN: Initializing in BeginBlock at height 1\n")
+		if err := am.keeper.InitializeIfNeeded(sdkCtx); err != nil {
+			return fmt.Errorf("failed to initialize maincoin module: %w", err)
+		}
+	}
+	
 	return nil
 }
 

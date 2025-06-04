@@ -85,93 +85,29 @@ func (k Keeper) GetAuthority() []byte {
 	return k.authority
 }
 
-// EnsureInitialized ensures all collections have values, setting defaults if needed
-func (k Keeper) EnsureInitialized(ctx sdk.Context) error {
-	// Only set defaults if params don't exist at all (error from Get)
-	params, err := k.Params.Get(ctx)
-	
-	if err != nil {
-		fmt.Printf("MAINCOIN DEBUG: Params not found, setting defaults at height %d\n", ctx.BlockHeight())
-		// Set default params
-		defaultParams := types.DefaultParams()
-		fmt.Printf("MAINCOIN DEBUG: Default params: %+v\n", defaultParams)
-		if err := k.Params.Set(ctx, defaultParams); err != nil {
-			fmt.Printf("MAINCOIN DEBUG: Failed to set params: %v\n", err)
-			return err
-		}
-		params = defaultParams
-		fmt.Printf("MAINCOIN DEBUG: Successfully set default params\n")
+// IsInitialized checks if the module state has been initialized
+func (k Keeper) IsInitialized(ctx sdk.Context) bool {
+	_, err := k.CurrentEpoch.Get(ctx)
+	return err == nil
+}
+
+// InitializeIfNeeded initializes the module state if not already initialized
+func (k Keeper) InitializeIfNeeded(ctx sdk.Context) error {
+	if k.IsInitialized(ctx) {
+		return nil
 	}
 	
-	// Check if CurrentEpoch exists, if not set to 1
-	_, err = k.CurrentEpoch.Get(ctx)
-	if err != nil {
-		if err := k.CurrentEpoch.Set(ctx, 1); err != nil {
-			return err
-		}
+	fmt.Printf("MAINCOIN: State not initialized, initializing with genesis defaults\n")
+	
+	// Use the default genesis parameters with proper initialization
+	genState := types.GenesisState{
+		Params:             types.DefaultParams(),
+		CurrentEpoch:       0,
+		CurrentPrice:       math.LegacyNewDecWithPrec(1, 4), // 0.0001
+		TotalSupply:        math.ZeroInt(),
+		ReserveBalance:     math.ZeroInt(),
+		DevAllocationTotal: math.ZeroInt(),
 	}
 	
-	// Check if CurrentPrice exists, if not set to initial price from params
-	_, err = k.CurrentPrice.Get(ctx)
-	if err != nil {
-		// Calculate price for epoch 1 (initial_price * 1.001)
-		price := params.InitialPrice.Mul(math.LegacyNewDecWithPrec(1001, 3))
-		if err := k.CurrentPrice.Set(ctx, price); err != nil {
-			return err
-		}
-	}
-	
-	// Check if TotalSupply exists, if not set based on epoch
-	_, err = k.TotalSupply.Get(ctx)
-	if err != nil {
-		// Check current epoch to determine correct initial supply
-		currentEpoch, _ := k.CurrentEpoch.Get(ctx)
-		if currentEpoch == 1 {
-			// Segment 1: Include the 10 MC dev allocation from Segment 0
-			if err := k.TotalSupply.Set(ctx, math.NewInt(100010000000)); err != nil { // 100,010 MC
-				return err
-			}
-		} else {
-			// Default to genesis supply
-			if err := k.TotalSupply.Set(ctx, math.NewInt(100000000000)); err != nil { // 100,000 MC
-				return err
-			}
-		}
-	}
-	
-	// Check if ReserveBalance exists, if not set to 1000000 (1 * 10^6)
-	_, err = k.ReserveBalance.Get(ctx)
-	if err != nil {
-		if err := k.ReserveBalance.Set(ctx, math.NewInt(1000000)); err != nil {
-			return err
-		}
-	}
-	
-	// Check if DevAllocationTotal exists, if not set based on epoch
-	_, err = k.DevAllocationTotal.Get(ctx)
-	if err != nil {
-		// Check current epoch to determine dev allocation
-		currentEpoch, _ := k.CurrentEpoch.Get(ctx)
-		if currentEpoch == 1 {
-			// Segment 1: 10 MC dev allocation already distributed
-			if err := k.DevAllocationTotal.Set(ctx, math.NewInt(10000000)); err != nil { // 10 MC
-				return err
-			}
-		} else {
-			if err := k.DevAllocationTotal.Set(ctx, math.ZeroInt()); err != nil {
-				return err
-			}
-		}
-	}
-	
-	// Check if PendingDevAllocation exists, if not set to 0
-	// (Pending is 0 because Segment 0's dev was already distributed when entering Segment 1)
-	_, err = k.PendingDevAllocation.Get(ctx)
-	if err != nil {
-		if err := k.PendingDevAllocation.Set(ctx, math.ZeroInt()); err != nil {
-			return err
-		}
-	}
-	
-	return nil
+	return k.InitGenesis(ctx, genState)
 }

@@ -41,4 +41,10 @@ message GenesisState {
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
+  
+  // pending_dev_allocation is the dev allocation pending for next segment
+  string pending_dev_allocation = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
 }

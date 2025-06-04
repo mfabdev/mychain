@@ -13,11 +13,8 @@ import (
 
 // BuyMaincoinWithDev implements the analytical purchase approach with dev allocation tracking
 func (k msgServer) BuyMaincoinWithDev(ctx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
-	// Ensure all collections are initialized
+	// State should be initialized through InitGenesis
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if err := k.EnsureInitialized(sdkCtx); err != nil {
-		return nil, errorsmod.Wrap(err, "failed to initialize state")
-	}
 	
 	buyerAddr, err := k.addressCodec.StringToBytes(msg.Buyer)
 	if err != nil {

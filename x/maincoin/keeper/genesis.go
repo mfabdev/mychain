@@ -55,14 +55,15 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 	}
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: DevAllocationTotal set to %s\n", genState.DevAllocationTotal.String())
 	
-	// CRITICAL: Initialize PendingDevAllocation for Genesis
-	// Genesis mints 100,000 MC, so 0.01% = 10 MC pending for Segment 1
-	pendingDev := sdkmath.NewInt(10_000_000) // 10 MC in micro units
+	// Initialize PendingDevAllocation based on genesis state
+	// For Segment 0 start: No pending dev allocation
+	// When starting at epoch 0 with 0 supply, there's no pending dev
+	pendingDev := sdkmath.ZeroInt()
 	if err := k.PendingDevAllocation.Set(ctx, pendingDev); err != nil {
 		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set PendingDevAllocation: %v\n", err)
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: PendingDevAllocation set to %s (10 MC from Genesis)\n", pendingDev.String())
+	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: PendingDevAllocation set to %s\n", pendingDev.String())
 	
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: InitGenesis completed successfully\n")
 	return nil

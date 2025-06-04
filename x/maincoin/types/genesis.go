@@ -9,11 +9,11 @@ func DefaultGenesis() *GenesisState {
 	params := DefaultParams()
 	return &GenesisState{
 		Params:             params,
-		CurrentEpoch:       0,
-		CurrentPrice:       params.InitialPrice,
-		TotalSupply:        math.NewInt(100000), // Initial 100k MC
-		ReserveBalance:     math.NewInt(1000000), // 1 TestUSD = 1,000,000 utestusd
-		DevAllocationTotal: math.ZeroInt(),
+		CurrentEpoch:       0,                    // Start at Segment 0
+		CurrentPrice:       params.InitialPrice,  // $0.0001
+		TotalSupply:        math.ZeroInt(),       // Start with 0 MC
+		ReserveBalance:     math.ZeroInt(),       // Start with $0 reserves
+		DevAllocationTotal: math.ZeroInt(),       // No dev allocation yet
 	}
 }
 

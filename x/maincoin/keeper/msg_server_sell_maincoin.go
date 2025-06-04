@@ -11,11 +11,8 @@ import (
 )
 
 func (k msgServer) SellMaincoin(ctx context.Context, msg *types.MsgSellMaincoin) (*types.MsgSellMaincoinResponse, error) {
-	// Ensure all collections are initialized
+	// State should be initialized through InitGenesis
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if err := k.EnsureInitialized(sdkCtx); err != nil {
-		return nil, errorsmod.Wrap(err, "failed to initialize state")
-	}
 	
 	sellerAddr, err := k.addressCodec.StringToBytes(msg.Seller)
 	if err != nil {
