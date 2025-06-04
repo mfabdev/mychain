@@ -9,9 +9,7 @@ import (
 	"mychain/x/maincoin/types"
 )
 
-// BuyMaincoin handles the corrected logic with deferred dev allocation
-// Dev allocation is calculated on FINAL supply at END of segment
-// and distributed at START of next segment by ADDING to total balance
+// BuyMaincoinSimplified uses the corrected analytical calculation directly
 func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k := ms.Keeper
@@ -47,15 +45,8 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		return nil, fmt.Errorf("failed to get params: %w", err)
 	}
 	
-	// Get pending dev allocation
-	pendingDev, err := k.PendingDevAllocation.Get(ctx)
-	if err != nil {
-		// If not found, assume zero
-		pendingDev = sdk.ZeroInt()
-	}
-	
-	// Use the corrected analytical calculation with deferred dev
-	result, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
+	// Use the corrected analytical calculation
+	result, err := k.CalculateAnalyticalPurchaseWithDev(
 		ctx,
 		msg.Amount.Amount,
 		currentPrice,
@@ -63,7 +54,6 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		currentEpoch,
 		totalSupply,
 		reserveBalance,
-		pendingDev,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate purchase: %w", err)
@@ -95,7 +85,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		}
 	}
 	
-	// Handle dev allocation from PREVIOUS segment
+	// Handle dev allocation if any
 	if result.TotalDevAllocation.IsPositive() && params.DevAddress != "" {
 		devAddress, err := sdk.AccAddressFromBech32(params.DevAddress)
 		if err != nil {
@@ -114,6 +104,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		// Update dev allocation total
 		devTotal, err := k.DevAllocationTotal.Get(ctx)
 		if err != nil {
+			// Initialize if not exists
 			devTotal = result.TotalDevAllocation
 		} else {
 			devTotal = devTotal.Add(result.TotalDevAllocation)
@@ -136,7 +127,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		return nil, fmt.Errorf("failed to update reserve balance: %w", err)
 	}
 	
-	// Update epoch and price
+	// Update epoch and price (already calculated in analytical function)
 	if err := k.CurrentEpoch.Set(ctx, result.FinalEpoch); err != nil {
 		return nil, fmt.Errorf("failed to update epoch: %w", err)
 	}
@@ -145,15 +136,11 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		return nil, fmt.Errorf("failed to update price: %w", err)
 	}
 	
-	// Update pending dev allocation for NEXT segment
-	if err := k.PendingDevAllocation.Set(ctx, result.PendingDevAllocation); err != nil {
-		return nil, fmt.Errorf("failed to update pending dev allocation: %w", err)
-	}
-	
 	// Record segment history if enabled
 	if len(result.SegmentDetails) > 0 {
 		txHash := fmt.Sprintf("%X", ctx.TxBytes())
 		if err := k.RecordSegmentPurchases(ctx, msg.Buyer, txHash, result.SegmentDetails); err != nil {
+			// Log error but don't fail the transaction
 			ctx.Logger().Error("failed to record segment history", "error", err)
 		}
 	}
@@ -170,7 +157,6 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 			sdk.NewAttribute("segments_completed", fmt.Sprintf("%d", result.SegmentsProcessed)),
 			sdk.NewAttribute("new_price", result.FinalPrice.String()),
 			sdk.NewAttribute("new_epoch", fmt.Sprintf("%d", result.FinalEpoch)),
-			sdk.NewAttribute("pending_dev", result.PendingDevAllocation.String()),
 		),
 	})
 	
@@ -182,13 +168,12 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		"refunded", result.RemainingFunds.String(),
 		"tokens_bought", result.TotalTokensBought.String(),
 		"user_tokens", result.TotalUserTokens.String(),
-		"dev_tokens_distributed", result.TotalDevAllocation.String(),
+		"dev_tokens", result.TotalDevAllocation.String(),
 		"segments_completed", result.SegmentsProcessed,
 		"new_price", result.FinalPrice.String(),
 		"new_epoch", result.FinalEpoch,
 		"new_supply", newSupply.String(),
 		"new_reserve", newReserve.String(),
-		"pending_dev_for_next", result.PendingDevAllocation.String(),
 	)
 	
 	return &types.MsgBuyMaincoinResponse{

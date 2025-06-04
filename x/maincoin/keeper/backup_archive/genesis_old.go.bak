@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	sdkmath "cosmossdk.io/math"
 	"mychain/x/maincoin/types"
 )
 
@@ -55,15 +54,6 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 	}
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: DevAllocationTotal set to %s\n", genState.DevAllocationTotal.String())
 	
-	// CRITICAL: Initialize PendingDevAllocation for Genesis
-	// Genesis mints 100,000 MC, so 0.01% = 10 MC pending for Segment 1
-	pendingDev := sdkmath.NewInt(10_000_000) // 10 MC in micro units
-	if err := k.PendingDevAllocation.Set(ctx, pendingDev); err != nil {
-		fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Failed to set PendingDevAllocation: %v\n", err)
-		return err
-	}
-	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: PendingDevAllocation set to %s (10 MC from Genesis)\n", pendingDev.String())
-	
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: InitGenesis completed successfully\n")
 	return nil
 }
@@ -100,8 +90,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, err
 	}
 
-	// Note: PendingDevAllocation is not exported as it's calculated from genesis supply
-	
 	return &types.GenesisState{
 		Params:             params,
 		CurrentEpoch:       currentEpoch,

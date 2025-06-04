@@ -5,9 +5,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// CalculateAnalyticalPurchaseWithDev computes the purchase result with dev allocation tracking
-// CORRECTED LOGIC: Segments complete when 1:10 ratio is restored, not at dollar thresholds
-func (k Keeper) CalculateAnalyticalPurchaseWithDev(
+// CalculateAnalyticalPurchaseWithDeferredDev implements the correct dev allocation logic
+// where dev allocation is calculated on the total supply at the END of each segment 
+// (right after the segment ends) and distributed at the START of the next segment 
+// by ADDING it to the total balance of MainCoin
+func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 	ctx sdk.Context,
 	availableFunds sdkmath.Int,
 	startPrice sdkmath.LegacyDec,
@@ -15,6 +17,7 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 	startEpoch uint64,
 	currentSupply sdkmath.Int,
 	currentReserve sdkmath.Int,
+	pendingDevAllocation sdkmath.Int, // Dev allocation from previous segment
 ) (*PurchaseResult, error) {
 	// Constants
 	reserveRatio := sdkmath.LegacyNewDecWithPrec(1, 1) // 0.1 (1:10 ratio)
@@ -37,8 +40,23 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 	// Track segment details
 	segmentDetails := []SegmentPurchaseDetail{}
 	
+	// Track tokens minted in current segment for NEXT segment's dev allocation
+	currentSegmentTokens := sdkmath.ZeroInt()
+	
 	// Process up to MaxSegmentsPerPurchase
 	for segmentsProcessed < MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
+		// First, handle pending dev allocation from previous segment
+		// CRITICAL: This happens at the START of the segment
+		if pendingDevAllocation.GT(sdkmath.ZeroInt()) && segmentsProcessed == 0 {
+			// Add pending dev tokens to supply by ADDING to total balance
+			// This immediately increases the total supply when the segment begins
+			currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(pendingDevAllocation))
+			totalTokensBought = totalTokensBought.Add(pendingDevAllocation)
+			totalDevAllocation = totalDevAllocation.Add(pendingDevAllocation)
+			
+			// This changes the total value and creates additional deficit
+		}
+		
 		// Calculate current total value and required reserves
 		totalValue := currentSupplyDec.Mul(currentPriceCalc)
 		requiredReserve := totalValue.Mul(reserveRatio)
@@ -58,8 +76,6 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 			// Need to restore ratio - this will complete a segment
 			
 			// Calculate purchase needed to restore ratio
-			// Reserve increases by purchase * 0.1
-			// So: purchase = deficit / 0.1
 			purchaseNeeded := reserveDeficit.Quo(reserveRatio)
 			
 			// Calculate tokens that would be bought
@@ -77,53 +93,39 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 				isSegmentComplete = true
 			} else {
 				// Can only partially restore ratio
-				// Buy what we can afford
 				affordableTokensDec := remainingFunds.Quo(currentPriceInMicro)
 				tokensToBuy = affordableTokensDec.Mul(sdkmath.LegacyNewDecFromInt(microUnit)).TruncateInt()
 				
 				if tokensToBuy.IsZero() && affordableTokensDec.IsPositive() {
-					// Try to buy at least 1 token
 					if remainingFunds.GTE(currentPriceInMicro.Quo(sdkmath.LegacyNewDecFromInt(microUnit))) {
 						tokensToBuy = sdkmath.OneInt()
 					}
 				}
 				
 				if tokensToBuy.IsZero() {
-					// Can't afford even 1 token
 					break
 				}
 				
-				costDec = remainingFunds // Use all remaining funds
+				costDec = remainingFunds
 				isSegmentComplete = false
 			}
 		} else {
-			// Ratio is already satisfied (rare case - could happen due to rounding)
-			// This completes a segment without purchase
+			// Ratio is already satisfied (rare case)
 			isSegmentComplete = true
 			tokensToBuy = sdkmath.ZeroInt()
 			costDec = sdkmath.LegacyZeroDec()
 		}
 		
-		// Calculate dev allocation
-		var userTokens, devTokens sdkmath.Int
-		if isSegmentComplete && currentEpochCalc > startEpoch {
-			// Dev allocation only applies when completing a segment after the initial one
-			// 0.01% of tokens go to dev
-			devTokensDec := sdkmath.LegacyNewDecFromInt(tokensToBuy).Mul(devAllocationRate)
-			devTokens = devTokensDec.TruncateInt()
-			userTokens = tokensToBuy.Sub(devTokens)
-		} else {
-			// No dev allocation for partial segments or the initial segment
-			userTokens = tokensToBuy
-			devTokens = sdkmath.ZeroInt()
-		}
-		
-		// Update totals
+		// Update totals (NO dev allocation taken from current purchase)
 		cost := costDec.TruncateInt()
 		totalTokensBought = totalTokensBought.Add(tokensToBuy)
 		totalSpent = totalSpent.Add(cost)
-		totalDevAllocation = totalDevAllocation.Add(devTokens)
 		remainingFunds = remainingFunds.Sub(costDec)
+		
+		// Track tokens for next segment's dev allocation
+		if isSegmentComplete {
+			currentSegmentTokens = currentSegmentTokens.Add(tokensToBuy)
+		}
 		
 		// Update state for tracking
 		currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(tokensToBuy))
@@ -131,13 +133,20 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 		currentReserveDec = currentReserveDec.Add(reserveAdded)
 		
 		// Store segment detail
+		var devAllocationForSegment sdkmath.Int
+		if segmentsProcessed == 0 && pendingDevAllocation.GT(sdkmath.ZeroInt()) {
+			devAllocationForSegment = pendingDevAllocation
+		} else {
+			devAllocationForSegment = sdkmath.ZeroInt()
+		}
+		
 		segmentDetail := SegmentPurchaseDetail{
 			SegmentNumber:      currentEpochCalc,
 			TokensBought:       tokensToBuy,
 			Cost:               cost,
 			Price:              currentPriceCalc,
-			DevAllocation:      devTokens,
-			UserTokens:         userTokens,
+			DevAllocation:      devAllocationForSegment,
+			UserTokens:         tokensToBuy, // All tokens go to user
 			IsComplete:         isSegmentComplete,
 			TokensInSegment:    tokensToBuy,
 			TokensNeededToComplete: sdkmath.ZeroInt(),
@@ -151,7 +160,7 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 			segmentsProcessed++
 		}
 		
-		// Check if we've spent all funds (with small epsilon for rounding)
+		// Check if we've spent all funds
 		epsilon := sdkmath.LegacyNewDecWithPrec(1, 6) // 0.000001
 		if remainingFunds.LT(epsilon) {
 			break
@@ -164,15 +173,29 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDev(
 		finalRemaining = sdkmath.ZeroInt()
 	}
 	
+	// Calculate pending dev allocation for NEXT segment
+	// CRITICAL: This is calculated on the FINAL total supply at the END of the segment
+	var pendingDevForNext sdkmath.Int
+	if currentSegmentTokens.GT(sdkmath.ZeroInt()) {
+		// Calculate 0.01% of tokens minted in completed segments
+		// This represents the total supply at the END of the segment
+		devDec := sdkmath.LegacyNewDecFromInt(currentSegmentTokens).Mul(devAllocationRate)
+		pendingDevForNext = devDec.TruncateInt()
+	}
+	
+	// Total user tokens is total bought minus dev allocation distributed
+	totalUserTokens := totalTokensBought.Sub(totalDevAllocation)
+	
 	return &PurchaseResult{
 		TotalTokensBought:  totalTokensBought,
-		TotalCost:         totalSpent,
-		SegmentsProcessed: segmentsProcessed,
-		FinalEpoch:        currentEpochCalc,
-		FinalPrice:        currentPriceCalc,
-		RemainingFunds:    finalRemaining,
+		TotalCost:          totalSpent,
+		SegmentsProcessed:  segmentsProcessed,
+		FinalEpoch:         currentEpochCalc,
+		FinalPrice:         currentPriceCalc,
+		RemainingFunds:     finalRemaining,
 		TotalDevAllocation: totalDevAllocation,
 		TotalUserTokens:    totalUserTokens,
 		SegmentDetails:     segmentDetails,
+		PendingDevAllocation: pendingDevForNext, // For next segment
 	}, nil
 }

@@ -1,0 +1,183 @@
+package keeper_test
+
+import (
+	"testing"
+	
+	"github.com/stretchr/testify/require"
+	sdkmath "cosmossdk.io/math"
+	
+	keepertest "mychain/testutil/keeper"
+	"mychain/x/maincoin/keeper"
+)
+
+// TestDeferredDevAllocation verifies the correct dev allocation behavior
+// where dev allocation is calculated on the FINAL total supply at the END of each segment
+// and distributed at the START of the next segment by ADDING to total balance
+func TestDeferredDevAllocation(t *testing.T) {
+	k, ctx := keepertest.MaincoinKeeper(t)
+	
+	params := keeper.DefaultParams()
+	err := k.Params.Set(ctx, params)
+	require.NoError(t, err)
+	
+	// Initialize to zero
+	err = k.PendingDevAllocation.Set(ctx, sdkmath.ZeroInt())
+	require.NoError(t, err)
+	
+	t.Log("\n=== Testing Genesis (Segment 0) ===")
+	
+	// Genesis: 100,000 MC minted
+	// Dev allocation: 0.01% = 10 MC (pending for next segment)
+	genesisSupply := sdkmath.NewInt(100_000_000_000) // 100,000 MC
+	result0 := k.CalculateAnalyticalPurchaseWithDeferredDev(
+		ctx,
+		sdkmath.NewInt(10_000_000), // $10
+		sdkmath.LegacyMustNewDecFromStr("0.0001"), // Starting price
+		params.PriceIncrement,
+		uint64(0), // Segment 0
+		sdkmath.ZeroInt(), // No supply yet
+		sdkmath.ZeroInt(), // No reserves yet
+		sdkmath.ZeroInt(), // No pending dev
+	)
+	require.NoError(t, err)
+	
+	// Genesis should have no dev allocation distributed
+	require.Equal(t, sdkmath.ZeroInt(), result0.TotalDevAllocation)
+	require.Equal(t, genesisSupply, result0.TotalTokensBought)
+	
+	// But should have pending dev for next segment
+	// CRITICAL: Dev calculated on FINAL supply at END of Segment 0
+	expectedPendingDev := sdkmath.NewInt(10_000_000) // 10 MC (0.01% of 100,000 MC)
+	require.Equal(t, expectedPendingDev, result0.PendingDevAllocation)
+	
+	t.Logf("Genesis complete:")
+	t.Logf("  Minted: %s MC", formatMC(result0.TotalTokensBought))
+	t.Logf("  Pending Dev: %s MC", formatMC(result0.PendingDevAllocation))
+	
+	// Now test Segment 1 with pending dev allocation
+	t.Log("\n=== Testing Segment 1 (With Genesis Dev) ===")
+	
+	// After Genesis: 100,000 MC at $0.0001001
+	// Pending: 10 MC dev allocation to be distributed at START of Segment 1
+	result1, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
+		ctx,
+		sdkmath.NewInt(11_001), // $0.011001 (calculated amount)
+		sdkmath.LegacyMustNewDecFromStr("0.0001001"),
+		params.PriceIncrement,
+		uint64(1),
+		genesisSupply,
+		sdkmath.NewInt(1_000_000), // $1 reserves
+		expectedPendingDev, // 10 MC pending from Genesis
+	)
+	require.NoError(t, err)
+	
+	// Should distribute the 10 MC from Genesis
+	// CRITICAL: This 10 MC is ADDED to total balance at START of Segment 1
+	require.Equal(t, expectedPendingDev, result1.TotalDevAllocation)
+	
+	// Total minted should be ~20.989 MC (10 dev + 10.989 user)
+	expectedTotal := sdkmath.NewInt(20_989_000) // ~20.989 MC
+	tolerance := sdkmath.NewInt(100_000) // 0.1 MC tolerance
+	diff := result1.TotalTokensBought.Sub(expectedTotal).Abs()
+	require.True(t, diff.LTE(tolerance),
+		"Expected ~20.989 MC total, got %s MC",
+		formatMC(result1.TotalTokensBought))
+	
+	// User should get ~10.989 MC
+	expectedUser := sdkmath.NewInt(10_989_000)
+	require.True(t, result1.TotalUserTokens.Sub(expectedUser).Abs().LTE(tolerance),
+		"Expected user to get ~10.989 MC, got %s MC",
+		formatMC(result1.TotalUserTokens))
+	
+	// New pending dev should be ~0.0011 MC
+	expectedNewPending := sdkmath.NewInt(1_100) // ~0.0011 MC
+	require.True(t, result1.PendingDevAllocation.Sub(expectedNewPending).Abs().LTE(sdkmath.NewInt(100)),
+		"Expected ~0.0011 MC pending, got %s MC",
+		formatMC(result1.PendingDevAllocation))
+	
+	t.Logf("Segment 1 complete:")
+	t.Logf("  Dev Distributed: %s MC (from Genesis)", formatMC(result1.TotalDevAllocation))
+	t.Logf("  User Tokens: %s MC", formatMC(result1.TotalUserTokens))
+	t.Logf("  Total Minted: %s MC", formatMC(result1.TotalTokensBought))
+	t.Logf("  New Pending Dev: %s MC", formatMC(result1.PendingDevAllocation))
+}
+
+// TestMultipleSegmentsWithDeferredDev tests the pattern across multiple segments
+func TestMultipleSegmentsWithDeferredDev(t *testing.T) {
+	k, ctx := keepertest.MaincoinKeeper(t)
+	params := keeper.DefaultParams()
+	
+	// Track state
+	currentSupply := sdkmath.NewInt(100_000_000_000) // After Genesis
+	currentPrice := sdkmath.LegacyMustNewDecFromStr("0.0001001")
+	currentReserve := sdkmath.NewInt(1_000_000)
+	currentEpoch := uint64(1)
+	pendingDev := sdkmath.NewInt(10_000_000) // 10 MC from Genesis
+	
+	// Expected purchases for segments 1-5
+	purchases := []int64{
+		11_001,  // $0.011001 for Segment 1
+		12_012,  // $0.012012 for Segment 2
+		13_226,  // $0.013226 for Segment 3
+		14_555,  // $0.014555 for Segment 4
+		16_008,  // $0.016008 for Segment 5
+	}
+	
+	totalDevDistributed := sdkmath.ZeroInt()
+	
+	for i, purchaseAmount := range purchases {
+		t.Logf("\n--- Segment %d ---", i+1)
+		t.Logf("Pending Dev In: %s MC", formatMC(pendingDev))
+		
+		result, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
+			ctx,
+			sdkmath.NewInt(purchaseAmount),
+			currentPrice,
+			params.PriceIncrement,
+			currentEpoch,
+			currentSupply,
+			currentReserve,
+			pendingDev,
+		)
+		require.NoError(t, err)
+		
+		// Verify dev allocation matches pending
+		require.Equal(t, pendingDev, result.TotalDevAllocation,
+			"Segment %d: Dev allocation should match pending", i+1)
+		
+		totalDevDistributed = totalDevDistributed.Add(result.TotalDevAllocation)
+		
+		// Update state
+		currentSupply = currentSupply.Add(result.TotalTokensBought)
+		currentPrice = result.FinalPrice
+		currentReserve = currentReserve.Add(sdkmath.NewInt(purchaseAmount).Quo(sdkmath.NewInt(10)))
+		currentEpoch = result.FinalEpoch
+		pendingDev = result.PendingDevAllocation
+		
+		t.Logf("  Purchase: $%s", formatUSD(sdkmath.NewInt(purchaseAmount)))
+		t.Logf("  Dev Distributed: %s MC", formatMC(result.TotalDevAllocation))
+		t.Logf("  User Gets: %s MC", formatMC(result.TotalUserTokens))
+		t.Logf("  Total Minted: %s MC", formatMC(result.TotalTokensBought))
+		t.Logf("  Pending Dev Out: %s MC", formatMC(result.PendingDevAllocation))
+	}
+	
+	t.Logf("\n=== Summary After 5 Segments ===")
+	t.Logf("Total Dev Distributed: %s MC", formatMC(totalDevDistributed))
+	t.Logf("Final Pending: %s MC", formatMC(pendingDev))
+	
+	// Total dev should be ~10.005 MC (0.01% of ~100,050 MC from completed segments)
+	expectedTotalDev := sdkmath.NewInt(10_005_000)
+	require.True(t, totalDevDistributed.Sub(expectedTotalDev).Abs().LT(sdkmath.NewInt(10_000)),
+		"Total dev should be ~10.005 MC, got %s MC", formatMC(totalDevDistributed))
+}
+
+// Helper functions
+func formatMC(amount sdkmath.Int) string {
+	mc := sdkmath.LegacyNewDecFromInt(amount).Quo(sdkmath.LegacyNewDec(1_000_000))
+	return mc.String()
+}
+
+func formatUSD(amount sdkmath.Int) string {
+	usd := sdkmath.LegacyNewDecFromInt(amount).Quo(sdkmath.LegacyNewDec(1_000_000))
+	return usd.String()
+}

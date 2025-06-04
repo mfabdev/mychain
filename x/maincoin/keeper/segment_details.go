@@ -33,6 +33,7 @@ type PurchaseResult struct {
 	TotalDevAllocation sdkmath.Int
 	TotalUserTokens    sdkmath.Int
 	SegmentDetails     []SegmentPurchaseDetail
+	PendingDevAllocation sdkmath.Int // Dev allocation to be distributed in next segment
 }
 
 // CalculateDevAllocation calculates the developer allocation for a given amount of tokens

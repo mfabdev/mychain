@@ -63,45 +63,68 @@ Created: 100,000 MC at $0.0001
 Value: $10.00
 Reserves: $1.00
 Ratio: 1:10 (perfect)
-Dev Allocation: 10 MC (0.01% of 100,000)
-Final Supply: 100,010 MC
+Dev Allocation: 10 MC (0.01% of 100,000) - PENDING for Segment 1
+Final Supply: 100,000 MC (dev not distributed yet)
 ```
 
-### Segment 1 (Current)
+### Segment 1
 ```
-Starting Supply: 100,010 MC (includes 10 MC dev from genesis)
+Starting Supply: 100,010 MC (includes 10 MC dev distributed from genesis)
 Price: $0.0001001
 Current Value: 100,010 × $0.0001001 = $10.011001
 Required Reserve: $1.0011001
 Current Reserve: $1.00
-Gap: $0.0011001
+Gap: $0.0011001 (created by dev distribution)
 Tokens to Sell: 10.99 MC
+Dev at End: 10.002 MC (0.01% of 100,020.99) - PENDING for Segment 2
 ```
 
 ## Developer Allocation
 
-### Timing
-Dev allocation is calculated and minted **AFTER** each segment closes, not during purchases.
+### Critical Timing
+**The dev allocation is ALWAYS calculated on the total supply at the END of each segment (right after the segment ends) and distributed at the START of the next segment by ADDING it to the total balance of MainCoin.**
 
 ### Calculation
 ```
-Dev Allocation = Tokens Sold in Segment × 0.01%
-Dev Allocation = Tokens Sold × 0.0001
+Dev Allocation = FINAL Total Supply at END of Segment × 0.01%
+Dev Allocation = FINAL Total Supply × 0.0001
 ```
 
-### Example Flow
-1. Segment 1: Sell 10.99 MC to users
-2. Segment closes at perfect 1:10 balance
-3. Calculate dev: 10.99 × 0.0001 = 0.001099 MC
-4. Mint 0.001099 MC to dev address
-5. New supply: 100,020.99 + 0.001099 = 100,020.991099 MC
-6. Segment 2 begins with this new supply
+### Deferred Distribution Mechanism
+1. **END of Segment N**: Calculate 0.01% of FINAL total supply → Store as pending
+2. **START of Segment N+1**: Distribute pending dev allocation → ADD to total balance
+3. **Impact**: Creates additional reserve deficit that must be covered
+
+### Example Flow (Segment 0 → Segment 1)
+1. **END of Segment 0 (Genesis)**:
+   - Final Supply: 100,000 MC
+   - Dev Calculation: 100,000 × 0.0001 = 10 MC
+   - Status: PENDING (not distributed yet)
+
+2. **START of Segment 1**:
+   - Initial Supply: 100,000 MC
+   - ADD Pending Dev: 100,000 + 10 = 100,010 MC
+   - New Value: 100,010 × $0.0001001 = $10.011001
+   - Required Reserve: $1.0011001
+   - Current Reserve: $1.00
+   - Gap Created by Dev: $0.0011001
+
+3. **DURING Segment 1**:
+   - Users must buy 10.99 MC to cover gap
+   - This restores the 1:10 ratio
+
+4. **END of Segment 1**:
+   - Final Supply: 100,020.99 MC
+   - Dev Calculation: 100,020.99 × 0.0001 = 10.002 MC
+   - Status: PENDING (for Segment 2)
 
 ### Genesis Special Case
-Even though no tokens were "sold" in genesis (they were created), the system still allocates 0.01% as dev tokens:
+Even though no tokens were "sold" in genesis (they were created), the system still calculates 0.01% as dev allocation:
 - Genesis creates: 100,000 MC
-- Dev allocation: 100,000 × 0.0001 = 10 MC
-- Total after genesis: 100,010 MC
+- Dev calculation: 100,000 × 0.0001 = 10 MC
+- Status: PENDING (not distributed in Genesis)
+- Dev distributed at START of Segment 1
+- This is why Segment 1 starts with 100,010 MC
 
 ## Technical Implementation
 
