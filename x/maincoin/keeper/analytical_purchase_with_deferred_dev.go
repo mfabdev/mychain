@@ -123,7 +123,8 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 					tokensToBuy = sdkmath.OneInt() // At least 1 token
 				}
 
-				costDec = costNeededMicro
+				// CRITICAL FIX: Calculate exact cost based on tokens to buy, not use all remaining funds
+				costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Quo(sdkmath.LegacyNewDecFromInt(microUnit)).Mul(currentPriceInMicro)
 				isSegmentComplete = true
 
 				// DEBUG: Log that we're completing the segment
@@ -131,7 +132,9 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 					"segment", currentEpochCalc,
 					"tokens_needed_dec", tokensNeededDec.String(),
 					"tokens_to_buy", tokensToBuy.String(),
-					"cost", costDec.String(),
+					"cost_calculated", costDec.String(),
+					"cost_needed_micro", costNeededMicro.String(),
+					"remaining_funds", remainingFunds.String(),
 					"reserve_deficit", reserveDeficit.String(),
 					"current_supply", currentSupplyDec.String(),
 					"current_reserve", currentReserveDec.String(),
@@ -172,18 +175,52 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 					break
 				}
 			} else if reserveDeficit.IsNegative() {
-				// We're over-reserved - shouldn't happen in normal operation
-				// This means we have more reserves than needed for 1:10 ratio
-				// Just buy what we can afford
-				affordableTokensDec := remainingFunds.Quo(currentPriceInMicro)
-				tokensToBuy = affordableTokensDec.Mul(sdkmath.LegacyNewDecFromInt(microUnit)).TruncateInt()
-
-				if tokensToBuy.GT(sdkmath.ZeroInt()) {
-					costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Mul(currentPriceInMicro)
-					isSegmentComplete = false
+				// We're over-reserved - calculate tokens to reach exact 1:10 ratio
+				// When buying X tokens at price P:
+				// New reserve = currentReserve + X*P
+				// New supply = currentSupply + X
+				// For 1:10 ratio: (currentReserve + X*P) = 0.1 * (currentSupply + X) * P
+				// Solving: X = (0.1 * currentSupply * P - currentReserve) / (0.9 * P)
+				
+				// Since reserveDeficit is negative, we need to negate it
+				numerator := reserveRatio.Mul(currentSupplyDec).Mul(currentPriceCalc).Sub(currentReserveDec)
+				denominator := sdkmath.LegacyNewDecWithPrec(9, 1).Mul(currentPriceCalc) // 0.9 * P
+				tokensToTargetDec := numerator.Quo(denominator)
+				
+				ctx.Logger().Info("OVER-RESERVED CALCULATION",
+					"current_supply", currentSupplyDec.String(),
+					"current_reserve", currentReserveDec.String(),
+					"current_price", currentPriceCalc.String(),
+					"numerator", numerator.String(),
+					"denominator", denominator.String(),
+					"tokens_to_target_dec", tokensToTargetDec.String(),
+					"reserve_deficit", reserveDeficit.String(),
+				)
+				
+				if tokensToTargetDec.IsPositive() {
+					// This should not happen if we're truly over-reserved
+					ctx.Logger().Error("LOGIC ERROR: positive tokens needed when over-reserved",
+						"tokens_to_target", tokensToTargetDec.String(),
+					)
+					// Fallback to buying what we can afford
+					affordableTokensDec := remainingFunds.Quo(currentPriceInMicro)
+					tokensToBuy = affordableTokensDec.Mul(sdkmath.LegacyNewDecFromInt(microUnit)).TruncateInt()
+					if tokensToBuy.GT(sdkmath.ZeroInt()) {
+						costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Mul(currentPriceInMicro)
+						isSegmentComplete = false
+					} else {
+						break
+					}
 				} else {
-					// Can't afford any tokens
-					break
+					// We're over-reserved, no tokens should be bought in this segment
+					// Mark segment as complete to progress to next segment
+					ctx.Logger().Info("OVER-RESERVED: Completing segment without purchase",
+						"current_segment", currentEpochCalc,
+						"reserve_ratio", currentReserveDec.Quo(currentSupplyDec.Mul(currentPriceCalc)).String(),
+					)
+					tokensToBuy = sdkmath.ZeroInt()
+					costDec = sdkmath.LegacyZeroDec()
+					isSegmentComplete = true
 				}
 			} else {
 				// Exactly at ratio
