@@ -73,6 +73,8 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 
 		// Price in micro units
 		currentPriceInMicro := currentPriceCalc.Mul(sdkmath.LegacyNewDecFromInt(microUnit))
+		// Price per smallest unit (uMC)
+		pricePerUMC := currentPriceInMicro.Quo(sdkmath.LegacyNewDecFromInt(microUnit))
 
 		// Determine how many tokens to buy
 		var tokensToBuy sdkmath.Int
@@ -98,33 +100,42 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 				// New Supply = currentSupply + X
 				// For 1:10 ratio: (currentReserve + X*P) = 0.1 * (currentSupply + X) * P
 				// Solving: X = (requiredReserve - currentReserve) / (0.9 * P)
-				// But requiredReserve = 0.1 * currentSupply * P
-				// So: X = (0.1 * currentSupply * P - currentReserve) / (0.9 * P)
-				divisor := currentPriceCalc.Mul(sdkmath.LegacyNewDecWithPrec(9, 1)) // 0.9 * P
+				// CRITICAL: reserveDeficit is in utestusd, so we need price in utestusd/uMC
+				// pricePerUMC is already calculated above
+				divisor := pricePerUMC.Mul(sdkmath.LegacyNewDecWithPrec(9, 1)) // 0.9 * P
 				tokensNeededDec = reserveDeficit.Quo(divisor)
 
 				ctx.Logger().Info("TOKENS CALCULATION DEBUG",
 					"reserve_deficit", reserveDeficit.String(),
 					"current_price", currentPriceCalc.String(),
+					"current_price_in_micro", currentPriceInMicro.String(),
+					"price_per_uMC", pricePerUMC.String(),
 					"divisor", divisor.String(),
 					"tokens_needed_dec", tokensNeededDec.String(),
 				)
 
-				// Calculate cost of these tokens
-				costNeeded := tokensNeededDec.Mul(currentPriceCalc)
-				costNeededMicro = costNeeded.Mul(sdkmath.LegacyNewDecFromInt(microUnit))
+				// Calculate cost of these tokens (tokensNeededDec is in uMC)
+				costNeededMicro = tokensNeededDec.Mul(pricePerUMC)
 			}
 
+			// Log the comparison
+			ctx.Logger().Info("AFFORDABILITY CHECK",
+				"remaining_funds", remainingFunds.String(),
+				"cost_needed_micro", costNeededMicro.String(),
+				"can_afford_exact", remainingFunds.GTE(costNeededMicro),
+			)
+			
 			// Check if we can afford it
 			if remainingFunds.GTE(costNeededMicro) {
 				// Can complete this segment
-				tokensToBuy = tokensNeededDec.Mul(sdkmath.LegacyNewDecFromInt(microUnit)).TruncateInt()
+				// tokensNeededDec is already in smallest units (uMC)
+				tokensToBuy = tokensNeededDec.TruncateInt()
 				if tokensToBuy.IsZero() && tokensNeededDec.IsPositive() {
 					tokensToBuy = sdkmath.OneInt() // At least 1 token
 				}
 
-				// CRITICAL FIX: Calculate exact cost based on tokens to buy, not use all remaining funds
-				costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Quo(sdkmath.LegacyNewDecFromInt(microUnit)).Mul(currentPriceInMicro)
+				// CRITICAL FIX: Calculate exact cost based on tokens to buy (in uMC)
+				costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Mul(pricePerUMC)
 				isSegmentComplete = true
 
 				// DEBUG: Log that we're completing the segment
@@ -141,9 +152,37 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 					"current_price", currentPriceCalc.String(),
 				)
 			} else {
-				// Can only buy what we can afford
+				// Can only buy what we can afford - but never more than needed for segment
 				affordableTokensDec := remainingFunds.Quo(currentPriceInMicro)
-				tokensToBuy = affordableTokensDec.Mul(sdkmath.LegacyNewDecFromInt(microUnit)).TruncateInt()
+				
+				// Calculate how many uMC we can afford
+				affordableTokensUMC := remainingFunds.Quo(pricePerUMC)
+				
+				// CRITICAL FIX: Cap affordable tokens at tokens needed
+				if affordableTokensUMC.LT(tokensNeededDec) {
+					// Can't afford all needed tokens
+					tokensToBuy = affordableTokensUMC.TruncateInt()
+					costDec = remainingFunds
+					isSegmentComplete = false
+					
+					ctx.Logger().Info("PARTIAL PURCHASE - INSUFFICIENT FUNDS",
+						"affordable_tokens_uMC", affordableTokensUMC.String(),
+						"tokens_needed_uMC", tokensNeededDec.String(),
+						"tokens_to_buy", tokensToBuy.String(),
+					)
+				} else {
+					// Can afford more than needed - buy only what's needed
+					tokensToBuy = tokensNeededDec.TruncateInt()
+					costDec = sdkmath.LegacyNewDecFromInt(tokensToBuy).Mul(pricePerUMC)
+					isSegmentComplete = true
+					
+					ctx.Logger().Info("CAPPED PURCHASE - BUYING ONLY NEEDED",
+						"affordable_tokens_uMC", affordableTokensUMC.String(),
+						"tokens_needed_uMC", tokensNeededDec.String(),
+						"tokens_to_buy", tokensToBuy.String(),
+						"cost", costDec.String(),
+					)
+				}
 
 				if tokensToBuy.IsZero() && affordableTokensDec.IsPositive() {
 					if remainingFunds.GTE(currentPriceInMicro) {
@@ -154,9 +193,6 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 				if tokensToBuy.IsZero() {
 					break
 				}
-
-				costDec = remainingFunds
-				isSegmentComplete = false
 			}
 		} else {
 			// Reserve ratio is already satisfied (we're over-reserved)
