@@ -5,6 +5,7 @@ import (
 	
 	"mychain/x/maincoin/types"
 	
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,9 +24,17 @@ func (q queryServer) SegmentHistory(ctx context.Context, req *types.QuerySegment
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	
 	// Get segment history
-	history, err := q.k.GetSegmentHistory(sdkCtx, req.SegmentNumber)
+	history, err := q.k.SegmentHistories.Get(sdkCtx, req.SegmentNumber)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		// Return empty history if not found
+		history = types.SegmentHistory{
+			SegmentNumber:      req.SegmentNumber,
+			Purchases:          []types.SegmentPurchaseRecord{},
+			TotalTokensSold:    math.ZeroInt(),
+			TotalDevAllocation: math.ZeroInt(),
+			TotalRevenue:       math.ZeroInt(),
+			IsComplete:         false,
+		}
 	}
 	
 	// Apply pagination if requested
@@ -53,7 +62,7 @@ func (q queryServer) SegmentHistory(ctx context.Context, req *types.QuerySegment
 	}
 	
 	return &types.QuerySegmentHistoryResponse{
-		SegmentHistory: history,
+		SegmentHistory: &history,
 		// Pagination response would be set here in a real implementation
 	}, nil
 }
@@ -76,9 +85,15 @@ func (q queryServer) UserPurchaseHistory(ctx context.Context, req *types.QueryUs
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	
 	// Get user history
-	history, err := q.k.GetUserPurchaseHistory(sdkCtx, req.Address)
+	history, err := q.k.UserHistories.Get(sdkCtx, req.Address)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		// Return empty history if not found
+		history = types.UserPurchaseHistory{
+			Address:           req.Address,
+			Purchases:         []types.SegmentPurchaseRecord{},
+			TotalTokensBought: math.ZeroInt(),
+			TotalSpent:        math.ZeroInt(),
+		}
 	}
 	
 	// Apply pagination if requested
@@ -104,7 +119,7 @@ func (q queryServer) UserPurchaseHistory(ctx context.Context, req *types.QueryUs
 	}
 	
 	return &types.QueryUserPurchaseHistoryResponse{
-		UserHistory: history,
+		UserHistory: &history,
 		// Pagination response would be set here in a real implementation
 	}, nil
 }

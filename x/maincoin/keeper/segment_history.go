@@ -109,22 +109,6 @@ func (k Keeper) updateUserHistory(ctx context.Context, buyer string, record type
 	return k.UserHistories.Set(ctx, buyer, history)
 }
 
-// GetSegmentHistory retrieves the purchase history for a specific segment
-func (k Keeper) GetSegmentHistory(ctx context.Context, segmentNumber uint64) (*types.SegmentHistory, error) {
-	history, err := k.SegmentHistories.Get(ctx, segmentNumber)
-	if err != nil {
-		// Return empty history if not found
-		return &types.SegmentHistory{
-			SegmentNumber:      segmentNumber,
-			Purchases:          []types.SegmentPurchaseRecord{},
-			TotalTokensSold:    math.ZeroInt(),
-			TotalDevAllocation: math.ZeroInt(),
-			TotalRevenue:       math.ZeroInt(),
-			IsComplete:         false,
-		}, nil
-	}
-	return &history, nil
-}
 
 // GetUserPurchaseHistory retrieves the purchase history for a specific user
 func (k Keeper) GetUserPurchaseHistory(ctx context.Context, address string) (*types.UserPurchaseHistory, error) {
@@ -175,4 +159,66 @@ func sortPurchasesByBlockHeight(purchases []types.SegmentPurchaseRecord) {
 			}
 		}
 	}
+}
+
+// GetSegmentHistory retrieves a segment history entry
+func (k Keeper) GetSegmentHistory(ctx sdk.Context, segmentNumber uint64) (types.SegmentHistoryEntry, bool) {
+	// For now, try to get from SegmentHistories collection and convert
+	history, err := k.SegmentHistories.Get(ctx, segmentNumber)
+	if err != nil {
+		return types.SegmentHistoryEntry{}, false
+	}
+	
+	// Convert SegmentHistory to SegmentHistoryEntry
+	entry := types.SegmentHistoryEntry{
+		SegmentNumber:  history.SegmentNumber,
+		TokensMinted:   history.TotalTokensSold,
+		DevDistributed: history.TotalDevAllocation,
+		TotalSupply:    math.ZeroInt(), // Need to calculate this
+		Price:          math.LegacyZeroDec(), // Need to calculate this
+		Reserves:       math.ZeroInt(), // Need to calculate this
+		CompletedAt:    history.CompletedAtHeight,
+		TxHash:         "", // Need to get from last transaction
+	}
+	
+	return entry, true
+}
+
+// SetSegmentHistory stores a segment history entry
+func (k Keeper) SetSegmentHistory(ctx sdk.Context, entry types.SegmentHistoryEntry) {
+	// For now, store as a simple key-value pair using storeService
+	// In production, this should be properly integrated with collections
+	store := k.storeService.OpenKVStore(ctx)
+	key := types.GetSegmentHistoryKey(entry.SegmentNumber)
+	bz := k.cdc.MustMarshal(&entry)
+	store.Set(key, bz)
+}
+
+// GetAllSegmentHistory retrieves all segment history entries
+func (k Keeper) GetAllSegmentHistory(ctx sdk.Context) []types.SegmentHistoryEntry {
+	// For now, return empty slice
+	// In production, this should iterate over stored entries
+	return []types.SegmentHistoryEntry{}
+}
+
+// GetSegmentTransactions retrieves all transactions for a specific segment
+func (k Keeper) GetSegmentTransactions(ctx sdk.Context, segmentNumber uint64) []*types.SegmentTransaction {
+	// For now, return empty slice - this would be implemented with proper transaction tracking
+	return []*types.SegmentTransaction{}
+}
+
+// RecordSegmentCompletion records when a segment is completed
+func (k Keeper) RecordSegmentCompletion(ctx sdk.Context, segmentNumber uint64, totalSupply, reserves math.Int, price math.LegacyDec) {
+	entry := types.SegmentHistoryEntry{
+		SegmentNumber:  segmentNumber,
+		TokensMinted:   math.NewInt(10), // Fixed amount per segment
+		DevDistributed: math.NewInt(10), // Fixed dev allocation
+		TotalSupply:    totalSupply,
+		Price:          price,
+		Reserves:       reserves,
+		CompletedAt:    ctx.BlockTime().Unix(),
+		TxHash:         "", // Will be set by the transaction handler
+	}
+	
+	k.SetSegmentHistory(ctx, entry)
 }

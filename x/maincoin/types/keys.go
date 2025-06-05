@@ -1,6 +1,9 @@
 package types
 
-import "cosmossdk.io/collections"
+import (
+	"cosmossdk.io/collections"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 const (
 	// ModuleName defines the module name
@@ -39,4 +42,10 @@ var (
 	TotalSupplyKey        = collections.NewPrefix(3) // "total_supply"
 	ReserveBalanceKey     = collections.NewPrefix(4) // "reserve_balance"
 	DevAllocationTotalKey = collections.NewPrefix(5) // "dev_allocation_total"
+	KeyPrefixSegmentHistory = []byte{6} // "segment_history"
 )
+
+// GetSegmentHistoryKey returns the key for a segment history entry
+func GetSegmentHistoryKey(segmentNumber uint64) []byte {
+	return append(KeyPrefixSegmentHistory, sdk.Uint64ToBigEndian(segmentNumber)...)
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { TransactionDetails } from '../components/TransactionDetails';
 import { TransactionHistory } from '../components/TransactionHistory';
 import { SegmentPurchaseDetails } from '../components/SegmentPurchaseDetails';
@@ -355,7 +356,18 @@ Alternative commands to open terminal:
         {/* Segment Information */}
         {epochInfo && (
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Segment {epochInfo.currentEpoch} Status</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Segment {epochInfo.currentEpoch} Status</h2>
+              <Link 
+                to="/maincoin/history" 
+                className="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center gap-2"
+              >
+                View Complete Segment History
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">Current Price</p>

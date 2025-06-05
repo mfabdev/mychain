@@ -102,3 +102,30 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 	return math.ZeroInt(), nil
 }
 
+// GetCurrentEpoch returns the current epoch/segment number
+func (k Keeper) GetCurrentEpoch(ctx sdk.Context) uint64 {
+	epoch, err := k.CurrentEpoch.Get(ctx)
+	if err != nil {
+		return 0
+	}
+	return epoch
+}
+
+// GetCurrentPrice returns the current MainCoin price
+func (k Keeper) GetCurrentPrice(ctx sdk.Context) math.LegacyDec {
+	price, err := k.CurrentPrice.Get(ctx)
+	if err != nil {
+		return math.LegacyZeroDec()
+	}
+	return price
+}
+
+// GetTotalSupply returns the total MainCoin supply
+func (k Keeper) GetTotalSupply(ctx sdk.Context) math.Int {
+	supply, err := k.TotalSupply.Get(ctx)
+	if err != nil {
+		return math.ZeroInt()
+	}
+	return supply
+}
+

@@ -71,3 +71,30 @@ message UserPurchaseHistory {
     (gogoproto.nullable) = false
   ];
 }
+
+// SegmentHistoryEntry represents a completed segment's summary
+message SegmentHistoryEntry {
+  uint64 segment_number = 1;
+  string tokens_minted = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string dev_distributed = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_supply = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string price = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string reserves = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 completed_at = 7;
+  string tx_hash = 8;
+}

@@ -37,6 +37,21 @@ service Query {
   rpc UserPurchaseHistory(QueryUserPurchaseHistoryRequest) returns (QueryUserPurchaseHistoryResponse) {
     option (google.api.http).get = "/mychain/maincoin/v1/user_history/{address}";
   }
+  
+  // SegmentHistoryAll queries all segment history with pagination
+  rpc SegmentHistoryAll(QuerySegmentHistoryAllRequest) returns (QuerySegmentHistoryAllResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/segment-history";
+  }
+  
+  // SegmentDetails queries detailed information about a specific segment
+  rpc SegmentDetails(QuerySegmentDetailsRequest) returns (QuerySegmentDetailsResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/segment/{segment_number}";
+  }
+  
+  // SegmentStatistics queries aggregated segment statistics
+  rpc SegmentStatistics(QuerySegmentStatisticsRequest) returns (QuerySegmentStatisticsResponse) {
+    option (google.api.http).get = "/mychain/maincoin/v1/segment-statistics";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -116,4 +131,107 @@ message QueryUserPurchaseHistoryRequest {
 message QueryUserPurchaseHistoryResponse {
   UserPurchaseHistory user_history = 1;
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QuerySegmentHistoryAllRequest is the request for all segment history
+message QuerySegmentHistoryAllRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QuerySegmentHistoryAllResponse is the response for all segment history
+message QuerySegmentHistoryAllResponse {
+  repeated SegmentHistoryEntry segments = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QuerySegmentDetailsRequest is the request for specific segment details
+message QuerySegmentDetailsRequest {
+  uint64 segment_number = 1;
+}
+
+// SegmentTransaction represents a transaction within a segment
+message SegmentTransaction {
+  string tx_hash = 1;
+  string buyer = 2;
+  string tokens_bought = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string amount_spent = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 timestamp = 5;
+  uint32 segments_in_tx = 6;
+}
+
+// SegmentDetails provides comprehensive information about a segment
+message SegmentDetails {
+  SegmentHistoryEntry segment = 1;
+  SegmentHistoryEntry previous_segment = 2;
+  repeated SegmentTransaction transactions = 3;
+  uint64 total_transactions = 4;
+  string average_purchase_size = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string largest_purchase = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string smallest_purchase = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 time_to_complete = 8; // seconds
+  string reserve_ratio_deviation = 9 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ]; // in basis points
+}
+
+// QuerySegmentDetailsResponse is the response for segment details
+message QuerySegmentDetailsResponse {
+  SegmentDetails details = 1;
+}
+
+// QuerySegmentStatisticsRequest is the request for segment statistics
+message QuerySegmentStatisticsRequest {}
+
+// SegmentStatistics provides aggregated statistics
+message SegmentStatistics {
+  uint64 total_segments = 1;
+  string total_mc_purchased = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_dev_allocated = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_reserves = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 average_segment_time = 5; // seconds
+  uint64 fastest_segment = 6;
+  uint64 slowest_segment = 7;
+  uint64 perfect_ratio_segments = 8;
+  uint64 deficit_segments = 9;
+  uint64 surplus_segments = 10;
+  uint64 current_segment = 11;
+  string current_price = 12 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string current_supply = 13 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  int64 latest_segment_time = 14;
+}
+
+// QuerySegmentStatisticsResponse is the response for segment statistics
+message QuerySegmentStatisticsResponse {
+  SegmentStatistics stats = 1;
 }

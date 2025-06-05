@@ -490,6 +490,542 @@ func (m *QueryUserPurchaseHistoryResponse) GetPagination() *query.PageResponse {
 	return nil
 }
 
+// QuerySegmentHistoryAllRequest is the request for all segment history
+type QuerySegmentHistoryAllRequest struct {
+	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QuerySegmentHistoryAllRequest) Reset()         { *m = QuerySegmentHistoryAllRequest{} }
+func (m *QuerySegmentHistoryAllRequest) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentHistoryAllRequest) ProtoMessage()    {}
+func (*QuerySegmentHistoryAllRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{10}
+}
+func (m *QuerySegmentHistoryAllRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentHistoryAllRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentHistoryAllRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentHistoryAllRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentHistoryAllRequest.Merge(m, src)
+}
+func (m *QuerySegmentHistoryAllRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentHistoryAllRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentHistoryAllRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentHistoryAllRequest proto.InternalMessageInfo
+
+func (m *QuerySegmentHistoryAllRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QuerySegmentHistoryAllResponse is the response for all segment history
+type QuerySegmentHistoryAllResponse struct {
+	Segments   []SegmentHistoryEntry `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments"`
+	Pagination *query.PageResponse   `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QuerySegmentHistoryAllResponse) Reset()         { *m = QuerySegmentHistoryAllResponse{} }
+func (m *QuerySegmentHistoryAllResponse) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentHistoryAllResponse) ProtoMessage()    {}
+func (*QuerySegmentHistoryAllResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{11}
+}
+func (m *QuerySegmentHistoryAllResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentHistoryAllResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentHistoryAllResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentHistoryAllResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentHistoryAllResponse.Merge(m, src)
+}
+func (m *QuerySegmentHistoryAllResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentHistoryAllResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentHistoryAllResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentHistoryAllResponse proto.InternalMessageInfo
+
+func (m *QuerySegmentHistoryAllResponse) GetSegments() []SegmentHistoryEntry {
+	if m != nil {
+		return m.Segments
+	}
+	return nil
+}
+
+func (m *QuerySegmentHistoryAllResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QuerySegmentDetailsRequest is the request for specific segment details
+type QuerySegmentDetailsRequest struct {
+	SegmentNumber uint64 `protobuf:"varint,1,opt,name=segment_number,json=segmentNumber,proto3" json:"segment_number,omitempty"`
+}
+
+func (m *QuerySegmentDetailsRequest) Reset()         { *m = QuerySegmentDetailsRequest{} }
+func (m *QuerySegmentDetailsRequest) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentDetailsRequest) ProtoMessage()    {}
+func (*QuerySegmentDetailsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{12}
+}
+func (m *QuerySegmentDetailsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentDetailsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentDetailsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentDetailsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentDetailsRequest.Merge(m, src)
+}
+func (m *QuerySegmentDetailsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentDetailsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentDetailsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentDetailsRequest proto.InternalMessageInfo
+
+func (m *QuerySegmentDetailsRequest) GetSegmentNumber() uint64 {
+	if m != nil {
+		return m.SegmentNumber
+	}
+	return 0
+}
+
+// SegmentTransaction represents a transaction within a segment
+type SegmentTransaction struct {
+	TxHash       string                `protobuf:"bytes,1,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	Buyer        string                `protobuf:"bytes,2,opt,name=buyer,proto3" json:"buyer,omitempty"`
+	TokensBought cosmossdk_io_math.Int `protobuf:"bytes,3,opt,name=tokens_bought,json=tokensBought,proto3,customtype=cosmossdk.io/math.Int" json:"tokens_bought"`
+	AmountSpent  cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=amount_spent,json=amountSpent,proto3,customtype=cosmossdk.io/math.Int" json:"amount_spent"`
+	Timestamp    int64                 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	SegmentsInTx uint32                `protobuf:"varint,6,opt,name=segments_in_tx,json=segmentsInTx,proto3" json:"segments_in_tx,omitempty"`
+}
+
+func (m *SegmentTransaction) Reset()         { *m = SegmentTransaction{} }
+func (m *SegmentTransaction) String() string { return proto.CompactTextString(m) }
+func (*SegmentTransaction) ProtoMessage()    {}
+func (*SegmentTransaction) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{13}
+}
+func (m *SegmentTransaction) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SegmentTransaction) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SegmentTransaction.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SegmentTransaction) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SegmentTransaction.Merge(m, src)
+}
+func (m *SegmentTransaction) XXX_Size() int {
+	return m.Size()
+}
+func (m *SegmentTransaction) XXX_DiscardUnknown() {
+	xxx_messageInfo_SegmentTransaction.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SegmentTransaction proto.InternalMessageInfo
+
+func (m *SegmentTransaction) GetTxHash() string {
+	if m != nil {
+		return m.TxHash
+	}
+	return ""
+}
+
+func (m *SegmentTransaction) GetBuyer() string {
+	if m != nil {
+		return m.Buyer
+	}
+	return ""
+}
+
+func (m *SegmentTransaction) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *SegmentTransaction) GetSegmentsInTx() uint32 {
+	if m != nil {
+		return m.SegmentsInTx
+	}
+	return 0
+}
+
+// SegmentDetails provides comprehensive information about a segment
+type SegmentDetails struct {
+	Segment               *SegmentHistoryEntry  `protobuf:"bytes,1,opt,name=segment,proto3" json:"segment,omitempty"`
+	PreviousSegment       *SegmentHistoryEntry  `protobuf:"bytes,2,opt,name=previous_segment,json=previousSegment,proto3" json:"previous_segment,omitempty"`
+	Transactions          []*SegmentTransaction `protobuf:"bytes,3,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	TotalTransactions     uint64                `protobuf:"varint,4,opt,name=total_transactions,json=totalTransactions,proto3" json:"total_transactions,omitempty"`
+	AveragePurchaseSize   cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=average_purchase_size,json=averagePurchaseSize,proto3,customtype=cosmossdk.io/math.Int" json:"average_purchase_size"`
+	LargestPurchase       cosmossdk_io_math.Int `protobuf:"bytes,6,opt,name=largest_purchase,json=largestPurchase,proto3,customtype=cosmossdk.io/math.Int" json:"largest_purchase"`
+	SmallestPurchase      cosmossdk_io_math.Int `protobuf:"bytes,7,opt,name=smallest_purchase,json=smallestPurchase,proto3,customtype=cosmossdk.io/math.Int" json:"smallest_purchase"`
+	TimeToComplete        int64                 `protobuf:"varint,8,opt,name=time_to_complete,json=timeToComplete,proto3" json:"time_to_complete,omitempty"`
+	ReserveRatioDeviation cosmossdk_io_math.Int `protobuf:"bytes,9,opt,name=reserve_ratio_deviation,json=reserveRatioDeviation,proto3,customtype=cosmossdk.io/math.Int" json:"reserve_ratio_deviation"`
+}
+
+func (m *SegmentDetails) Reset()         { *m = SegmentDetails{} }
+func (m *SegmentDetails) String() string { return proto.CompactTextString(m) }
+func (*SegmentDetails) ProtoMessage()    {}
+func (*SegmentDetails) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{14}
+}
+func (m *SegmentDetails) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SegmentDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SegmentDetails.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SegmentDetails) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SegmentDetails.Merge(m, src)
+}
+func (m *SegmentDetails) XXX_Size() int {
+	return m.Size()
+}
+func (m *SegmentDetails) XXX_DiscardUnknown() {
+	xxx_messageInfo_SegmentDetails.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SegmentDetails proto.InternalMessageInfo
+
+func (m *SegmentDetails) GetSegment() *SegmentHistoryEntry {
+	if m != nil {
+		return m.Segment
+	}
+	return nil
+}
+
+func (m *SegmentDetails) GetPreviousSegment() *SegmentHistoryEntry {
+	if m != nil {
+		return m.PreviousSegment
+	}
+	return nil
+}
+
+func (m *SegmentDetails) GetTransactions() []*SegmentTransaction {
+	if m != nil {
+		return m.Transactions
+	}
+	return nil
+}
+
+func (m *SegmentDetails) GetTotalTransactions() uint64 {
+	if m != nil {
+		return m.TotalTransactions
+	}
+	return 0
+}
+
+func (m *SegmentDetails) GetTimeToComplete() int64 {
+	if m != nil {
+		return m.TimeToComplete
+	}
+	return 0
+}
+
+// QuerySegmentDetailsResponse is the response for segment details
+type QuerySegmentDetailsResponse struct {
+	Details *SegmentDetails `protobuf:"bytes,1,opt,name=details,proto3" json:"details,omitempty"`
+}
+
+func (m *QuerySegmentDetailsResponse) Reset()         { *m = QuerySegmentDetailsResponse{} }
+func (m *QuerySegmentDetailsResponse) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentDetailsResponse) ProtoMessage()    {}
+func (*QuerySegmentDetailsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{15}
+}
+func (m *QuerySegmentDetailsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentDetailsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentDetailsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentDetailsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentDetailsResponse.Merge(m, src)
+}
+func (m *QuerySegmentDetailsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentDetailsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentDetailsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentDetailsResponse proto.InternalMessageInfo
+
+func (m *QuerySegmentDetailsResponse) GetDetails() *SegmentDetails {
+	if m != nil {
+		return m.Details
+	}
+	return nil
+}
+
+// QuerySegmentStatisticsRequest is the request for segment statistics
+type QuerySegmentStatisticsRequest struct {
+}
+
+func (m *QuerySegmentStatisticsRequest) Reset()         { *m = QuerySegmentStatisticsRequest{} }
+func (m *QuerySegmentStatisticsRequest) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentStatisticsRequest) ProtoMessage()    {}
+func (*QuerySegmentStatisticsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{16}
+}
+func (m *QuerySegmentStatisticsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentStatisticsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentStatisticsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentStatisticsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentStatisticsRequest.Merge(m, src)
+}
+func (m *QuerySegmentStatisticsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentStatisticsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentStatisticsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentStatisticsRequest proto.InternalMessageInfo
+
+// SegmentStatistics provides aggregated statistics
+type SegmentStatistics struct {
+	TotalSegments        uint64                      `protobuf:"varint,1,opt,name=total_segments,json=totalSegments,proto3" json:"total_segments,omitempty"`
+	TotalMcPurchased     cosmossdk_io_math.Int       `protobuf:"bytes,2,opt,name=total_mc_purchased,json=totalMcPurchased,proto3,customtype=cosmossdk.io/math.Int" json:"total_mc_purchased"`
+	TotalDevAllocated    cosmossdk_io_math.Int       `protobuf:"bytes,3,opt,name=total_dev_allocated,json=totalDevAllocated,proto3,customtype=cosmossdk.io/math.Int" json:"total_dev_allocated"`
+	TotalReserves        cosmossdk_io_math.Int       `protobuf:"bytes,4,opt,name=total_reserves,json=totalReserves,proto3,customtype=cosmossdk.io/math.Int" json:"total_reserves"`
+	AverageSegmentTime   int64                       `protobuf:"varint,5,opt,name=average_segment_time,json=averageSegmentTime,proto3" json:"average_segment_time,omitempty"`
+	FastestSegment       uint64                      `protobuf:"varint,6,opt,name=fastest_segment,json=fastestSegment,proto3" json:"fastest_segment,omitempty"`
+	SlowestSegment       uint64                      `protobuf:"varint,7,opt,name=slowest_segment,json=slowestSegment,proto3" json:"slowest_segment,omitempty"`
+	PerfectRatioSegments uint64                      `protobuf:"varint,8,opt,name=perfect_ratio_segments,json=perfectRatioSegments,proto3" json:"perfect_ratio_segments,omitempty"`
+	DeficitSegments      uint64                      `protobuf:"varint,9,opt,name=deficit_segments,json=deficitSegments,proto3" json:"deficit_segments,omitempty"`
+	SurplusSegments      uint64                      `protobuf:"varint,10,opt,name=surplus_segments,json=surplusSegments,proto3" json:"surplus_segments,omitempty"`
+	CurrentSegment       uint64                      `protobuf:"varint,11,opt,name=current_segment,json=currentSegment,proto3" json:"current_segment,omitempty"`
+	CurrentPrice         cosmossdk_io_math.LegacyDec `protobuf:"bytes,12,opt,name=current_price,json=currentPrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"current_price"`
+	CurrentSupply        cosmossdk_io_math.Int       `protobuf:"bytes,13,opt,name=current_supply,json=currentSupply,proto3,customtype=cosmossdk.io/math.Int" json:"current_supply"`
+	LatestSegmentTime    int64                       `protobuf:"varint,14,opt,name=latest_segment_time,json=latestSegmentTime,proto3" json:"latest_segment_time,omitempty"`
+}
+
+func (m *SegmentStatistics) Reset()         { *m = SegmentStatistics{} }
+func (m *SegmentStatistics) String() string { return proto.CompactTextString(m) }
+func (*SegmentStatistics) ProtoMessage()    {}
+func (*SegmentStatistics) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{17}
+}
+func (m *SegmentStatistics) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SegmentStatistics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SegmentStatistics.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SegmentStatistics) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SegmentStatistics.Merge(m, src)
+}
+func (m *SegmentStatistics) XXX_Size() int {
+	return m.Size()
+}
+func (m *SegmentStatistics) XXX_DiscardUnknown() {
+	xxx_messageInfo_SegmentStatistics.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SegmentStatistics proto.InternalMessageInfo
+
+func (m *SegmentStatistics) GetTotalSegments() uint64 {
+	if m != nil {
+		return m.TotalSegments
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetAverageSegmentTime() int64 {
+	if m != nil {
+		return m.AverageSegmentTime
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetFastestSegment() uint64 {
+	if m != nil {
+		return m.FastestSegment
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetSlowestSegment() uint64 {
+	if m != nil {
+		return m.SlowestSegment
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetPerfectRatioSegments() uint64 {
+	if m != nil {
+		return m.PerfectRatioSegments
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetDeficitSegments() uint64 {
+	if m != nil {
+		return m.DeficitSegments
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetSurplusSegments() uint64 {
+	if m != nil {
+		return m.SurplusSegments
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetCurrentSegment() uint64 {
+	if m != nil {
+		return m.CurrentSegment
+	}
+	return 0
+}
+
+func (m *SegmentStatistics) GetLatestSegmentTime() int64 {
+	if m != nil {
+		return m.LatestSegmentTime
+	}
+	return 0
+}
+
+// QuerySegmentStatisticsResponse is the response for segment statistics
+type QuerySegmentStatisticsResponse struct {
+	Stats *SegmentStatistics `protobuf:"bytes,1,opt,name=stats,proto3" json:"stats,omitempty"`
+}
+
+func (m *QuerySegmentStatisticsResponse) Reset()         { *m = QuerySegmentStatisticsResponse{} }
+func (m *QuerySegmentStatisticsResponse) String() string { return proto.CompactTextString(m) }
+func (*QuerySegmentStatisticsResponse) ProtoMessage()    {}
+func (*QuerySegmentStatisticsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3da961af857ffeef, []int{18}
+}
+func (m *QuerySegmentStatisticsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySegmentStatisticsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySegmentStatisticsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySegmentStatisticsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySegmentStatisticsResponse.Merge(m, src)
+}
+func (m *QuerySegmentStatisticsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySegmentStatisticsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySegmentStatisticsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySegmentStatisticsResponse proto.InternalMessageInfo
+
+func (m *QuerySegmentStatisticsResponse) GetStats() *SegmentStatistics {
+	if m != nil {
+		return m.Stats
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "mychain.maincoin.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "mychain.maincoin.v1.QueryParamsResponse")
@@ -501,67 +1037,123 @@ func init() {
 	proto.RegisterType((*QuerySegmentHistoryResponse)(nil), "mychain.maincoin.v1.QuerySegmentHistoryResponse")
 	proto.RegisterType((*QueryUserPurchaseHistoryRequest)(nil), "mychain.maincoin.v1.QueryUserPurchaseHistoryRequest")
 	proto.RegisterType((*QueryUserPurchaseHistoryResponse)(nil), "mychain.maincoin.v1.QueryUserPurchaseHistoryResponse")
+	proto.RegisterType((*QuerySegmentHistoryAllRequest)(nil), "mychain.maincoin.v1.QuerySegmentHistoryAllRequest")
+	proto.RegisterType((*QuerySegmentHistoryAllResponse)(nil), "mychain.maincoin.v1.QuerySegmentHistoryAllResponse")
+	proto.RegisterType((*QuerySegmentDetailsRequest)(nil), "mychain.maincoin.v1.QuerySegmentDetailsRequest")
+	proto.RegisterType((*SegmentTransaction)(nil), "mychain.maincoin.v1.SegmentTransaction")
+	proto.RegisterType((*SegmentDetails)(nil), "mychain.maincoin.v1.SegmentDetails")
+	proto.RegisterType((*QuerySegmentDetailsResponse)(nil), "mychain.maincoin.v1.QuerySegmentDetailsResponse")
+	proto.RegisterType((*QuerySegmentStatisticsRequest)(nil), "mychain.maincoin.v1.QuerySegmentStatisticsRequest")
+	proto.RegisterType((*SegmentStatistics)(nil), "mychain.maincoin.v1.SegmentStatistics")
+	proto.RegisterType((*QuerySegmentStatisticsResponse)(nil), "mychain.maincoin.v1.QuerySegmentStatisticsResponse")
 }
 
 func init() { proto.RegisterFile("mychain/maincoin/v1/query.proto", fileDescriptor_3da961af857ffeef) }
 
 var fileDescriptor_3da961af857ffeef = []byte{
-	// 880 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x41, 0x6f, 0xe3, 0x44,
-	0x14, 0x8e, 0x77, 0xb7, 0x59, 0x75, 0x92, 0x76, 0xc5, 0xb4, 0x08, 0xaf, 0xc3, 0x26, 0xc5, 0x01,
-	0xb6, 0x2d, 0xd4, 0x43, 0x52, 0x2a, 0xc4, 0x01, 0x04, 0x01, 0x4a, 0x2b, 0xaa, 0x12, 0x5c, 0xca,
-	0x81, 0x4b, 0x34, 0x71, 0x06, 0xc7, 0x6a, 0x3c, 0xe3, 0x7a, 0x9c, 0x88, 0xa8, 0xaa, 0x84, 0xe0,
-	0xc8, 0x05, 0x09, 0x71, 0xe0, 0x1f, 0x70, 0x41, 0x42, 0x08, 0x09, 0x7e, 0x42, 0x8f, 0x95, 0xb8,
-	0x20, 0x0e, 0x15, 0x6a, 0x91, 0xb8, 0xf3, 0x0b, 0x90, 0x67, 0xc6, 0x34, 0x49, 0x9d, 0xad, 0x2b,
-	0xf5, 0x12, 0xd9, 0xcf, 0xef, 0xfb, 0xde, 0xf7, 0x9e, 0xe7, 0x7b, 0x0e, 0xa8, 0xf8, 0x43, 0xa7,
-	0x8b, 0x3d, 0x8a, 0x7c, 0xec, 0x51, 0x87, 0x79, 0x14, 0x0d, 0x6a, 0xe8, 0xb0, 0x4f, 0xc2, 0xa1,
-	0x15, 0x84, 0x2c, 0x62, 0x70, 0x41, 0x25, 0x58, 0x49, 0x82, 0x35, 0xa8, 0x19, 0x4f, 0x61, 0xdf,
-	0xa3, 0x0c, 0x89, 0x5f, 0x99, 0x67, 0xac, 0x3a, 0x8c, 0xfb, 0x8c, 0xa3, 0x36, 0xe6, 0x44, 0x12,
-	0xa0, 0x41, 0xad, 0x4d, 0x22, 0x5c, 0x43, 0x01, 0x76, 0x3d, 0x8a, 0x23, 0x8f, 0x51, 0x95, 0xbb,
-	0xe8, 0x32, 0x97, 0x89, 0x4b, 0x14, 0x5f, 0xa9, 0xe8, 0xb3, 0x2e, 0x63, 0x6e, 0x8f, 0x20, 0x1c,
-	0x78, 0x08, 0x53, 0xca, 0x22, 0x01, 0xe1, 0xea, 0xe9, 0x52, 0x9a, 0xd0, 0x00, 0x87, 0xd8, 0x4f,
-	0x32, 0x56, 0xd2, 0x32, 0x38, 0x71, 0x7d, 0x42, 0xa3, 0x56, 0xd7, 0xe3, 0x11, 0x4b, 0x9a, 0x32,
-	0x17, 0x01, 0xfc, 0x28, 0x96, 0xd8, 0x14, 0x78, 0x9b, 0x1c, 0xf6, 0x09, 0x8f, 0xcc, 0x7d, 0xb0,
-	0x30, 0x16, 0xe5, 0x01, 0xa3, 0x9c, 0xc0, 0x37, 0x41, 0x5e, 0xd6, 0xd1, 0xb5, 0x25, 0x6d, 0xb9,
-	0x50, 0x2f, 0x59, 0x29, 0x23, 0xb1, 0x24, 0xa8, 0x31, 0x7b, 0x72, 0x56, 0xc9, 0xfd, 0xf0, 0xcf,
-	0x4f, 0xab, 0x9a, 0xad, 0x50, 0xa6, 0x01, 0x74, 0x41, 0xfb, 0x4e, 0x3f, 0x0c, 0x09, 0x8d, 0x9a,
-	0xa1, 0xe7, 0x90, 0xa4, 0xe4, 0x27, 0xe0, 0x61, 0xca, 0x33, 0x55, 0xf8, 0x75, 0x30, 0x13, 0xc4,
-	0x01, 0x51, 0x77, 0xb6, 0x51, 0x8d, 0xa9, 0xff, 0x3c, 0xab, 0x94, 0xe4, 0xa4, 0x79, 0xe7, 0xc0,
-	0xf2, 0x18, 0xf2, 0x71, 0xd4, 0xb5, 0x76, 0x88, 0x8b, 0x9d, 0xe1, 0xbb, 0xc4, 0xb1, 0x25, 0xc2,
-	0x7c, 0x08, 0x9e, 0x11, 0xbc, 0x7b, 0xb2, 0xfd, 0x6d, 0xfa, 0x19, 0x4b, 0x4a, 0xfe, 0x7b, 0x57,
-	0xe9, 0x19, 0x7b, 0xa6, 0x4a, 0x56, 0xc1, 0x9c, 0x23, 0xa5, 0xb4, 0x48, 0xc0, 0x9c, 0xae, 0x28,
-	0x7d, 0xcf, 0x2e, 0xaa, 0xe0, 0x7b, 0x71, 0x0c, 0x6e, 0x5d, 0x26, 0x49, 0x7d, 0x77, 0xb2, 0xeb,
-	0x4b, 0x98, 0x44, 0xa7, 0xf0, 0x2d, 0x50, 0x8c, 0x58, 0x84, 0x7b, 0x2d, 0xde, 0x0f, 0x82, 0xde,
-	0x50, 0xbf, 0x2b, 0x88, 0x1e, 0x29, 0xa2, 0xa7, 0xaf, 0x12, 0x6d, 0xd3, 0xc8, 0x2e, 0x08, 0xc8,
-	0x9e, 0x40, 0xc0, 0x4d, 0xf0, 0x20, 0x24, 0x9c, 0x84, 0x03, 0xd2, 0x6a, 0xe3, 0x1e, 0xa6, 0x0e,
-	0xd1, 0xef, 0x65, 0x21, 0x99, 0x57, 0xa8, 0x86, 0x04, 0xc1, 0x06, 0x98, 0x8b, 0xd8, 0x01, 0xa1,
-	0xbc, 0x45, 0x09, 0xe9, 0x90, 0x8e, 0x3e, 0x93, 0x85, 0xa5, 0x28, 0x31, 0xbb, 0x02, 0x12, 0xcf,
-	0x25, 0xd1, 0x12, 0xc6, 0x67, 0x57, 0xcf, 0xdf, 0x60, 0x2e, 0x0a, 0x69, 0xc7, 0x40, 0xf8, 0x21,
-	0x58, 0xec, 0x90, 0x41, 0x0b, 0xf7, 0x7a, 0xcc, 0x11, 0x2e, 0x68, 0x89, 0x9e, 0xf5, 0xfb, 0x59,
-	0x44, 0xc1, 0x0e, 0x19, 0xbc, 0xfd, 0x3f, 0xf2, 0xe3, 0x18, 0x68, 0x7e, 0xad, 0x01, 0x63, 0xf4,
-	0xa5, 0x6f, 0x49, 0x3b, 0xa8, 0x33, 0x01, 0x5f, 0x00, 0xf3, 0x89, 0x51, 0x68, 0xdf, 0x6f, 0x93,
-	0x50, 0xbd, 0xf7, 0x39, 0x15, 0xdd, 0x15, 0x41, 0xb8, 0x09, 0xc0, 0xa5, 0x97, 0xc5, 0x5b, 0x2f,
-	0xd4, 0x5f, 0xb4, 0xa4, 0x0a, 0x2b, 0x36, 0xbe, 0x25, 0x37, 0x87, 0x32, 0xbe, 0xd5, 0xc4, 0x6e,
-	0x72, 0xd2, 0xed, 0x11, 0xa4, 0xf9, 0x8b, 0x06, 0x4a, 0xa9, 0x6a, 0xd4, 0x29, 0xdc, 0x01, 0x0f,
-	0x26, 0x7c, 0xab, 0xac, 0x57, 0x4d, 0xb5, 0xde, 0x04, 0x4b, 0xd2, 0x8a, 0xba, 0x87, 0xef, 0xa7,
-	0xa8, 0x7e, 0x7c, 0xad, 0x6a, 0x29, 0x65, 0x4c, 0xf6, 0x57, 0x1a, 0xa8, 0x08, 0xd9, 0xfb, 0x9c,
-	0x84, 0xcd, 0x7e, 0xe8, 0x74, 0x31, 0x27, 0x13, 0x93, 0xd4, 0xc1, 0x7d, 0xdc, 0xe9, 0x84, 0x84,
-	0xcb, 0x6d, 0x31, 0x6b, 0x27, 0xb7, 0xb7, 0x36, 0xbc, 0xdf, 0x34, 0xb0, 0x34, 0x5d, 0x85, 0x9a,
-	0xe0, 0x07, 0xa0, 0xd8, 0xe7, 0x24, 0x9c, 0x18, 0xdf, 0x72, 0xea, 0xf8, 0xd2, 0x78, 0x0a, 0x31,
-	0xfa, 0xb6, 0x07, 0x58, 0xff, 0x31, 0x0f, 0x66, 0x84, 0x74, 0xf8, 0x85, 0x06, 0xf2, 0x72, 0x63,
-	0xc2, 0xc7, 0xa9, 0xa2, 0xae, 0xae, 0x67, 0x63, 0xf9, 0xfa, 0x44, 0x59, 0xd3, 0xac, 0x7e, 0xf9,
-	0xfb, 0xdf, 0xdf, 0xde, 0x79, 0x04, 0x4b, 0x68, 0xfa, 0x47, 0x03, 0x7e, 0xaf, 0x81, 0xe2, 0xe8,
-	0xda, 0x85, 0x6b, 0xd3, 0xf9, 0x53, 0x56, 0xb7, 0x61, 0x65, 0x4d, 0x57, 0xa2, 0x56, 0x85, 0xa8,
-	0xe7, 0xa1, 0x99, 0x2a, 0x6a, 0x6c, 0xa1, 0xc2, 0xef, 0x34, 0x50, 0x18, 0x59, 0xcf, 0xf0, 0xe5,
-	0xe9, 0xb5, 0xae, 0x6e, 0x78, 0x63, 0x2d, 0x63, 0xb6, 0x12, 0xb6, 0x22, 0x84, 0x55, 0xe1, 0x73,
-	0xe8, 0x49, 0x1f, 0x50, 0x2f, 0xd6, 0xf1, 0xb3, 0x06, 0xe6, 0xc7, 0xdd, 0x06, 0xd1, 0xb5, 0xc5,
-	0xc6, 0x1d, 0x62, 0xbc, 0x92, 0x1d, 0xa0, 0x04, 0xbe, 0x21, 0x04, 0xbe, 0x06, 0x37, 0x50, 0x86,
-	0x2f, 0x3c, 0x3a, 0x1a, 0xdf, 0x64, 0xc7, 0xf0, 0x57, 0x0d, 0x2c, 0xa4, 0x9c, 0x71, 0xf8, 0xea,
-	0x74, 0x21, 0xd3, 0x0d, 0x6e, 0x6c, 0xdc, 0x10, 0xa5, 0x7a, 0x58, 0x17, 0x3d, 0xac, 0xc1, 0x97,
-	0x52, 0x7b, 0x18, 0xf5, 0x2a, 0x3a, 0x52, 0x1b, 0xe3, 0xb8, 0x51, 0x3f, 0x39, 0x2f, 0x6b, 0xa7,
-	0xe7, 0x65, 0xed, 0xaf, 0xf3, 0xb2, 0xf6, 0xcd, 0x45, 0x39, 0x77, 0x7a, 0x51, 0xce, 0xfd, 0x71,
-	0x51, 0xce, 0x7d, 0xaa, 0x27, 0x2c, 0x9f, 0x5f, 0xf2, 0x44, 0xc3, 0x80, 0xf0, 0x76, 0x5e, 0xfc,
-	0xc3, 0x59, 0xff, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x56, 0x99, 0xd3, 0x2d, 0xd9, 0x09, 0x00, 0x00,
+	// 1617 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x58, 0x5b, 0x6f, 0x1b, 0xc5,
+	0x17, 0xcf, 0xe6, 0xda, 0x9c, 0x5c, 0x9c, 0x4c, 0xd2, 0x7f, 0x5d, 0xa7, 0x4d, 0xfa, 0x77, 0x4a,
+	0x93, 0x94, 0xc6, 0xdb, 0xa4, 0xad, 0x10, 0x12, 0x45, 0xd4, 0x4d, 0x4b, 0x7a, 0x25, 0x75, 0x52,
+	0x1e, 0x10, 0x62, 0x35, 0x59, 0x4f, 0xec, 0x55, 0xf7, 0xd6, 0x9d, 0xb1, 0x49, 0x5a, 0x55, 0x42,
+	0xf0, 0x88, 0x10, 0x48, 0xa8, 0x0f, 0x7c, 0x03, 0x84, 0x84, 0x84, 0x10, 0xa8, 0x7c, 0x84, 0x3e,
+	0x56, 0xe2, 0x05, 0xf1, 0x50, 0xa1, 0x16, 0x89, 0x77, 0x3e, 0x01, 0xda, 0xb9, 0xac, 0x77, 0xe3,
+	0x75, 0xb2, 0xa9, 0xfa, 0x12, 0xc5, 0x67, 0xce, 0xef, 0xcc, 0x6f, 0xce, 0x6d, 0xce, 0x2c, 0xcc,
+	0x38, 0x3b, 0x66, 0x1d, 0x5b, 0xae, 0xee, 0x60, 0xcb, 0x35, 0x3d, 0xcb, 0xd5, 0x9b, 0x4b, 0xfa,
+	0xfd, 0x06, 0x09, 0x76, 0x4a, 0x7e, 0xe0, 0x31, 0x0f, 0x4d, 0x48, 0x85, 0x92, 0x52, 0x28, 0x35,
+	0x97, 0x0a, 0xe3, 0xd8, 0xb1, 0x5c, 0x4f, 0xe7, 0x7f, 0x85, 0x5e, 0xe1, 0xb4, 0xe9, 0x51, 0xc7,
+	0xa3, 0xfa, 0x26, 0xa6, 0x44, 0x18, 0xd0, 0x9b, 0x4b, 0x9b, 0x84, 0xe1, 0x25, 0xdd, 0xc7, 0x35,
+	0xcb, 0xc5, 0xcc, 0xf2, 0x5c, 0xa9, 0x3b, 0x59, 0xf3, 0x6a, 0x1e, 0xff, 0x57, 0x0f, 0xff, 0x93,
+	0xd2, 0x63, 0x35, 0xcf, 0xab, 0xd9, 0x44, 0xc7, 0xbe, 0xa5, 0x63, 0xd7, 0xf5, 0x18, 0x87, 0x50,
+	0xb9, 0x7a, 0x22, 0x8d, 0xa8, 0x8f, 0x03, 0xec, 0x28, 0x8d, 0x85, 0x34, 0x0d, 0x4a, 0x6a, 0x0e,
+	0x71, 0x99, 0x51, 0xb7, 0x28, 0xf3, 0xd4, 0xa1, 0x8a, 0x93, 0x80, 0xee, 0x84, 0x14, 0xd7, 0x38,
+	0xbe, 0x42, 0xee, 0x37, 0x08, 0x65, 0xc5, 0xbb, 0x30, 0x91, 0x90, 0x52, 0xdf, 0x73, 0x29, 0x41,
+	0xef, 0x42, 0xbf, 0xd8, 0x27, 0xaf, 0x9d, 0xd0, 0xe6, 0x87, 0x96, 0xa7, 0x4a, 0x29, 0x2e, 0x29,
+	0x09, 0x50, 0x79, 0xf0, 0xe9, 0xf3, 0x99, 0xae, 0xef, 0xff, 0xf9, 0xe9, 0xb4, 0x56, 0x91, 0xa8,
+	0x62, 0x01, 0xf2, 0xdc, 0xec, 0xe5, 0x46, 0x10, 0x10, 0x97, 0xad, 0x05, 0x96, 0x49, 0xd4, 0x96,
+	0x1f, 0xc2, 0xd1, 0x94, 0x35, 0xb9, 0xf1, 0xdb, 0xd0, 0xe7, 0x87, 0x02, 0xbe, 0xef, 0x60, 0x79,
+	0x36, 0x34, 0xfd, 0xe7, 0xf3, 0x99, 0x29, 0xe1, 0x69, 0x5a, 0xbd, 0x57, 0xb2, 0x3c, 0xdd, 0xc1,
+	0xac, 0x5e, 0xba, 0x49, 0x6a, 0xd8, 0xdc, 0x59, 0x21, 0x66, 0x45, 0x20, 0x8a, 0x47, 0xe1, 0x08,
+	0xb7, 0xbb, 0x2e, 0x8e, 0x7f, 0xcd, 0xdd, 0xf2, 0xd4, 0x96, 0xff, 0xf6, 0x48, 0x3e, 0x89, 0x35,
+	0xb9, 0xe5, 0x2c, 0x8c, 0x98, 0x82, 0x8a, 0x41, 0x7c, 0xcf, 0xac, 0xf3, 0xad, 0x7b, 0x2b, 0xc3,
+	0x52, 0x78, 0x25, 0x94, 0xa1, 0xd5, 0x96, 0x92, 0xe0, 0xd7, 0x9d, 0x9d, 0x9f, 0xb2, 0xc4, 0x4f,
+	0x8a, 0xde, 0x83, 0x61, 0xe6, 0x31, 0x6c, 0x1b, 0xb4, 0xe1, 0xfb, 0xf6, 0x4e, 0xbe, 0x87, 0x1b,
+	0x3a, 0x2e, 0x0d, 0x1d, 0x6e, 0x37, 0x74, 0xcd, 0x65, 0x95, 0x21, 0x0e, 0x59, 0xe7, 0x08, 0x74,
+	0x15, 0x72, 0x01, 0xa1, 0x24, 0x68, 0x12, 0x63, 0x13, 0xdb, 0xd8, 0x35, 0x49, 0xbe, 0x37, 0x8b,
+	0x91, 0x51, 0x89, 0x2a, 0x0b, 0x10, 0x2a, 0xc3, 0x08, 0xf3, 0xee, 0x11, 0x97, 0x1a, 0x2e, 0x21,
+	0x55, 0x52, 0xcd, 0xf7, 0x65, 0xb1, 0x32, 0x2c, 0x30, 0xb7, 0x39, 0x24, 0xf4, 0x8b, 0xe2, 0x12,
+	0x84, 0xb9, 0x9b, 0xef, 0x3f, 0x80, 0x5f, 0x24, 0xb2, 0x12, 0x02, 0xd1, 0x07, 0x30, 0x59, 0x25,
+	0x4d, 0x03, 0xdb, 0xb6, 0x67, 0xf2, 0x2a, 0x30, 0xf8, 0x99, 0xf3, 0x03, 0x59, 0x48, 0xa1, 0x2a,
+	0x69, 0x5e, 0x8a, 0x90, 0x1b, 0x21, 0xb0, 0xf8, 0xa5, 0x06, 0x85, 0x78, 0xd0, 0x57, 0x45, 0x39,
+	0xc8, 0x9c, 0x40, 0x6f, 0xc0, 0xa8, 0x2a, 0x14, 0xb7, 0xe1, 0x6c, 0x92, 0x40, 0xc6, 0x7d, 0x44,
+	0x4a, 0x6f, 0x73, 0x21, 0xba, 0x0a, 0xd0, 0xaa, 0x65, 0x1e, 0xf5, 0xa1, 0xe5, 0x53, 0x25, 0xc1,
+	0xa2, 0x14, 0x16, 0x7e, 0x49, 0x74, 0x0e, 0x59, 0xf8, 0xa5, 0x35, 0x5c, 0x53, 0x99, 0x5e, 0x89,
+	0x21, 0x8b, 0xbf, 0x68, 0x30, 0x95, 0xca, 0x46, 0x66, 0xe1, 0x4d, 0xc8, 0xed, 0xaa, 0x5b, 0x59,
+	0x7a, 0xb3, 0xa9, 0xa5, 0xb7, 0xcb, 0x8a, 0x3a, 0x8a, 0xfc, 0x8d, 0xde, 0x4f, 0x61, 0x3d, 0xb7,
+	0x2f, 0x6b, 0x41, 0x25, 0x41, 0xfb, 0x0b, 0x0d, 0x66, 0x38, 0xed, 0xbb, 0x94, 0x04, 0x6b, 0x8d,
+	0xc0, 0xac, 0x63, 0x4a, 0x76, 0x79, 0x32, 0x0f, 0x03, 0xb8, 0x5a, 0x0d, 0x08, 0x15, 0xdd, 0x62,
+	0xb0, 0xa2, 0x7e, 0xbe, 0x36, 0xe7, 0xfd, 0xa6, 0xc1, 0x89, 0xce, 0x2c, 0xa4, 0x07, 0x6f, 0xc0,
+	0x70, 0x83, 0x92, 0x60, 0x97, 0xfb, 0xe6, 0x53, 0xdd, 0x97, 0x66, 0x67, 0x28, 0x44, 0xbf, 0x76,
+	0x07, 0xd6, 0xe0, 0x78, 0x4a, 0xd8, 0x2f, 0xd9, 0xb6, 0xf2, 0x5e, 0xd2, 0x47, 0xda, 0x2b, 0xfb,
+	0xe8, 0x57, 0x0d, 0xa6, 0x3b, 0xed, 0x24, 0x3d, 0x74, 0x1d, 0x0e, 0xc9, 0x3c, 0x09, 0x23, 0xd5,
+	0xd3, 0xd1, 0x3b, 0x49, 0x0b, 0x57, 0x5c, 0x16, 0xec, 0x94, 0x7b, 0xc3, 0x02, 0xac, 0x44, 0xf8,
+	0xd7, 0xe7, 0xa0, 0xcb, 0xc9, 0x2a, 0x5d, 0x21, 0x0c, 0x5b, 0x36, 0x3d, 0x58, 0x95, 0x16, 0xbf,
+	0xea, 0x06, 0x24, 0x0d, 0x6c, 0x04, 0xd8, 0xa5, 0xd8, 0x0c, 0x6d, 0xa3, 0x23, 0x30, 0xc0, 0xb6,
+	0x8d, 0x3a, 0xa6, 0x75, 0x99, 0x99, 0xfd, 0x6c, 0x7b, 0x15, 0xd3, 0x3a, 0x9a, 0x84, 0xbe, 0xcd,
+	0xc6, 0x0e, 0x09, 0x44, 0x1b, 0xaf, 0x88, 0x1f, 0xb1, 0x86, 0xb8, 0xe9, 0x35, 0x6a, 0x75, 0x96,
+	0xad, 0x37, 0xcb, 0x86, 0x58, 0xe6, 0x90, 0xb0, 0xbd, 0x63, 0xc7, 0x6b, 0xb8, 0xcc, 0xa0, 0x3e,
+	0x71, 0x59, 0xb6, 0xce, 0x3c, 0x24, 0x20, 0xeb, 0x21, 0x02, 0x1d, 0x83, 0x41, 0x66, 0x39, 0x84,
+	0x32, 0xec, 0xf8, 0xbc, 0x25, 0xf7, 0x54, 0x5a, 0x02, 0x74, 0x32, 0x72, 0x08, 0x35, 0x2c, 0xd7,
+	0x60, 0xdb, 0xbc, 0xe3, 0x8e, 0x54, 0x86, 0x95, 0xf4, 0x9a, 0xbb, 0xb1, 0x5d, 0xfc, 0xba, 0x0f,
+	0x46, 0x93, 0x0e, 0x45, 0x65, 0x18, 0x90, 0x2a, 0x7b, 0x56, 0x46, 0x4a, 0xec, 0x2b, 0x0a, 0x88,
+	0xd6, 0x61, 0xcc, 0x0f, 0x48, 0xd3, 0xf2, 0x1a, 0xd4, 0x50, 0xc6, 0xba, 0x0f, 0x68, 0x2c, 0xa7,
+	0x2c, 0xc8, 0xc5, 0xb0, 0x6e, 0x59, 0x2b, 0x66, 0x34, 0xdf, 0xc3, 0x33, 0x73, 0x6e, 0x2f, 0x83,
+	0xb1, 0x18, 0x57, 0x12, 0x60, 0xb4, 0x08, 0x48, 0xdc, 0xae, 0x09, 0x93, 0xbd, 0x3c, 0x67, 0xc6,
+	0xf9, 0xca, 0x46, 0x5c, 0xfd, 0x0e, 0x1c, 0xc6, 0x4d, 0x12, 0xe0, 0x1a, 0x31, 0x7c, 0xd9, 0x0e,
+	0x0c, 0x6a, 0x3d, 0x20, 0xd9, 0xae, 0xc2, 0x09, 0x89, 0x55, 0x9d, 0x64, 0xdd, 0x7a, 0x40, 0xd0,
+	0x2a, 0x8c, 0xd9, 0x38, 0xa8, 0x11, 0xca, 0x22, 0x93, 0xf2, 0x52, 0xdc, 0xc7, 0x5a, 0x4e, 0xc2,
+	0x94, 0x35, 0x74, 0x1d, 0xc6, 0xa9, 0x83, 0x6d, 0x3b, 0x61, 0x2a, 0xd3, 0x75, 0x38, 0xa6, 0x70,
+	0x91, 0xad, 0x79, 0x18, 0x0b, 0x73, 0xc8, 0x60, 0x9e, 0x61, 0x7a, 0x8e, 0x6f, 0x13, 0x46, 0xf2,
+	0x87, 0x78, 0x6e, 0x8d, 0x86, 0xf2, 0x0d, 0xef, 0xb2, 0x94, 0xa2, 0xbb, 0x70, 0x24, 0x71, 0xa3,
+	0x1b, 0x55, 0xd2, 0xb4, 0x44, 0x95, 0x0f, 0x66, 0xd9, 0xfb, 0x70, 0xfc, 0x56, 0x5f, 0x51, 0xd8,
+	0xe2, 0xc7, 0xc9, 0xeb, 0x2f, 0x2a, 0x73, 0xd9, 0x9a, 0x2e, 0xc2, 0x40, 0x55, 0x88, 0xb2, 0x5c,
+	0x7b, 0x0a, 0xad, 0x30, 0xc5, 0x99, 0x64, 0x97, 0x5d, 0x0f, 0xe7, 0x68, 0xca, 0x2c, 0x33, 0x9a,
+	0x73, 0x1f, 0xf7, 0xc3, 0x78, 0xdb, 0x62, 0xd8, 0x5d, 0xe4, 0x2c, 0xd6, 0x6a, 0x8b, 0xbc, 0xbb,
+	0x88, 0x71, 0x4b, 0xf5, 0xba, 0x1b, 0x2a, 0xa9, 0x1c, 0x33, 0x0a, 0x44, 0x55, 0x4e, 0x80, 0xfb,
+	0x45, 0x82, 0x03, 0x6f, 0x99, 0x2a, 0x10, 0x55, 0x74, 0x0b, 0x26, 0x84, 0xb1, 0xd8, 0xb4, 0x43,
+	0xaa, 0xd9, 0x5a, 0x8d, 0xc8, 0xe0, 0x95, 0x68, 0xd6, 0x21, 0x55, 0xb4, 0xa2, 0x8e, 0x20, 0xdd,
+	0x4e, 0xb3, 0x75, 0x1c, 0x71, 0xc2, 0x8a, 0xc4, 0xa0, 0xb3, 0x30, 0xa9, 0xea, 0x40, 0xb5, 0xdb,
+	0x30, 0x2d, 0x64, 0xfb, 0x41, 0x72, 0x4d, 0x55, 0x9f, 0xe5, 0x10, 0x34, 0x07, 0xb9, 0x2d, 0x4c,
+	0x59, 0x98, 0x9b, 0xaa, 0x13, 0xf4, 0x73, 0xdf, 0x8d, 0x4a, 0xb1, 0x2a, 0xef, 0x39, 0xc8, 0x51,
+	0xdb, 0xfb, 0x34, 0xae, 0x38, 0x20, 0x14, 0xa5, 0x58, 0x29, 0x9e, 0x87, 0xff, 0xf9, 0x24, 0xd8,
+	0x22, 0x26, 0x93, 0x89, 0x17, 0x05, 0xe5, 0x10, 0xd7, 0x9f, 0x94, 0xab, 0x3c, 0xb1, 0xa2, 0xd8,
+	0x2c, 0xc0, 0x58, 0x95, 0x6c, 0x59, 0xa6, 0xc5, 0x5a, 0xfa, 0x83, 0x5c, 0x3f, 0x27, 0xe5, 0x71,
+	0x55, 0xda, 0x08, 0x7c, 0xbb, 0xd5, 0xbc, 0x68, 0x1e, 0x84, 0xaa, 0x94, 0x47, 0xaa, 0x73, 0x90,
+	0x53, 0xe3, 0xbe, 0x22, 0x3d, 0x24, 0x48, 0x4b, 0xb1, 0x22, 0xdd, 0xf6, 0x2e, 0x18, 0x7e, 0xd5,
+	0x77, 0xc1, 0x0a, 0x8c, 0x46, 0x5b, 0x8a, 0x97, 0xc1, 0x48, 0xa6, 0x40, 0x2a, 0x42, 0xe2, 0x6d,
+	0x50, 0x82, 0x09, 0x1b, 0xc7, 0xa3, 0x22, 0xe2, 0x38, 0xca, 0xe3, 0x38, 0x2e, 0x96, 0x62, 0x61,
+	0x2c, 0x7e, 0x92, 0x1c, 0x1a, 0xe2, 0x85, 0x23, 0x2b, 0xf3, 0x1d, 0xe8, 0xa3, 0x0c, 0x33, 0x1a,
+	0x8d, 0x26, 0x7b, 0xd4, 0x65, 0x0c, 0x2e, 0x40, 0xcb, 0x4f, 0x00, 0xfa, 0xf8, 0x06, 0xe8, 0x33,
+	0x0d, 0xfa, 0xc5, 0x83, 0x11, 0xa5, 0xf7, 0xf6, 0xf6, 0xd7, 0x69, 0x61, 0x7e, 0x7f, 0x45, 0xc1,
+	0xb2, 0x38, 0xfb, 0xf9, 0xef, 0x7f, 0x7f, 0xdb, 0x7d, 0x1c, 0x4d, 0xe9, 0x9d, 0xdf, 0xcc, 0xe8,
+	0x3b, 0x0d, 0x86, 0xe3, 0xaf, 0x4e, 0xb4, 0xd8, 0xd9, 0x7e, 0xca, 0xcb, 0xb5, 0x50, 0xca, 0xaa,
+	0x2e, 0x49, 0x9d, 0xe6, 0xa4, 0x4e, 0xa2, 0x62, 0x2a, 0xa9, 0x44, 0xde, 0xa0, 0xc7, 0x1a, 0x0c,
+	0xc5, 0x5e, 0xa7, 0xe8, 0x4c, 0xe7, 0xbd, 0xda, 0x1f, 0xb8, 0x85, 0xc5, 0x8c, 0xda, 0x92, 0xd8,
+	0x02, 0x27, 0x36, 0x8b, 0xfe, 0xaf, 0xef, 0xf5, 0xfd, 0xc0, 0x0a, 0x79, 0xfc, 0xac, 0x45, 0x93,
+	0x84, 0x9a, 0x8d, 0xf5, 0x7d, 0x37, 0x4b, 0x3e, 0x10, 0x0a, 0x67, 0xb3, 0x03, 0x24, 0xc1, 0x8b,
+	0x9c, 0xe0, 0x5b, 0xe8, 0x82, 0x9e, 0xe1, 0x03, 0x87, 0xfe, 0x30, 0x39, 0x22, 0x3e, 0x42, 0x4f,
+	0x34, 0x98, 0x48, 0x19, 0xf1, 0xd1, 0xf9, 0xce, 0x44, 0x3a, 0xbf, 0x6f, 0x0a, 0x17, 0x0e, 0x88,
+	0x92, 0x67, 0x38, 0xc7, 0xcf, 0xb0, 0x88, 0xde, 0x4c, 0x3d, 0x43, 0xfc, 0xa9, 0xa2, 0x3f, 0x94,
+	0x0f, 0xa6, 0x47, 0xe8, 0x07, 0x2d, 0xba, 0xa7, 0x5a, 0x03, 0x3c, 0x5a, 0xce, 0xea, 0xc0, 0xd6,
+	0xbb, 0xa2, 0x70, 0xee, 0x40, 0x18, 0xc9, 0xf9, 0x0c, 0xe7, 0x7c, 0x0a, 0x9d, 0xdc, 0xcb, 0xef,
+	0x8b, 0x92, 0x76, 0x48, 0x76, 0xf7, 0x94, 0xb9, 0x7f, 0x6e, 0x24, 0x07, 0xfc, 0x0c, 0xb9, 0xb1,
+	0x6b, 0x54, 0x28, 0x5e, 0xe0, 0x1c, 0x75, 0xb4, 0xb8, 0x17, 0xc7, 0xf6, 0x9c, 0xf8, 0x51, 0x4b,
+	0x9b, 0x00, 0xf6, 0xf7, 0x6c, 0xdb, 0x2c, 0x91, 0xc1, 0xb3, 0xed, 0x6d, 0xb4, 0xa8, 0x73, 0xd6,
+	0x0b, 0x68, 0x6e, 0x4f, 0xcf, 0xd2, 0x08, 0x58, 0x5e, 0x7e, 0xfa, 0x62, 0x5a, 0x7b, 0xf6, 0x62,
+	0x5a, 0xfb, 0xeb, 0xc5, 0xb4, 0xf6, 0xcd, 0xcb, 0xe9, 0xae, 0x67, 0x2f, 0xa7, 0xbb, 0xfe, 0x78,
+	0x39, 0xdd, 0xf5, 0x51, 0x5e, 0x59, 0xd8, 0x6e, 0xd9, 0x60, 0x3b, 0x3e, 0xa1, 0x9b, 0xfd, 0xfc,
+	0x53, 0xdf, 0xb9, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x61, 0x6e, 0x91, 0x91, 0xe2, 0x14, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -586,6 +1178,12 @@ type QueryClient interface {
 	SegmentHistory(ctx context.Context, in *QuerySegmentHistoryRequest, opts ...grpc.CallOption) (*QuerySegmentHistoryResponse, error)
 	// UserPurchaseHistory queries purchase history for a specific user
 	UserPurchaseHistory(ctx context.Context, in *QueryUserPurchaseHistoryRequest, opts ...grpc.CallOption) (*QueryUserPurchaseHistoryResponse, error)
+	// SegmentHistoryAll queries all segment history with pagination
+	SegmentHistoryAll(ctx context.Context, in *QuerySegmentHistoryAllRequest, opts ...grpc.CallOption) (*QuerySegmentHistoryAllResponse, error)
+	// SegmentDetails queries detailed information about a specific segment
+	SegmentDetails(ctx context.Context, in *QuerySegmentDetailsRequest, opts ...grpc.CallOption) (*QuerySegmentDetailsResponse, error)
+	// SegmentStatistics queries aggregated segment statistics
+	SegmentStatistics(ctx context.Context, in *QuerySegmentStatisticsRequest, opts ...grpc.CallOption) (*QuerySegmentStatisticsResponse, error)
 }
 
 type queryClient struct {
@@ -641,6 +1239,33 @@ func (c *queryClient) UserPurchaseHistory(ctx context.Context, in *QueryUserPurc
 	return out, nil
 }
 
+func (c *queryClient) SegmentHistoryAll(ctx context.Context, in *QuerySegmentHistoryAllRequest, opts ...grpc.CallOption) (*QuerySegmentHistoryAllResponse, error) {
+	out := new(QuerySegmentHistoryAllResponse)
+	err := c.cc.Invoke(ctx, "/mychain.maincoin.v1.Query/SegmentHistoryAll", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) SegmentDetails(ctx context.Context, in *QuerySegmentDetailsRequest, opts ...grpc.CallOption) (*QuerySegmentDetailsResponse, error) {
+	out := new(QuerySegmentDetailsResponse)
+	err := c.cc.Invoke(ctx, "/mychain.maincoin.v1.Query/SegmentDetails", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) SegmentStatistics(ctx context.Context, in *QuerySegmentStatisticsRequest, opts ...grpc.CallOption) (*QuerySegmentStatisticsResponse, error) {
+	out := new(QuerySegmentStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/mychain.maincoin.v1.Query/SegmentStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
@@ -653,6 +1278,12 @@ type QueryServer interface {
 	SegmentHistory(context.Context, *QuerySegmentHistoryRequest) (*QuerySegmentHistoryResponse, error)
 	// UserPurchaseHistory queries purchase history for a specific user
 	UserPurchaseHistory(context.Context, *QueryUserPurchaseHistoryRequest) (*QueryUserPurchaseHistoryResponse, error)
+	// SegmentHistoryAll queries all segment history with pagination
+	SegmentHistoryAll(context.Context, *QuerySegmentHistoryAllRequest) (*QuerySegmentHistoryAllResponse, error)
+	// SegmentDetails queries detailed information about a specific segment
+	SegmentDetails(context.Context, *QuerySegmentDetailsRequest) (*QuerySegmentDetailsResponse, error)
+	// SegmentStatistics queries aggregated segment statistics
+	SegmentStatistics(context.Context, *QuerySegmentStatisticsRequest) (*QuerySegmentStatisticsResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -673,6 +1304,15 @@ func (*UnimplementedQueryServer) SegmentHistory(ctx context.Context, req *QueryS
 }
 func (*UnimplementedQueryServer) UserPurchaseHistory(ctx context.Context, req *QueryUserPurchaseHistoryRequest) (*QueryUserPurchaseHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserPurchaseHistory not implemented")
+}
+func (*UnimplementedQueryServer) SegmentHistoryAll(ctx context.Context, req *QuerySegmentHistoryAllRequest) (*QuerySegmentHistoryAllResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SegmentHistoryAll not implemented")
+}
+func (*UnimplementedQueryServer) SegmentDetails(ctx context.Context, req *QuerySegmentDetailsRequest) (*QuerySegmentDetailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SegmentDetails not implemented")
+}
+func (*UnimplementedQueryServer) SegmentStatistics(ctx context.Context, req *QuerySegmentStatisticsRequest) (*QuerySegmentStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SegmentStatistics not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -769,6 +1409,60 @@ func _Query_UserPurchaseHistory_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_SegmentHistoryAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySegmentHistoryAllRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SegmentHistoryAll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.maincoin.v1.Query/SegmentHistoryAll",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SegmentHistoryAll(ctx, req.(*QuerySegmentHistoryAllRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_SegmentDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySegmentDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SegmentDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.maincoin.v1.Query/SegmentDetails",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SegmentDetails(ctx, req.(*QuerySegmentDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_SegmentStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySegmentStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).SegmentStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mychain.maincoin.v1.Query/SegmentStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).SegmentStatistics(ctx, req.(*QuerySegmentStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "mychain.maincoin.v1.Query",
@@ -793,6 +1487,18 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserPurchaseHistory",
 			Handler:    _Query_UserPurchaseHistory_Handler,
+		},
+		{
+			MethodName: "SegmentHistoryAll",
+			Handler:    _Query_SegmentHistoryAll_Handler,
+		},
+		{
+			MethodName: "SegmentDetails",
+			Handler:    _Query_SegmentDetails_Handler,
+		},
+		{
+			MethodName: "SegmentStatistics",
+			Handler:    _Query_SegmentStatistics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1198,6 +1904,507 @@ func (m *QueryUserPurchaseHistoryResponse) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
+func (m *QuerySegmentHistoryAllRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentHistoryAllRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentHistoryAllRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentHistoryAllResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentHistoryAllResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentHistoryAllResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Segments) > 0 {
+		for iNdEx := len(m.Segments) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Segments[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentDetailsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentDetailsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentDetailsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SegmentNumber != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.SegmentNumber))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SegmentTransaction) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SegmentTransaction) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SegmentTransaction) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SegmentsInTx != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.SegmentsInTx))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Timestamp != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.Timestamp))
+		i--
+		dAtA[i] = 0x28
+	}
+	{
+		size := m.AmountSpent.Size()
+		i -= size
+		if _, err := m.AmountSpent.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size := m.TokensBought.Size()
+		i -= size
+		if _, err := m.TokensBought.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.Buyer) > 0 {
+		i -= len(m.Buyer)
+		copy(dAtA[i:], m.Buyer)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Buyer)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.TxHash) > 0 {
+		i -= len(m.TxHash)
+		copy(dAtA[i:], m.TxHash)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.TxHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SegmentDetails) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SegmentDetails) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SegmentDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.ReserveRatioDeviation.Size()
+		i -= size
+		if _, err := m.ReserveRatioDeviation.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	if m.TimeToComplete != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.TimeToComplete))
+		i--
+		dAtA[i] = 0x40
+	}
+	{
+		size := m.SmallestPurchase.Size()
+		i -= size
+		if _, err := m.SmallestPurchase.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
+	{
+		size := m.LargestPurchase.Size()
+		i -= size
+		if _, err := m.LargestPurchase.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x32
+	{
+		size := m.AveragePurchaseSize.Size()
+		i -= size
+		if _, err := m.AveragePurchaseSize.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x2a
+	if m.TotalTransactions != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.TotalTransactions))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Transactions) > 0 {
+		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Transactions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.PreviousSegment != nil {
+		{
+			size, err := m.PreviousSegment.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Segment != nil {
+		{
+			size, err := m.Segment.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentDetailsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentDetailsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentDetailsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Details != nil {
+		{
+			size, err := m.Details.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentStatisticsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentStatisticsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentStatisticsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *SegmentStatistics) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SegmentStatistics) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SegmentStatistics) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.LatestSegmentTime != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.LatestSegmentTime))
+		i--
+		dAtA[i] = 0x70
+	}
+	{
+		size := m.CurrentSupply.Size()
+		i -= size
+		if _, err := m.CurrentSupply.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x6a
+	{
+		size := m.CurrentPrice.Size()
+		i -= size
+		if _, err := m.CurrentPrice.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x62
+	if m.CurrentSegment != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.CurrentSegment))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.SurplusSegments != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.SurplusSegments))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.DeficitSegments != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.DeficitSegments))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.PerfectRatioSegments != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.PerfectRatioSegments))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.SlowestSegment != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.SlowestSegment))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.FastestSegment != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.FastestSegment))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.AverageSegmentTime != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.AverageSegmentTime))
+		i--
+		dAtA[i] = 0x28
+	}
+	{
+		size := m.TotalReserves.Size()
+		i -= size
+		if _, err := m.TotalReserves.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size := m.TotalDevAllocated.Size()
+		i -= size
+		if _, err := m.TotalDevAllocated.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size := m.TotalMcPurchased.Size()
+		i -= size
+		if _, err := m.TotalMcPurchased.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if m.TotalSegments != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.TotalSegments))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySegmentStatisticsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySegmentStatisticsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySegmentStatisticsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Stats != nil {
+		{
+			size, err := m.Stats.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -1344,6 +2551,195 @@ func (m *QueryUserPurchaseHistoryResponse) Size() (n int) {
 	}
 	if m.Pagination != nil {
 		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QuerySegmentHistoryAllRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QuerySegmentHistoryAllResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Segments) > 0 {
+		for _, e := range m.Segments {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QuerySegmentDetailsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SegmentNumber != 0 {
+		n += 1 + sovQuery(uint64(m.SegmentNumber))
+	}
+	return n
+}
+
+func (m *SegmentTransaction) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TxHash)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = len(m.Buyer)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = m.TokensBought.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.AmountSpent.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if m.Timestamp != 0 {
+		n += 1 + sovQuery(uint64(m.Timestamp))
+	}
+	if m.SegmentsInTx != 0 {
+		n += 1 + sovQuery(uint64(m.SegmentsInTx))
+	}
+	return n
+}
+
+func (m *SegmentDetails) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Segment != nil {
+		l = m.Segment.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if m.PreviousSegment != nil {
+		l = m.PreviousSegment.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	if len(m.Transactions) > 0 {
+		for _, e := range m.Transactions {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.TotalTransactions != 0 {
+		n += 1 + sovQuery(uint64(m.TotalTransactions))
+	}
+	l = m.AveragePurchaseSize.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.LargestPurchase.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.SmallestPurchase.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if m.TimeToComplete != 0 {
+		n += 1 + sovQuery(uint64(m.TimeToComplete))
+	}
+	l = m.ReserveRatioDeviation.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QuerySegmentDetailsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Details != nil {
+		l = m.Details.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QuerySegmentStatisticsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *SegmentStatistics) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.TotalSegments != 0 {
+		n += 1 + sovQuery(uint64(m.TotalSegments))
+	}
+	l = m.TotalMcPurchased.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.TotalDevAllocated.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.TotalReserves.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if m.AverageSegmentTime != 0 {
+		n += 1 + sovQuery(uint64(m.AverageSegmentTime))
+	}
+	if m.FastestSegment != 0 {
+		n += 1 + sovQuery(uint64(m.FastestSegment))
+	}
+	if m.SlowestSegment != 0 {
+		n += 1 + sovQuery(uint64(m.SlowestSegment))
+	}
+	if m.PerfectRatioSegments != 0 {
+		n += 1 + sovQuery(uint64(m.PerfectRatioSegments))
+	}
+	if m.DeficitSegments != 0 {
+		n += 1 + sovQuery(uint64(m.DeficitSegments))
+	}
+	if m.SurplusSegments != 0 {
+		n += 1 + sovQuery(uint64(m.SurplusSegments))
+	}
+	if m.CurrentSegment != 0 {
+		n += 1 + sovQuery(uint64(m.CurrentSegment))
+	}
+	l = m.CurrentPrice.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.CurrentSupply.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	if m.LatestSegmentTime != 0 {
+		n += 1 + sovQuery(uint64(m.LatestSegmentTime))
+	}
+	return n
+}
+
+func (m *QuerySegmentStatisticsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Stats != nil {
+		l = m.Stats.Size()
 		n += 1 + l + sovQuery(uint64(l))
 	}
 	return n
@@ -2388,6 +3784,1444 @@ func (m *QueryUserPurchaseHistoryResponse) Unmarshal(dAtA []byte) error {
 				m.Pagination = &query.PageResponse{}
 			}
 			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentHistoryAllRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentHistoryAllRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentHistoryAllRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentHistoryAllResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentHistoryAllResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentHistoryAllResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Segments", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Segments = append(m.Segments, SegmentHistoryEntry{})
+			if err := m.Segments[len(m.Segments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentDetailsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentDetailsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentDetailsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SegmentNumber", wireType)
+			}
+			m.SegmentNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SegmentNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SegmentTransaction) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SegmentTransaction: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SegmentTransaction: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Buyer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Buyer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokensBought", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TokensBought.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AmountSpent", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AmountSpent.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Timestamp |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SegmentsInTx", wireType)
+			}
+			m.SegmentsInTx = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SegmentsInTx |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SegmentDetails) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SegmentDetails: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SegmentDetails: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Segment", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Segment == nil {
+				m.Segment = &SegmentHistoryEntry{}
+			}
+			if err := m.Segment.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PreviousSegment", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PreviousSegment == nil {
+				m.PreviousSegment = &SegmentHistoryEntry{}
+			}
+			if err := m.PreviousSegment.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Transactions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Transactions = append(m.Transactions, &SegmentTransaction{})
+			if err := m.Transactions[len(m.Transactions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalTransactions", wireType)
+			}
+			m.TotalTransactions = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalTransactions |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveragePurchaseSize", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AveragePurchaseSize.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LargestPurchase", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LargestPurchase.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SmallestPurchase", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SmallestPurchase.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TimeToComplete", wireType)
+			}
+			m.TimeToComplete = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TimeToComplete |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReserveRatioDeviation", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ReserveRatioDeviation.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentDetailsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentDetailsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentDetailsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Details", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Details == nil {
+				m.Details = &SegmentDetails{}
+			}
+			if err := m.Details.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentStatisticsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentStatisticsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentStatisticsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SegmentStatistics) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SegmentStatistics: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SegmentStatistics: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalSegments", wireType)
+			}
+			m.TotalSegments = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalSegments |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalMcPurchased", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TotalMcPurchased.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalDevAllocated", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TotalDevAllocated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalReserves", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TotalReserves.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AverageSegmentTime", wireType)
+			}
+			m.AverageSegmentTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AverageSegmentTime |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FastestSegment", wireType)
+			}
+			m.FastestSegment = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FastestSegment |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowestSegment", wireType)
+			}
+			m.SlowestSegment = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SlowestSegment |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PerfectRatioSegments", wireType)
+			}
+			m.PerfectRatioSegments = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PerfectRatioSegments |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeficitSegments", wireType)
+			}
+			m.DeficitSegments = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeficitSegments |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SurplusSegments", wireType)
+			}
+			m.SurplusSegments = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SurplusSegments |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurrentSegment", wireType)
+			}
+			m.CurrentSegment = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CurrentSegment |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurrentPrice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CurrentPrice.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CurrentSupply", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CurrentSupply.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LatestSegmentTime", wireType)
+			}
+			m.LatestSegmentTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LatestSegmentTime |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySegmentStatisticsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySegmentStatisticsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySegmentStatisticsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stats", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Stats == nil {
+				m.Stats = &SegmentStatistics{}
+			}
+			if err := m.Stats.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
