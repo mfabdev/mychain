@@ -1,0 +1,141 @@
+package keeper_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	sdkmath "cosmossdk.io/math"
+
+	keepertest "mychain/testutil/keeper"
+	"mychain/x/maincoin/keeper"
+)
+
+// TestMultiSegmentDevAllocation tests dev allocation across multiple segments in a single transaction
+func TestMultiSegmentDevAllocation(t *testing.T) {
+	k, ctx := keepertest.MaincoinKeeper(t)
+
+	params := keeper.DefaultParams()
+	err := k.Params.Set(ctx, params)
+	require.NoError(t, err)
+
+	// Test Case 1: Complete 3 segments in one transaction
+	t.Run("ThreeSegmentsInOneTransaction", func(t *testing.T) {
+		// Start fresh
+		err = k.PendingDevAllocation.Set(ctx, sdkmath.ZeroInt())
+		require.NoError(t, err)
+
+		// Purchase enough to complete segments 0, 1, and 2
+		// Segment 0: $1.00 (creates 100,000 MC)
+		// Segment 1: $0.0011001 (creates ~10.99 MC + 10 MC dev from segment 0)
+		// Segment 2: $0.00121222 (creates ~10.02 MC + 10.002 MC dev from segment 1)
+		totalFunds := sdkmath.NewInt(1_002_312) // $1.002312
+
+		result, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
+			ctx,
+			totalFunds,
+			sdkmath.LegacyMustNewDecFromStr("0.0001"), // Starting price
+			params.PriceIncrement,
+			uint64(0), // Starting segment
+			sdkmath.ZeroInt(), // No supply yet
+			sdkmath.ZeroInt(), // No reserves yet
+			sdkmath.ZeroInt(), // No pending dev
+		)
+		require.NoError(t, err)
+
+		// Should have processed 3 segments
+		require.Equal(t, 3, result.SegmentsProcessed)
+		require.Equal(t, uint64(3), result.FinalEpoch)
+
+		// Check segment details
+		require.Len(t, result.SegmentDetails, 3)
+
+		// Segment 0: No dev distributed (first segment)
+		seg0 := result.SegmentDetails[0]
+		require.Equal(t, uint64(0), seg0.SegmentNumber)
+		require.Equal(t, sdkmath.ZeroInt(), seg0.DevAllocation, "Segment 0 should have no dev distributed")
+		require.Equal(t, sdkmath.NewInt(100_000_000_000), seg0.TokensBought, "Segment 0 should mint 100,000 MC")
+
+		// Segment 1: Should distribute dev from segment 0
+		seg1 := result.SegmentDetails[1]
+		require.Equal(t, uint64(1), seg1.SegmentNumber)
+		expectedSeg0Dev := sdkmath.NewInt(10_000_000) // 0.01% of 100,000 MC
+		require.True(t, seg1.DevAllocation.Sub(expectedSeg0Dev).Abs().LTE(sdkmath.NewInt(100_000)),
+			"Segment 1 should distribute ~10 MC dev from segment 0, got %s MC",
+			formatMC(seg1.DevAllocation))
+
+		// Segment 2: Should distribute dev from segment 1
+		seg2 := result.SegmentDetails[2]
+		require.Equal(t, uint64(2), seg2.SegmentNumber)
+		// Dev from segment 1 = 0.01% of (seg1.TokensBought + seg1.DevAllocation)
+		seg1TotalTokens := seg1.TokensBought.Add(seg1.DevAllocation)
+		expectedSeg1Dev := seg1TotalTokens.Mul(sdkmath.NewInt(1)).Quo(sdkmath.NewInt(10000)) // 0.01%
+		require.True(t, seg2.DevAllocation.Sub(expectedSeg1Dev).Abs().LTE(sdkmath.NewInt(100_000)),
+			"Segment 2 should distribute dev from segment 1, expected ~%s MC, got %s MC",
+			formatMC(expectedSeg1Dev), formatMC(seg2.DevAllocation))
+
+		// Total dev allocation should be sum of dev distributed in segments 1 and 2
+		expectedTotalDev := seg1.DevAllocation.Add(seg2.DevAllocation)
+		require.Equal(t, expectedTotalDev, result.TotalDevAllocation,
+			"Total dev should be sum of segment 1 and 2 dev allocations")
+
+		// Should have pending dev from segment 2 for next transaction
+		seg2TotalTokens := seg2.TokensBought.Add(seg2.DevAllocation)
+		expectedPendingDev := seg2TotalTokens.Mul(sdkmath.NewInt(1)).Quo(sdkmath.NewInt(10000)) // 0.01%
+		require.True(t, result.PendingDevAllocation.Sub(expectedPendingDev).Abs().LTE(sdkmath.NewInt(100_000)),
+			"Should have pending dev from segment 2, expected ~%s MC, got %s MC",
+			formatMC(expectedPendingDev), formatMC(result.PendingDevAllocation))
+
+		t.Logf("Three segments completed:")
+		t.Logf("  Segment 0: %s MC minted, %s MC dev distributed", 
+			formatMC(seg0.TokensBought), formatMC(seg0.DevAllocation))
+		t.Logf("  Segment 1: %s MC minted, %s MC dev distributed", 
+			formatMC(seg1.TokensBought), formatMC(seg1.DevAllocation))
+		t.Logf("  Segment 2: %s MC minted, %s MC dev distributed", 
+			formatMC(seg2.TokensBought), formatMC(seg2.DevAllocation))
+		t.Logf("  Total dev distributed: %s MC", formatMC(result.TotalDevAllocation))
+		t.Logf("  Pending dev for next: %s MC", formatMC(result.PendingDevAllocation))
+	})
+
+	// Test Case 2: Partial segment with dev calculation
+	t.Run("PartialSegmentWithDev", func(t *testing.T) {
+		// Start with some pending dev
+		pendingDev := sdkmath.NewInt(15_000_000) // 15 MC
+		
+		// Buy partial segment
+		result, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
+			ctx,
+			sdkmath.NewInt(500_000), // $0.50 (not enough to complete segment)
+			sdkmath.LegacyMustNewDecFromStr("0.0001001"),
+			params.PriceIncrement,
+			uint64(1),
+			sdkmath.NewInt(100_000_000_000), // 100,000 MC supply
+			sdkmath.NewInt(1_000_000), // $1 reserves
+			pendingDev,
+		)
+		require.NoError(t, err)
+
+		// Should distribute the pending dev
+		require.Equal(t, pendingDev, result.TotalDevAllocation)
+
+		// Should not complete the segment
+		require.Equal(t, 0, result.SegmentsProcessed)
+		require.Equal(t, uint64(1), result.FinalEpoch) // Still on segment 1
+
+		// Should have new pending dev from the partial purchase
+		// Pending = old pending (if not distributed) + 0.01% of (user tokens + distributed dev)
+		totalTokensInSegment := result.TotalTokensBought
+		expectedNewPending := totalTokensInSegment.Mul(sdkmath.NewInt(1)).Quo(sdkmath.NewInt(10000))
+		require.True(t, result.PendingDevAllocation.Sub(expectedNewPending).Abs().LTE(sdkmath.NewInt(100_000)),
+			"Partial segment should calculate dev on all tokens, expected ~%s MC, got %s MC",
+			formatMC(expectedNewPending), formatMC(result.PendingDevAllocation))
+	})
+}
+
+func formatMC(amount sdkmath.Int) string {
+	mc := amount.Quo(sdkmath.NewInt(1_000_000))
+	remainder := amount.Mod(sdkmath.NewInt(1_000_000))
+	if remainder.IsZero() {
+		return mc.String()
+	}
+	return mc.String() + "." + remainder.String()
+}

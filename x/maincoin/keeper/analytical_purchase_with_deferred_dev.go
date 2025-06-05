@@ -43,18 +43,27 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 
 	// Track tokens minted in current segment for NEXT segment's dev allocation
 	currentSegmentTokens := sdkmath.ZeroInt()
+	
+	// Track pending dev allocation that accumulates from all completed segments
+	accumulatedPendingDev := sdkmath.ZeroInt()
 
 	// Process up to MaxSegmentsPerPurchase
 	for segmentsProcessed < types.MaxSegmentsPerPurchase && remainingFunds.GT(sdkmath.LegacyZeroDec()) {
 		// CRITICAL: First, handle pending dev allocation from previous segment
 		// Dev is distributed at START of segment by ADDING to total balance
-		if pendingDevAllocation.GT(sdkmath.ZeroInt()) && segmentsProcessed == 0 {
-			// Add pending dev tokens to supply
+		// This happens at the start of EVERY segment, not just the first one
+		if segmentsProcessed == 0 && pendingDevAllocation.GT(sdkmath.ZeroInt()) {
+			// Initial pending dev allocation from previous transaction
 			currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(pendingDevAllocation))
 			totalTokensBought = totalTokensBought.Add(pendingDevAllocation)
 			totalDevAllocation = totalDevAllocation.Add(pendingDevAllocation)
-
-			// This creates additional deficit that must be covered
+		} else if segmentsProcessed > 0 && accumulatedPendingDev.GT(sdkmath.ZeroInt()) {
+			// Dev allocation from segments completed in THIS transaction
+			currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(accumulatedPendingDev))
+			totalTokensBought = totalTokensBought.Add(accumulatedPendingDev)
+			totalDevAllocation = totalDevAllocation.Add(accumulatedPendingDev)
+			// Reset accumulated pending dev after distribution
+			accumulatedPendingDev = sdkmath.ZeroInt()
 		}
 
 		// Calculate current total value and required reserves
@@ -272,10 +281,8 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 		totalSpent = totalSpent.Add(cost)
 		remainingFunds = remainingFunds.Sub(costDec)
 
-		// Track tokens for next segment's dev allocation
-		if isSegmentComplete {
-			currentSegmentTokens = currentSegmentTokens.Add(tokensToBuy)
-		}
+		// Track tokens for this segment (will be used for dev allocation calculation)
+		currentSegmentTokens = currentSegmentTokens.Add(tokensToBuy)
 
 		// Update state for tracking
 		currentSupplyDec = currentSupplyDec.Add(sdkmath.LegacyNewDecFromInt(tokensToBuy))
@@ -284,11 +291,17 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 		currentReserveDec = currentReserveDec.Add(reserveAdded)
 
 		// Store segment detail
-		var devAllocationForSegment sdkmath.Int
+		// Dev allocation shown here is what was DISTRIBUTED at the START of this segment
+		var devDistributedInSegment sdkmath.Int
 		if segmentsProcessed == 0 && pendingDevAllocation.GT(sdkmath.ZeroInt()) {
-			devAllocationForSegment = pendingDevAllocation
+			// First segment gets the pending dev from previous transaction
+			devDistributedInSegment = pendingDevAllocation
+		} else if segmentsProcessed > 0 && accumulatedPendingDev.GT(sdkmath.ZeroInt()) {
+			// Subsequent segments get dev from previous segments in this transaction
+			// Note: This was already added to supply and tokens bought above
+			devDistributedInSegment = accumulatedPendingDev
 		} else {
-			devAllocationForSegment = sdkmath.ZeroInt()
+			devDistributedInSegment = sdkmath.ZeroInt()
 		}
 
 		segmentDetail := SegmentPurchaseDetail{
@@ -296,26 +309,57 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 			TokensBought:           tokensToBuy,
 			Cost:                   cost,
 			Price:                  currentPriceCalc,
-			DevAllocation:          devAllocationForSegment,
-			UserTokens:             tokensToBuy, // All tokens go to user
+			DevAllocation:          devDistributedInSegment, // Dev distributed at START of segment
+			UserTokens:             tokensToBuy, // All purchased tokens go to user
 			IsComplete:             isSegmentComplete,
-			TokensInSegment:        tokensToBuy,
+			TokensInSegment:        tokensToBuy.Add(devDistributedInSegment), // Total tokens in segment
 			TokensNeededToComplete: sdkmath.ZeroInt(),
 		}
 		segmentDetails = append(segmentDetails, segmentDetail)
 
-		// If segment completed, update epoch and price
+		// If segment completed, calculate dev allocation and update epoch/price
 		if isSegmentComplete {
+			// Calculate dev allocation for THIS completed segment
+			// CRITICAL: Include both purchased tokens AND dev distributed at start of segment
+			totalSegmentTokens := currentSegmentTokens
+			if segmentsProcessed == 0 && pendingDevAllocation.GT(sdkmath.ZeroInt()) {
+				// First segment: add the pending dev that was distributed
+				totalSegmentTokens = totalSegmentTokens.Add(pendingDevAllocation)
+			} else if segmentsProcessed > 0 && devDistributedInSegment.GT(sdkmath.ZeroInt()) {
+				// Subsequent segments: add the dev that was distributed at start
+				totalSegmentTokens = totalSegmentTokens.Add(devDistributedInSegment)
+			}
+			
+			if totalSegmentTokens.GT(sdkmath.ZeroInt()) {
+				// Calculate 0.01% of ALL tokens in this segment
+				devDec := sdkmath.LegacyNewDecFromInt(totalSegmentTokens).Mul(devAllocationRate)
+				segmentDevAllocation := devDec.TruncateInt()
+				accumulatedPendingDev = accumulatedPendingDev.Add(segmentDevAllocation)
+				
+				ctx.Logger().Info("Dev allocation calculated for segment",
+					"segment", currentEpochCalc,
+					"purchased_tokens", currentSegmentTokens.String(),
+					"dev_distributed", devDistributedInSegment.String(),
+					"total_segment_tokens", totalSegmentTokens.String(),
+					"dev_allocation", segmentDevAllocation.String(),
+					"accumulated_pending", accumulatedPendingDev.String(),
+				)
+			}
+			
 			ctx.Logger().Info("Completing segment",
 				"old_segment", currentEpochCalc,
 				"new_segment", currentEpochCalc+1,
 				"old_price", currentPriceCalc.String(),
 				"price_increment", priceIncrement.String(),
+				"tokens_in_segment", currentSegmentTokens.String(),
 			)
 
 			currentEpochCalc++
 			currentPriceCalc = currentPriceCalc.Mul(sdkmath.LegacyOneDec().Add(priceIncrement))
 			segmentsProcessed++
+			
+			// Reset current segment tokens for next segment
+			currentSegmentTokens = sdkmath.ZeroInt()
 		}
 
 		// Check if we've spent all funds
@@ -332,13 +376,44 @@ func (k Keeper) CalculateAnalyticalPurchaseWithDeferredDev(
 	}
 
 	// CRITICAL: Calculate pending dev allocation for NEXT segment
-	// Dev is calculated on FINAL supply at END of segment
-	var pendingDevForNext sdkmath.Int
+	// This includes:
+	// 1. Dev allocation from any incomplete segment (if tokens were bought)
+	// 2. Accumulated pending dev from completed segments in this transaction
+	pendingDevForNext := sdkmath.ZeroInt()
+	
+	// If we have tokens in an incomplete segment, calculate dev for those
 	if currentSegmentTokens.GT(sdkmath.ZeroInt()) {
-		// Calculate 0.01% of tokens minted in completed segments
-		devDec := sdkmath.LegacyNewDecFromInt(currentSegmentTokens).Mul(devAllocationRate)
-		pendingDevForNext = devDec.TruncateInt()
+		// CRITICAL: Include both purchased tokens AND any dev distributed at start of incomplete segment
+		totalIncompleteTokens := currentSegmentTokens
+		
+		// Check if this incomplete segment had dev distributed at its start
+		if len(segmentDetails) > 0 {
+			lastSegmentDetail := segmentDetails[len(segmentDetails)-1]
+			if !lastSegmentDetail.IsComplete && lastSegmentDetail.DevAllocation.GT(sdkmath.ZeroInt()) {
+				totalIncompleteTokens = totalIncompleteTokens.Add(lastSegmentDetail.DevAllocation)
+			}
+		}
+		
+		// Calculate 0.01% of ALL tokens in incomplete segment
+		devDec := sdkmath.LegacyNewDecFromInt(totalIncompleteTokens).Mul(devAllocationRate)
+		incompleteSegmentDev := devDec.TruncateInt()
+		pendingDevForNext = pendingDevForNext.Add(incompleteSegmentDev)
+		
+		ctx.Logger().Info("Dev allocation for incomplete segment",
+			"purchased_tokens", currentSegmentTokens.String(),
+			"total_tokens", totalIncompleteTokens.String(),
+			"dev", incompleteSegmentDev.String(),
+		)
 	}
+	
+	// Add any accumulated pending dev that hasn't been distributed yet
+	pendingDevForNext = pendingDevForNext.Add(accumulatedPendingDev)
+	
+	ctx.Logger().Info("Final pending dev allocation",
+		"incomplete_segment_dev", pendingDevForNext.Sub(accumulatedPendingDev).String(),
+		"accumulated_pending", accumulatedPendingDev.String(),
+		"total_pending", pendingDevForNext.String(),
+	)
 
 	// Total user tokens is total bought minus dev allocation distributed
 	totalUserTokens := totalTokensBought.Sub(totalDevAllocation)
