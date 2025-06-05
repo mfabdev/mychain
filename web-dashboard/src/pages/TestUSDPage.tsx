@@ -21,15 +21,15 @@ export const TestUSDPage: React.FC = () => {
         ]);
 
         setTestUSDData({
-          totalSupply: supplyResponse.total_supply || '1000000000000',
+          totalSupply: supplyResponse.total_supply || '0',
           bridgeStatus: 'Active',
           params: paramsResponse.params
         });
       } catch (error) {
         console.error('Error fetching TestUSD data:', error);
-        // Use default values
+        // Use actual zero values, not fake data
         setTestUSDData({
-          totalSupply: '1000000000000',
+          totalSupply: '0',
           bridgeStatus: 'Active',
           params: null
         });
@@ -66,7 +66,7 @@ export const TestUSDPage: React.FC = () => {
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Total Supply</p>
               <p className="text-2xl font-bold text-green-400">
-                {testUSDData ? formatAmount(testUSDData.totalSupply) : '1,000,000.00'}
+                {testUSDData ? formatAmount(testUSDData.totalSupply) : '0.00'}
               </p>
               <p className="text-xs text-gray-500">TestUSD</p>
             </div>

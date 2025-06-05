@@ -1,8 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BlockInfo } from '../components/BlockInfo';
+import { fetchAPI } from '../utils/api';
 
 export const OverviewPage: React.FC = () => {
+  const [maincoinSupply, setMaincoinSupply] = useState<string>('0');
+  const [maincoinPrice, setMaincoinPrice] = useState<string>('0.0001');
+  const [lcSupply, setLcSupply] = useState<string>('0');
+  const [testusdSupply, setTestusdSupply] = useState<string>('0');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTokenData = async () => {
+      try {
+        // Fetch MainCoin data
+        const segmentInfo = await fetchAPI('/mychain/maincoin/v1/segment_info');
+        if (segmentInfo) {
+          setMaincoinSupply(segmentInfo.total_supply || '0');
+          setMaincoinPrice(segmentInfo.current_price || '0.0001');
+        }
+
+        // Fetch total supply data
+        const totalSupply = await fetchAPI('/cosmos/bank/v1beta1/total');
+        if (totalSupply && totalSupply.supply) {
+          totalSupply.supply.forEach((token: any) => {
+            if (token.denom === 'ulc') {
+              // Convert from ulc (micro) to LC
+              const lcAmount = parseInt(token.amount || '0') / 1_000_000;
+              setLcSupply(lcAmount.toLocaleString());
+            } else if (token.denom === 'utestusd') {
+              // Convert from utestusd (micro) to TestUSD
+              const testusdAmount = parseInt(token.amount || '0') / 1_000_000;
+              setTestusdSupply(testusdAmount.toLocaleString());
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch token data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTokenData();
+    // Refresh data every 10 seconds
+    const interval = setInterval(fetchTokenData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -14,36 +59,6 @@ export const OverviewPage: React.FC = () => {
         {/* Block Information */}
         <BlockInfo />
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">💧 LiquidityCoin</h3>
-            <p className="text-2xl font-bold text-blue-400">100,000</p>
-            <p className="text-sm text-gray-400">Total Supply (90% staked)</p>
-            <Link to="/liquiditycoin" className="text-blue-400 hover:text-blue-300 text-sm">
-              View Details →
-            </Link>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">🪙 MainCoin</h3>
-            <p className="text-2xl font-bold text-green-400">100,000</p>
-            <p className="text-sm text-gray-400">At $0.0001 each</p>
-            <Link to="/maincoin" className="text-green-400 hover:text-green-300 text-sm">
-              Trade Now →
-            </Link>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">💵 TestUSD</h3>
-            <p className="text-2xl font-bold text-purple-400">1,001</p>
-            <p className="text-sm text-gray-400">Bridge Token</p>
-            <Link to="/testusd" className="text-purple-400 hover:text-purple-300 text-sm">
-              Bridge →
-            </Link>
-          </div>
-        </div>
-
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Staking Card */}
@@ -53,16 +68,16 @@ export const OverviewPage: React.FC = () => {
               <h2 className="text-xl font-bold">Staking</h2>
             </div>
             <p className="text-gray-300 mb-4">
-              Stake your ALC tokens to earn 10% annual rewards and help secure the network.
+              Stake your ALC tokens to earn rewards and help secure the network.
             </p>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <p className="text-sm text-gray-400">Currently Staked</p>
-                <p className="text-lg font-bold text-green-400">90,000 ALC</p>
+                <p className="text-sm text-gray-400">Network Status</p>
+                <p className="text-lg font-bold text-green-400">Active</p>
               </div>
               <div>
-                <p className="text-sm text-gray-400">APR</p>
-                <p className="text-lg font-bold text-yellow-400">10%</p>
+                <p className="text-sm text-gray-400">Validators</p>
+                <p className="text-lg font-bold text-yellow-400">1</p>
               </div>
             </div>
             <Link 
@@ -84,12 +99,12 @@ export const OverviewPage: React.FC = () => {
             </p>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <p className="text-sm text-gray-400">Trading Pairs</p>
-                <p className="text-lg font-bold text-green-400">3</p>
+                <p className="text-sm text-gray-400">Available Pairs</p>
+                <p className="text-lg font-bold text-green-400">MC/TestUSD</p>
               </div>
               <div>
-                <p className="text-sm text-gray-400">24h Volume</p>
-                <p className="text-lg font-bold text-yellow-400">$0.00</p>
+                <p className="text-sm text-gray-400">Status</p>
+                <p className="text-lg font-bold text-yellow-400">Ready</p>
               </div>
             </div>
             <Link 

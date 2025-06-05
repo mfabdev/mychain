@@ -23,19 +23,19 @@ type Keeper struct {
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]
-	
+
 	// State management
-	CurrentEpoch       collections.Item[uint64]
-	CurrentPrice       collections.Item[math.LegacyDec]
-	TotalSupply        collections.Item[math.Int]
-	ReserveBalance     collections.Item[math.Int]
-	DevAllocationTotal collections.Item[math.Int]
+	CurrentEpoch         collections.Item[uint64]
+	CurrentPrice         collections.Item[math.LegacyDec]
+	TotalSupply          collections.Item[math.Int]
+	ReserveBalance       collections.Item[math.Int]
+	DevAllocationTotal   collections.Item[math.Int]
 	PendingDevAllocation collections.Item[math.Int]
-	
+
 	// Segment history tracking
 	SegmentHistories collections.Map[uint64, types.SegmentHistory]
 	UserHistories    collections.Map[string, types.UserPurchaseHistory]
-	
+
 	// Expected keepers
 	bankKeeper types.BankKeeper
 }
@@ -60,15 +60,15 @@ func NewKeeper(
 		authority:    authority,
 		bankKeeper:   bankKeeper,
 
-		Params:             collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
-		CurrentEpoch:       collections.NewItem(sb, types.CurrentEpochKey, "current_epoch", collections.Uint64Value),
-		CurrentPrice:       collections.NewItem(sb, types.CurrentPriceKey, "current_price", sdk.LegacyDecValue),
-		TotalSupply:        collections.NewItem(sb, types.TotalSupplyKey, "total_supply", sdk.IntValue),
-		ReserveBalance:     collections.NewItem(sb, types.ReserveBalanceKey, "reserve_balance", sdk.IntValue),
-		DevAllocationTotal: collections.NewItem(sb, types.DevAllocationTotalKey, "dev_allocation_total", sdk.IntValue),
+		Params:               collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
+		CurrentEpoch:         collections.NewItem(sb, types.CurrentEpochKey, "current_epoch", collections.Uint64Value),
+		CurrentPrice:         collections.NewItem(sb, types.CurrentPriceKey, "current_price", sdk.LegacyDecValue),
+		TotalSupply:          collections.NewItem(sb, types.TotalSupplyKey, "total_supply", sdk.IntValue),
+		ReserveBalance:       collections.NewItem(sb, types.ReserveBalanceKey, "reserve_balance", sdk.IntValue),
+		DevAllocationTotal:   collections.NewItem(sb, types.DevAllocationTotalKey, "dev_allocation_total", sdk.IntValue),
 		PendingDevAllocation: collections.NewItem(sb, collections.NewPrefix(10), "pending_dev_allocation", sdk.IntValue),
-		SegmentHistories:   collections.NewMap(sb, collections.NewPrefix(8), "segment_histories", collections.Uint64Key, codec.CollValue[types.SegmentHistory](cdc)),
-		UserHistories:      collections.NewMap(sb, collections.NewPrefix(9), "user_histories", collections.StringKey, codec.CollValue[types.UserPurchaseHistory](cdc)),
+		SegmentHistories:     collections.NewMap(sb, collections.NewPrefix(8), "segment_histories", collections.Uint64Key, codec.CollValue[types.SegmentHistory](cdc)),
+		UserHistories:        collections.NewMap(sb, collections.NewPrefix(9), "user_histories", collections.StringKey, codec.CollValue[types.UserPurchaseHistory](cdc)),
 	}
 
 	schema, err := sb.Build()
@@ -83,31 +83,4 @@ func NewKeeper(
 // GetAuthority returns the module's authority.
 func (k Keeper) GetAuthority() []byte {
 	return k.authority
-}
-
-// IsInitialized checks if the module state has been initialized
-func (k Keeper) IsInitialized(ctx sdk.Context) bool {
-	_, err := k.CurrentEpoch.Get(ctx)
-	return err == nil
-}
-
-// InitializeIfNeeded initializes the module state if not already initialized
-func (k Keeper) InitializeIfNeeded(ctx sdk.Context) error {
-	if k.IsInitialized(ctx) {
-		return nil
-	}
-	
-	fmt.Printf("MAINCOIN: State not initialized, initializing with genesis defaults\n")
-	
-	// Use the default genesis parameters with proper initialization
-	genState := types.GenesisState{
-		Params:             types.DefaultParams(),
-		CurrentEpoch:       0,
-		CurrentPrice:       math.LegacyNewDecWithPrec(1, 4), // 0.0001
-		TotalSupply:        math.ZeroInt(),
-		ReserveBalance:     math.ZeroInt(),
-		DevAllocationTotal: math.ZeroInt(),
-	}
-	
-	return k.InitGenesis(ctx, genState)
 }

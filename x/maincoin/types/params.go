@@ -7,12 +7,12 @@ import (
 
 const (
 	// Default parameters
-	DefaultInitialPrice    = "0.0001"
-	DefaultPriceIncrement  = "0.01" // 1%
-	DefaultPurchaseDenom   = "utestusd"
-	DefaultFeePercentage   = "0.0001" // 0.01% dev fee
-	DefaultMaxSupply       = "0" // unlimited
-	DefaultDevAddress      = "cosmos1596fcwtk69cy2k8vuax3xcugcrj8zcj80cw4yt" // Dev address
+	DefaultInitialPrice   = "0.0001"
+	DefaultPriceIncrement = "0.001" // 0.1%
+	DefaultPurchaseDenom  = "utestusd"
+	DefaultFeePercentage  = "0.0001"                                        // 0.01% dev fee
+	DefaultMaxSupply      = "0"                                             // unlimited
+	DefaultDevAddress     = "cosmos1596fcwtk69cy2k8vuax3xcugcrj8zcj80cw4yt" // Dev address
 )
 
 // NewParams creates a new Params instance.

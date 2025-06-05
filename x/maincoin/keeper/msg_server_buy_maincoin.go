@@ -3,10 +3,10 @@ package keeper
 import (
 	"context"
 	"fmt"
-	
+
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	
+
 	"mychain/x/maincoin/types"
 )
 
@@ -16,47 +16,47 @@ import (
 func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin) (*types.MsgBuyMaincoinResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k := ms.Keeper
-	
+
 	// State should be initialized through InitGenesis
-	
+
 	// Validate TestUSD amount
 	if msg.Amount.Denom != types.TestUSDDenom {
 		return nil, fmt.Errorf("invalid denom %s, expected %s", msg.Amount.Denom, types.TestUSDDenom)
 	}
-	
+
 	// Get current state
 	currentEpoch, err := k.CurrentEpoch.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current epoch: %w", err)
 	}
-	
+
 	currentPrice, err := k.CurrentPrice.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current price: %w", err)
 	}
-	
+
 	totalSupply, err := k.TotalSupply.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total supply: %w", err)
 	}
-	
+
 	reserveBalance, err := k.ReserveBalance.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reserve balance: %w", err)
 	}
-	
+
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get params: %w", err)
 	}
-	
+
 	// Get pending dev allocation
 	pendingDev, err := k.PendingDevAllocation.Get(ctx)
 	if err != nil {
 		// If not found, assume zero
 		pendingDev = sdkmath.ZeroInt()
 	}
-	
+
 	// Use the corrected analytical calculation with deferred dev
 	result, err := k.CalculateAnalyticalPurchaseWithDeferredDev(
 		ctx,
@@ -71,13 +71,23 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate purchase: %w", err)
 	}
-	
+
 	// Execute the purchase
 	buyer, err := sdk.AccAddressFromBech32(msg.Buyer)
 	if err != nil {
 		return nil, fmt.Errorf("invalid buyer address: %w", err)
 	}
-	
+
+	// Transfer TestUSD from buyer to module
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(
+		ctx,
+		buyer,
+		types.ModuleName,
+		sdk.NewCoins(msg.Amount),
+	); err != nil {
+		return nil, fmt.Errorf("failed to transfer funds from buyer: %w", err)
+	}
+
 	// Refund any unspent funds
 	if result.RemainingFunds.IsPositive() {
 		refund := sdk.NewCoins(sdk.NewCoin(types.TestUSDDenom, result.RemainingFunds))
@@ -85,35 +95,35 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 			return nil, fmt.Errorf("failed to refund remaining funds: %w", err)
 		}
 	}
-	
+
 	// Mint MainCoin tokens for user
 	if result.TotalUserTokens.IsPositive() {
 		userCoins := sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, result.TotalUserTokens))
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, userCoins); err != nil {
 			return nil, fmt.Errorf("failed to mint user tokens: %w", err)
 		}
-		
+
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, buyer, userCoins); err != nil {
 			return nil, fmt.Errorf("failed to send user tokens: %w", err)
 		}
 	}
-	
+
 	// Handle dev allocation from PREVIOUS segment
 	if result.TotalDevAllocation.IsPositive() && params.DevAddress != "" {
 		devAddress, err := sdk.AccAddressFromBech32(params.DevAddress)
 		if err != nil {
 			return nil, fmt.Errorf("invalid dev address: %w", err)
 		}
-		
+
 		devCoins := sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, result.TotalDevAllocation))
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, devCoins); err != nil {
 			return nil, fmt.Errorf("failed to mint dev tokens: %w", err)
 		}
-		
+
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, devAddress, devCoins); err != nil {
 			return nil, fmt.Errorf("failed to send dev tokens: %w", err)
 		}
-		
+
 		// Update dev allocation total
 		devTotal, err := k.DevAllocationTotal.Get(ctx)
 		if err != nil {
@@ -125,42 +135,43 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 			return nil, fmt.Errorf("failed to update dev allocation total: %w", err)
 		}
 	}
-	
+
 	// Update state
 	newSupply := totalSupply.Add(result.TotalTokensBought)
 	if err := k.TotalSupply.Set(ctx, newSupply); err != nil {
 		return nil, fmt.Errorf("failed to update total supply: %w", err)
 	}
-	
+
 	// Update reserve (100% of purchase goes to reserve)
 	reserveIncrease := result.TotalCost
 	newReserve := reserveBalance.Add(reserveIncrease)
 	if err := k.ReserveBalance.Set(ctx, newReserve); err != nil {
 		return nil, fmt.Errorf("failed to update reserve balance: %w", err)
 	}
-	
+
 	// Update epoch and price
 	if err := k.CurrentEpoch.Set(ctx, result.FinalEpoch); err != nil {
 		return nil, fmt.Errorf("failed to update epoch: %w", err)
 	}
-	
+
 	if err := k.CurrentPrice.Set(ctx, result.FinalPrice); err != nil {
 		return nil, fmt.Errorf("failed to update price: %w", err)
 	}
-	
+
 	// Update pending dev allocation for NEXT segment
 	if err := k.PendingDevAllocation.Set(ctx, result.PendingDevAllocation); err != nil {
 		return nil, fmt.Errorf("failed to update pending dev allocation: %w", err)
 	}
-	
+
 	// Record segment history if enabled
-	if len(result.SegmentDetails) > 0 {
-		txHash := fmt.Sprintf("%X", ctx.TxBytes())
-		if err := k.RecordSegmentPurchases(ctx, msg.Buyer, txHash, result.SegmentDetails); err != nil {
-			ctx.Logger().Error("failed to record segment history", "error", err)
-		}
-	}
-	
+	// TEMPORARILY DISABLED due to excessive gas usage
+	// if len(result.SegmentDetails) > 0 {
+	// 	txHash := fmt.Sprintf("%X", ctx.TxBytes())
+	// 	if err := k.RecordSegmentPurchases(ctx, msg.Buyer, txHash, result.SegmentDetails); err != nil {
+	// 		ctx.Logger().Error("failed to record segment history", "error", err)
+	// 	}
+	// }
+
 	// Emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
@@ -176,7 +187,7 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 			sdk.NewAttribute("pending_dev", result.PendingDevAllocation.String()),
 		),
 	})
-	
+
 	// Log summary
 	ctx.Logger().Info("MainCoin purchase completed",
 		"buyer", msg.Buyer,
@@ -193,13 +204,13 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		"new_reserve", newReserve.String(),
 		"pending_dev_for_next", result.PendingDevAllocation.String(),
 	)
-	
+
 	// Calculate average price
 	avgPrice := sdkmath.LegacyZeroDec()
 	if result.TotalUserTokens.GT(sdkmath.ZeroInt()) {
 		avgPrice = sdkmath.LegacyNewDecFromInt(result.TotalCost).Quo(sdkmath.LegacyNewDecFromInt(result.TotalUserTokens))
 	}
-	
+
 	return &types.MsgBuyMaincoinResponse{
 		TotalTokensBought: result.TotalUserTokens.String(),
 		TotalPaid:         result.TotalCost.String(),

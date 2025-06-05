@@ -45,6 +45,21 @@ export const SegmentHistoryViewer: React.FC<SegmentHistoryViewerProps> = ({ curr
     setLoading(true);
     setError(null);
     
+    // Segment 0 is the current active segment and has no history yet
+    if (segmentNumber === 0) {
+      setSegmentHistory({
+        segmentNumber: 0,
+        purchases: [],
+        totalTokensSold: '0',
+        totalDevAllocation: '0',
+        totalRevenue: '0',
+        isComplete: false,
+        completedAtHeight: 0,
+      });
+      setLoading(false);
+      return;
+    }
+    
     try {
       const response = await fetchAPI(`/mychain/maincoin/v1/segment_history/${segmentNumber}`);
       if (response && response.segment_history) {

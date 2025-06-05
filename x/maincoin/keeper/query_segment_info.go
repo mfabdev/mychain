@@ -18,38 +18,38 @@ func (q queryServer) SegmentInfo(ctx context.Context, req *types.QuerySegmentInf
 
 	// State should be initialized through InitGenesis
 
-	currentEpoch, err := q.k.CurrentEpoch.Get(ctx)
+	currentSegment, err := q.k.CurrentEpoch.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get current epoch: %v", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get current segment: %v", err))
 	}
-	
+
 	currentPrice, err := q.k.CurrentPrice.Get(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	
+
 	totalSupply, err := q.k.TotalSupply.Get(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	
+
 	reserveBalance, err := q.k.ReserveBalance.Get(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	
+
 	devAllocationTotal, err := q.k.DevAllocationTotal.Get(ctx)
 	if err != nil {
 		// Default to zero if not set
 		devAllocationTotal = math.ZeroInt()
 	}
-	
+
 	// Calculate tokens needed
 	tokensNeeded, err := q.k.CalculateTokensNeeded(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	
+
 	// Calculate reserve ratio
 	var reserveRatio math.LegacyDec
 	if totalSupply.IsZero() {
@@ -64,7 +64,7 @@ func (q queryServer) SegmentInfo(ctx context.Context, req *types.QuerySegmentInf
 	}
 
 	return &types.QuerySegmentInfoResponse{
-		CurrentEpoch:       currentEpoch,
+		CurrentEpoch:       currentSegment,
 		CurrentPrice:       currentPrice,
 		TotalSupply:        totalSupply,
 		ReserveBalance:     reserveBalance,
