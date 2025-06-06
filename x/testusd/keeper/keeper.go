@@ -26,6 +26,7 @@ type Keeper struct {
     bankKeeper    types.BankKeeper
     eventService  event.Service
     Params        collections.Item[types.Params]
+    transactionKeeper types.TransactionKeeper
 }
 
 // NewKeeper creates a new testusd Keeper instance
@@ -72,4 +73,14 @@ func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
 // SetParams sets the module parameters.
 func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
     return k.Params.Set(ctx, params)
+}
+
+// SetTransactionKeeper sets the transaction keeper
+func (k *Keeper) SetTransactionKeeper(tk types.TransactionKeeper) {
+    k.transactionKeeper = tk
+}
+
+// GetTransactionKeeper returns the transaction keeper
+func (k Keeper) GetTransactionKeeper() types.TransactionKeeper {
+    return k.transactionKeeper
 }

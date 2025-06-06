@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io"
 
 	clienthelpers "cosmossdk.io/client/v2/helpers"
@@ -26,6 +27,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -104,7 +106,7 @@ type App struct {
 
 	MychainKeeper  mychainmodulekeeper.Keeper
 	TestusdKeeper  testusdmodulekeeper.Keeper
-	MaincoinKeeper maincoinmodulekeeper.Keeper
+	MaincoinKeeper *maincoinmodulekeeper.Keeper
 	DexKeeper      dexmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
@@ -196,6 +198,23 @@ func New(
 		panic(err)
 	}
 
+	// Wire keepers together BEFORE building the app
+	logger.Info("Wiring transaction keeper from mychain to other modules")
+	logger.Info("MaincoinKeeper address", "addr", fmt.Sprintf("%p", &app.MaincoinKeeper))
+	logger.Info("DexKeeper address", "addr", fmt.Sprintf("%p", &app.DexKeeper))
+	logger.Info("TestusdKeeper address", "addr", fmt.Sprintf("%p", &app.TestusdKeeper))
+	logger.Info("MychainKeeper address", "addr", fmt.Sprintf("%p", &app.MychainKeeper))
+	
+	// Set transaction keeper for all modules
+	app.MaincoinKeeper.SetTransactionKeeper(&app.MychainKeeper)
+	app.DexKeeper.SetTransactionKeeper(&app.MychainKeeper)
+	app.TestusdKeeper.SetTransactionKeeper(&app.MychainKeeper)
+	
+	logger.Info("Transaction keeper wiring completed")
+	logger.Info("Verification", "maincoin", app.MaincoinKeeper.GetTransactionKeeper() != nil)
+	logger.Info("Verification", "dex", app.DexKeeper.GetTransactionKeeper() != nil)
+	logger.Info("Verification", "testusd", app.TestusdKeeper.GetTransactionKeeper() != nil)
+
 	// add to default baseapp options
 	// enable optimistic execution
 	baseAppOptions = append(baseAppOptions, baseapp.SetOptimisticExecution())
@@ -207,6 +226,25 @@ func New(
 	if err := app.registerIBCModules(appOpts); err != nil {
 		panic(err)
 	}
+
+	// Set up custom ante handler with transaction recording
+	anteHandler, err := NewAnteHandler(
+		HandlerOptions{
+			HandlerOptions: ante.HandlerOptions{
+				AccountKeeper:          app.AuthKeeper,
+				BankKeeper:             app.BankKeeper,
+				SignModeHandler:        app.txConfig.SignModeHandler(),
+				FeegrantKeeper:         nil, // not using feegrant
+				SigGasConsumer:         ante.DefaultSigVerificationGasConsumer,
+				ExtensionOptionChecker: nil,
+			},
+			MychainKeeper: &app.MychainKeeper,
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+	app.SetAnteHandler(anteHandler)
 
 	/****  Module Options ****/
 

@@ -3,6 +3,7 @@ package mychain.mychain.v1;
 
 import "amino/amino.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "mychain/mychain/v1/params.proto";
@@ -14,6 +15,11 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/mychain/mychain/v1/params";
+  }
+  
+  // TransactionHistory queries transaction history for an address
+  rpc TransactionHistory(QueryTransactionHistoryRequest) returns (QueryTransactionHistoryResponse) {
+    option (google.api.http).get = "/mychain/mychain/v1/transaction-history/{address}";
   }
 }
 
@@ -27,4 +33,30 @@ message QueryParamsResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// QueryTransactionHistoryRequest is request type for the Query/TransactionHistory RPC method
+message QueryTransactionHistoryRequest {
+  string address = 1;
+  uint64 limit = 2;
+}
+
+// TransactionRecord represents a transaction history record
+message TransactionRecord {
+  string tx_hash = 1;
+  string type = 2;
+  string description = 3;
+  repeated cosmos.base.v1beta1.Coin amount = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  string from = 5;
+  string to = 6;
+  int64 height = 7;
+  string timestamp = 8;
+}
+
+// QueryTransactionHistoryResponse is response type for the Query/TransactionHistory RPC method
+message QueryTransactionHistoryResponse {
+  repeated TransactionRecord transactions = 1 [(gogoproto.nullable) = false];
 }

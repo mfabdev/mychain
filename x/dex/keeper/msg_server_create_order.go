@@ -143,6 +143,47 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 			sdk.NewAttribute("amount", msg.Amount.String()),
 		),
 	)
+	
+	// Record transaction
+	if tk := k.GetTransactionKeeper(); tk != nil {
+		orderType := "buy"
+		if !msg.IsBuy {
+			orderType = "sell"
+		}
+		
+		description := fmt.Sprintf("Created %s order for %s at %s", orderType, msg.Amount.String(), msg.Price.String())
+		metadata := fmt.Sprintf(`{"order_id":%d,"pair_id":%d,"is_buy":%t,"price":"%s"}`, orderID, msg.PairId, msg.IsBuy, msg.Price.String())
+		
+		if err := tk.RecordTransaction(ctx, msg.Maker, "dex_create_order", description, sdk.NewCoins(msg.Amount), msg.Maker, "dex_orderbook", metadata); err != nil {
+			k.Logger(ctx).Error("failed to record transaction", "error", err)
+		}
+	}
+	
+	// Emit transaction record event
+	txHash := ""
+	if txBytes := sdkCtx.TxBytes(); len(txBytes) > 0 {
+		txHash = fmt.Sprintf("%X", txBytes)
+	}
+	
+	orderType := "buy"
+	if !msg.IsBuy {
+		orderType = "sell"
+	}
+	
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"transaction_record",
+			sdk.NewAttribute("address", msg.Maker),
+			sdk.NewAttribute("type", "dex_order"),
+			sdk.NewAttribute("description", fmt.Sprintf("Created %s order for %s at %s", orderType, msg.Amount.String(), msg.Price.String())),
+			sdk.NewAttribute("amount", msg.Amount.String()),
+			sdk.NewAttribute("from", msg.Maker),
+			sdk.NewAttribute("to", "dex_orderbook"),
+			sdk.NewAttribute("tx_hash", txHash),
+			sdk.NewAttribute("height", fmt.Sprintf("%d", sdkCtx.BlockHeight())),
+			sdk.NewAttribute("metadata", fmt.Sprintf(`{"order_id":%d,"pair_id":%d,"is_buy":%t,"price":"%s"}`, orderID, msg.PairId, msg.IsBuy, msg.Price.String())),
+		),
+	)
 
 	return &types.MsgCreateOrderResponse{
 		OrderId: orderID,

@@ -41,3 +41,15 @@ export const formatTimestamp = (timestamp: string): string => {
     second: '2-digit'
   });
 };
+
+export const shortenAddress = (address: string): string => {
+  if (!address) return '';
+  if (address.length <= 10) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+export const formatCoin = (coin: { denom: string; amount: string }): string => {
+  const amount = parseInt(coin.amount) / 1_000_000;
+  const denom = coin.denom.toUpperCase();
+  return `${amount.toLocaleString()} ${denom}`;
+};

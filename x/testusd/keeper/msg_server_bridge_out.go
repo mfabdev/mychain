@@ -2,6 +2,7 @@ package keeper
 
 import (
     "context"
+    "fmt"
 
     errorsmod "cosmossdk.io/errors"
     "cosmossdk.io/math"
@@ -90,6 +91,16 @@ func (k msgServer) BridgeOut(goCtx context.Context, msg *types.MsgBridgeOut) (*t
     stats.LastBridgeOutTimestamp = ctx.BlockTime().Unix()
     k.SetBridgeStatistics(ctx, stats)
     
+    // Record transaction
+    if tk := k.GetTransactionKeeper(); tk != nil {
+        description := fmt.Sprintf("Bridged out %s, released %s", testUsdCoin.String(), usdcCoin.String())
+        metadata := fmt.Sprintf(`{"testusd_amount":"%s","usdc_amount":"%s","peg_ratio":"%s"}`, testUsdCoin.String(), usdcCoin.String(), pegRatio.String())
+        
+        if err := tk.RecordTransaction(ctx, msg.Sender, "bridge_out", description, sdk.NewCoins(testUsdCoin), msg.Sender, "external_bridge", metadata); err != nil {
+            k.Logger(ctx).Error("failed to record transaction", "error", err)
+        }
+    }
+
     // Emit event
     ctx.EventManager().EmitEvent(
         sdk.NewEvent(

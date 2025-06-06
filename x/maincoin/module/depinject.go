@@ -1,6 +1,8 @@
 package maincoin
 
 import (
+	"fmt"
+	
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
@@ -40,7 +42,7 @@ type ModuleInputs struct {
 type ModuleOutputs struct {
 	depinject.Out
 
-	MaincoinKeeper keeper.Keeper
+	MaincoinKeeper *keeper.Keeper
 	Module         appmodule.AppModule
 }
 
@@ -56,8 +58,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.AddressCodec,
 		authority,
 		in.BankKeeper,
+		nil, // transaction keeper will be set later
 	)
-	m := NewAppModule(in.Cdc, k, in.AuthKeeper, in.BankKeeper)
+	fmt.Printf("ProvideModule: Created keeper at %p\n", &k)
+	m := NewAppModule(in.Cdc, &k, in.AuthKeeper, in.BankKeeper)
 
-	return ModuleOutputs{MaincoinKeeper: k, Module: m}
+	return ModuleOutputs{MaincoinKeeper: &k, Module: m}
 }

@@ -30,3 +30,8 @@ type ParamSubspace interface {
 	Get(context.Context, []byte, interface{})
 	Set(context.Context, []byte, interface{})
 }
+
+// TransactionKeeper defines the expected interface for transaction recording
+type TransactionKeeper interface {
+	RecordTransaction(ctx context.Context, address string, txType string, description string, amount sdk.Coins, from string, to string, metadata string) error
+}

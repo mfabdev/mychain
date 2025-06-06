@@ -37,7 +37,8 @@ type Keeper struct {
 	UserHistories    collections.Map[string, types.UserPurchaseHistory]
 
 	// Expected keepers
-	bankKeeper types.BankKeeper
+	bankKeeper        types.BankKeeper
+	transactionKeeper types.TransactionKeeper
 }
 
 func NewKeeper(
@@ -46,6 +47,7 @@ func NewKeeper(
 	addressCodec address.Codec,
 	authority []byte,
 	bankKeeper types.BankKeeper,
+	transactionKeeper types.TransactionKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -54,11 +56,12 @@ func NewKeeper(
 	sb := collections.NewSchemaBuilder(storeService)
 
 	k := Keeper{
-		storeService: storeService,
-		cdc:          cdc,
-		addressCodec: addressCodec,
-		authority:    authority,
-		bankKeeper:   bankKeeper,
+		storeService:      storeService,
+		cdc:               cdc,
+		addressCodec:      addressCodec,
+		authority:         authority,
+		bankKeeper:        bankKeeper,
+		transactionKeeper: transactionKeeper,
 
 		Params:               collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		CurrentEpoch:         collections.NewItem(sb, types.CurrentEpochKey, "current_epoch", collections.Uint64Value),
@@ -83,4 +86,19 @@ func NewKeeper(
 // GetAuthority returns the module's authority.
 func (k Keeper) GetAuthority() []byte {
 	return k.authority
+}
+
+// SetTransactionKeeper sets the transaction keeper for recording transactions
+func (k *Keeper) SetTransactionKeeper(tk types.TransactionKeeper) {
+	k.transactionKeeper = tk
+	if tk != nil {
+		fmt.Printf("MainCoin: Transaction keeper set successfully: %T\n", tk)
+	} else {
+		fmt.Printf("MainCoin: WARNING - Transaction keeper is nil\n")
+	}
+}
+
+// GetTransactionKeeper returns the transaction keeper
+func (k Keeper) GetTransactionKeeper() types.TransactionKeeper {
+	return k.transactionKeeper
 }

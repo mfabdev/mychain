@@ -77,6 +77,16 @@ func (k msgServer) CancelOrder(ctx context.Context, msg *types.MsgCancelOrder) (
 
 	// Emit event
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// Record transaction
+	if tk := k.GetTransactionKeeper(); tk != nil {
+		description := fmt.Sprintf("Cancelled order #%d, refunded %s", msg.OrderId, refundAmount.String())
+		metadata := fmt.Sprintf(`{"order_id":%d,"refund":"%s"}`, msg.OrderId, refundAmount.String())
+		
+		if err := tk.RecordTransaction(ctx, msg.Maker, "dex_cancel_order", description, sdk.NewCoins(refundAmount), "dex_orderbook", msg.Maker, metadata); err != nil {
+			k.Logger(ctx).Error("failed to record transaction", "error", err)
+		}
+	}
+
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			"cancel_order",

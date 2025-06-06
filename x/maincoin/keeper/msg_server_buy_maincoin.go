@@ -205,6 +205,34 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		"pending_dev_for_next", result.PendingDevAllocation.String(),
 	)
 
+	// Record transaction history
+	// Get the transaction keeper dynamically
+	ctx.Logger().Info("DEBUG: Checking transaction keeper", 
+		"ms.Keeper", fmt.Sprintf("%p", ms.Keeper),
+		"GetTransactionKeeper", fmt.Sprintf("%v", ms.GetTransactionKeeper() != nil))
+	tk := ms.GetTransactionKeeper()
+	if tk != nil {
+		ctx.Logger().Info("Recording MainCoin purchase transaction", "buyer", msg.Buyer, "amount", result.TotalUserTokens.String())
+		metadata := fmt.Sprintf(`{"spent":"%s","received":"%s","segments":%d}`, result.TotalCost.String(), result.TotalUserTokens.String(), result.SegmentsProcessed)
+		err := tk.RecordTransaction(
+			ctx,
+			msg.Buyer,
+			"buy_maincoin",
+			fmt.Sprintf("Bought %s MainCoin for %s utestusd", result.TotalUserTokens.String(), result.TotalCost.String()),
+			sdk.NewCoins(sdk.NewCoin(types.MainCoinDenom, result.TotalUserTokens)),
+			msg.Buyer,
+			"maincoin_reserve",
+			metadata,
+		)
+		if err != nil {
+			ctx.Logger().Error("failed to record transaction", "error", err)
+		} else {
+			ctx.Logger().Info("Successfully recorded transaction", "buyer", msg.Buyer)
+		}
+	} else {
+		ctx.Logger().Warn("Transaction keeper is nil, cannot record transaction")
+	}
+
 	// Calculate average price
 	avgPrice := sdkmath.LegacyZeroDec()
 	if result.TotalUserTokens.GT(sdkmath.ZeroInt()) {

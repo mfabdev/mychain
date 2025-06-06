@@ -2,6 +2,7 @@ package keeper
 
 import (
     "context"
+    "fmt"
 
     errorsmod "cosmossdk.io/errors"
     "cosmossdk.io/math"
@@ -80,6 +81,16 @@ func (k msgServer) BridgeIn(goCtx context.Context, msg *types.MsgBridgeIn) (*typ
     stats.LastBridgeInTimestamp = ctx.BlockTime().Unix()
     k.SetBridgeStatistics(ctx, stats)
     
+    // Record transaction
+    if tk := k.GetTransactionKeeper(); tk != nil {
+        description := fmt.Sprintf("Bridged in %s, received %s", usdcCoin.String(), testUsdCoin.String())
+        metadata := fmt.Sprintf(`{"usdc_amount":"%s","testusd_amount":"%s","peg_ratio":"%s"}`, usdcCoin.String(), testUsdCoin.String(), pegRatio.String())
+        
+        if err := tk.RecordTransaction(ctx, msg.Sender, "bridge_in", description, sdk.NewCoins(testUsdCoin), "external_bridge", msg.Sender, metadata); err != nil {
+            k.Logger(ctx).Error("failed to record transaction", "error", err)
+        }
+    }
+
     // Emit event
     ctx.EventManager().EmitEvent(
         sdk.NewEvent(

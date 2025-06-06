@@ -43,6 +43,7 @@ type Keeper struct {
 	
 	// Expected keepers
 	bankKeeper types.BankKeeper
+	transactionKeeper types.TransactionKeeper
 }
 
 func NewKeeper(
@@ -97,4 +98,14 @@ func (k Keeper) GetAuthority() []byte {
 func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return sdkCtx.Logger().With("module", "x/"+types.ModuleName)
+}
+
+// SetTransactionKeeper sets the transaction keeper
+func (k *Keeper) SetTransactionKeeper(tk types.TransactionKeeper) {
+	k.transactionKeeper = tk
+}
+
+// GetTransactionKeeper returns the transaction keeper
+func (k Keeper) GetTransactionKeeper() types.TransactionKeeper {
+	return k.transactionKeeper
 }

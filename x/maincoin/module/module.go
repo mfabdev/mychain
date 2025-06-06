@@ -34,14 +34,14 @@ var (
 // AppModule implements the AppModule interface that defines the inter-dependent methods that modules need to implement
 type AppModule struct {
 	cdc        codec.Codec
-	keeper     keeper.Keeper
+	keeper     *keeper.Keeper
 	authKeeper types.AuthKeeper
 	bankKeeper types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	keeper keeper.Keeper,
+	keeper *keeper.Keeper,
 	authKeeper types.AuthKeeper,
 	bankKeeper types.BankKeeper,
 ) AppModule {
@@ -78,6 +78,7 @@ func (AppModule) RegisterInterfaces(registrar codectypes.InterfaceRegistry) {
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(registrar grpc.ServiceRegistrar) error {
+	fmt.Printf("RegisterServices called: keeper %p, transactionKeeper: %v\n", am.keeper, am.keeper.GetTransactionKeeper() != nil)
 	types.RegisterMsgServer(registrar, keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(registrar, keeper.NewQueryServerImpl(am.keeper))
 

@@ -261,6 +261,22 @@ func (k msgServer) BuyMaincoinWithDev(ctx context.Context, msg *types.MsgBuyMain
 		),
 	)
 	
+	// Emit transaction record event for the purchase
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"transaction_record",
+			sdk.NewAttribute("address", msg.Buyer),
+			sdk.NewAttribute("type", "buy_maincoin"),
+			sdk.NewAttribute("description", fmt.Sprintf("Bought %s MainCoin for %s", result.TotalUserTokens.String(), result.TotalCost.String())),
+			sdk.NewAttribute("amount", result.TotalUserTokens.String()),
+			sdk.NewAttribute("from", msg.Buyer),
+			sdk.NewAttribute("to", "maincoin_reserve"),
+			sdk.NewAttribute("tx_hash", txHash),
+			sdk.NewAttribute("height", fmt.Sprintf("%d", sdkCtx.BlockHeight())),
+			sdk.NewAttribute("metadata", fmt.Sprintf(`{"spent":"%s","received":"%s","segments":%d}`, result.TotalCost.String(), result.TotalUserTokens.String(), result.SegmentsProcessed)),
+		),
+	)
+	
 	// Log segment details
 	sdkCtx.Logger().Info("Segment Purchase Details",
 		"details", FormatSegmentDetails(result.SegmentDetails),

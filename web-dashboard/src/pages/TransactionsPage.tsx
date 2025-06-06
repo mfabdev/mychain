@@ -4,7 +4,28 @@ import { useKeplr } from '../hooks/useKeplr';
 
 export const TransactionsPage: React.FC = () => {
   const { address, isConnected } = useKeplr();
-  const mockAddress = "cosmos1kfhxj58p67wgg26a7sfwmw48sp7j4pjxryhm2q"; // Default for demo
+  const defaultAddress = isConnected && address ? address : "cosmos1sn9wjkv38jglqsvtwfk3ae9kzcpkp6vd0j5ptl";
+  const [searchAddress, setSearchAddress] = React.useState(defaultAddress);
+  const [addressInput, setAddressInput] = React.useState(defaultAddress);
+  const [txHashInput, setTxHashInput] = React.useState("");
+
+  const handleSearch = () => {
+    if (addressInput.trim()) {
+      setSearchAddress(addressInput.trim());
+    }
+  };
+
+  const handleClear = () => {
+    setAddressInput("");
+    setTxHashInput("");
+    setSearchAddress("");
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -24,7 +45,9 @@ export const TransactionsPage: React.FC = () => {
                 type="text" 
                 className="w-full bg-gray-700 rounded px-3 py-2 text-sm font-mono" 
                 placeholder="cosmos1..."
-                defaultValue={isConnected && address ? address : mockAddress}
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
             <div>
@@ -33,14 +56,22 @@ export const TransactionsPage: React.FC = () => {
                 type="text" 
                 className="w-full bg-gray-700 rounded px-3 py-2 text-sm font-mono" 
                 placeholder="Enter tx hash..."
+                value={txHashInput}
+                onChange={(e) => setTxHashInput(e.target.value)}
               />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button className="bg-blue-600 hover:bg-blue-700 rounded px-4 py-2 font-semibold">
+            <button 
+              className="bg-blue-600 hover:bg-blue-700 rounded px-4 py-2 font-semibold"
+              onClick={handleSearch}
+            >
               Search
             </button>
-            <button className="bg-gray-600 hover:bg-gray-700 rounded px-4 py-2">
+            <button 
+              className="bg-gray-600 hover:bg-gray-700 rounded px-4 py-2"
+              onClick={handleClear}
+            >
               Clear
             </button>
           </div>
@@ -81,7 +112,7 @@ export const TransactionsPage: React.FC = () => {
         </div>
 
         {/* Transaction History Component */}
-        <TransactionHistory address={isConnected && address ? address : mockAddress} />
+        <TransactionHistory address={searchAddress} />
 
         {/* Transaction Statistics */}
         <div className="bg-gray-800 rounded-lg p-6">

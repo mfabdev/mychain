@@ -18,6 +18,8 @@ type Keeper struct {
 	// Address capable of executing a MsgUpdateParams message.
 	// Typically, this should be the x/gov module account.
 	authority []byte
+	
+	stakingKeeper types.StakingKeeper
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]

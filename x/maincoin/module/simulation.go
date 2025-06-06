@@ -42,7 +42,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgBuyMaincoin,
-		maincoinsimulation.SimulateMsgBuyMaincoin(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		maincoinsimulation.SimulateMsgBuyMaincoin(am.authKeeper, am.bankKeeper, *am.keeper, simState.TxConfig),
 	))
 	const (
 		opWeightMsgSellMaincoin          = "op_weight_msg_maincoin"
@@ -57,7 +57,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgSellMaincoin,
-		maincoinsimulation.SimulateMsgSellMaincoin(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		maincoinsimulation.SimulateMsgSellMaincoin(am.authKeeper, am.bankKeeper, *am.keeper, simState.TxConfig),
 	))
 
 	return operations

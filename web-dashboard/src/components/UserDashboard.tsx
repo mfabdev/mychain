@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchBalance, fetchUserRewards, formatAmount } from '../utils/api';
 import { Balance, UserRewards } from '../types';
+import { TransactionHistory } from './TransactionHistory';
 
 interface UserDashboardProps {
   address: string;
@@ -201,6 +202,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
           </div>
         </div>
       )}
+
+      {/* Transaction History */}
+      <div className="mt-6">
+        <TransactionHistory address={address} />
+      </div>
     </div>
   );
 };
