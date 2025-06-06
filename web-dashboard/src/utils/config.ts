@@ -19,7 +19,7 @@ export const CHAIN_INFO: ChainInfo = {
   currencies: [
     {
       coinDenom: 'ALC',
-      coinMinimalDenom: 'alc',
+      coinMinimalDenom: 'ALC',
       coinDecimals: 6,
     },
     {
@@ -29,20 +29,20 @@ export const CHAIN_INFO: ChainInfo = {
     },
     {
       coinDenom: 'TESTUSD',
-      coinMinimalDenom: 'testusd',
+      coinMinimalDenom: 'utestusd',
       coinDecimals: 6,
     },
   ],
   feeCurrencies: [
     {
       coinDenom: 'ALC',
-      coinMinimalDenom: 'alc',
+      coinMinimalDenom: 'ALC',
       coinDecimals: 6,
     },
   ],
   stakeCurrency: {
     coinDenom: 'ALC',
-    coinMinimalDenom: 'alc',
+    coinMinimalDenom: 'ALC',
     coinDecimals: 6,
   },
 };

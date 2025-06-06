@@ -196,9 +196,8 @@ func (k Keeper) SetSegmentHistory(ctx sdk.Context, entry types.SegmentHistoryEnt
 
 // GetAllSegmentHistory retrieves all segment history entries
 func (k Keeper) GetAllSegmentHistory(ctx sdk.Context) []types.SegmentHistoryEntry {
-	// For now, return empty slice
-	// In production, this should iterate over stored entries
-	return []types.SegmentHistoryEntry{}
+	// Use the optimized version
+	return k.GetAllSegmentHistoryOptimized(ctx)
 }
 
 // GetSegmentTransactions retrieves all transactions for a specific segment

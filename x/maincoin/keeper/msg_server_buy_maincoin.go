@@ -163,14 +163,14 @@ func (ms msgServer) BuyMaincoin(goCtx context.Context, msg *types.MsgBuyMaincoin
 		return nil, fmt.Errorf("failed to update pending dev allocation: %w", err)
 	}
 
-	// Record segment history if enabled
-	// TEMPORARILY DISABLED due to excessive gas usage
-	// if len(result.SegmentDetails) > 0 {
-	// 	txHash := fmt.Sprintf("%X", ctx.TxBytes())
-	// 	if err := k.RecordSegmentPurchases(ctx, msg.Buyer, txHash, result.SegmentDetails); err != nil {
-	// 		ctx.Logger().Error("failed to record segment history", "error", err)
-	// 	}
-	// }
+	// Record segment history using optimized version
+	if len(result.SegmentDetails) > 0 {
+		txHash := fmt.Sprintf("%X", ctx.TxBytes())
+		if err := k.RecordSegmentPurchasesOptimized(ctx, msg.Buyer, txHash, result.SegmentDetails); err != nil {
+			// Log error but don't fail the transaction
+			ctx.Logger().Error("failed to record segment history", "error", err)
+		}
+	}
 
 	// Emit events
 	ctx.EventManager().EmitEvents(sdk.Events{

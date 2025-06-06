@@ -129,3 +129,12 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) math.Int {
 	return supply
 }
 
+// GetReserveBalance returns the current reserve balance
+func (k Keeper) GetReserveBalance(ctx sdk.Context) math.Int {
+	balance, err := k.ReserveBalance.Get(ctx)
+	if err != nil {
+		return math.ZeroInt()
+	}
+	return balance
+}
+

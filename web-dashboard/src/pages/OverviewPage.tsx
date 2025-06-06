@@ -21,7 +21,7 @@ export const OverviewPage: React.FC = () => {
         }
 
         // Fetch total supply data
-        const totalSupply = await fetchAPI('/cosmos/bank/v1beta1/total');
+        const totalSupply = await fetchAPI('/cosmos/bank/v1beta1/supply');
         if (totalSupply && totalSupply.supply) {
           totalSupply.supply.forEach((token: any) => {
             if (token.denom === 'ALC') {

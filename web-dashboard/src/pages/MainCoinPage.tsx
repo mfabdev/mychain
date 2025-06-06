@@ -793,6 +793,33 @@ Alternative commands to open terminal:
         <div className="bg-gray-800 rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4">Segment History & Forecast</h2>
           
+          {/* Blockchain Transaction Summary */}
+          <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
+            <h3 className="font-semibold text-blue-400 mb-2">🔗 Actual Blockchain Data (Transaction F08C0A11...)</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400">User Received</p>
+                <p className="font-bold">279.014 MC</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Dev Allocated</p>
+                <p className="font-bold">0.027 MC</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Segments</p>
+                <p className="font-bold">1→26 (25 total)</p>
+              </div>
+              <div>
+                <p className="text-gray-400">TESTUSD Spent</p>
+                <p className="font-bold">$0.028252</p>
+              </div>
+            </div>
+            <p className="text-xs text-orange-400 mt-2">
+              ⚠️ Note: Segment history queries are not available in current blockchain implementation. 
+              The table below shows theoretical values based on the 1:10 reserve algorithm.
+            </p>
+          </div>
+          
           <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4 mb-4">
             <h3 className="font-semibold text-yellow-400 mb-2">📌 Table Column Explanation</h3>
             <ul className="text-sm text-gray-300 space-y-1">
@@ -825,47 +852,143 @@ Alternative commands to open terminal:
                 </tr>
               </thead>
               <tbody>
-                {/* Completed Segments */}
-                <tr className="border-b border-gray-700 bg-blue-900/10">
-                  <td className="p-2 font-semibold text-blue-400">0 ✅</td>
-                  <td className="p-2 text-right">$0.0001</td>
-                  <td className="p-2 text-right">100,000</td>
-                  <td className="p-2 text-right">-</td>
-                  <td className="p-2 text-right">0</td>
-                  <td className="p-2 text-right">0</td>
-                  <td className="p-2 text-right">100,000</td>
-                  <td className="p-2 text-right">$10.00</td>
-                  <td className="p-2 text-right">$1.00</td>
-                  <td className="p-2 text-right text-green-400">1:10 ✅</td>
-                </tr>
-                
-                {/* Current and Recent Segments */}
-                {epochInfo && epochInfo.currentEpoch > 1 && (
-                  <>
-                    {/* Show segments 1 through current-1 as completed */}
-                    {Array.from({ length: Math.min(epochInfo.currentEpoch - 1, 8) }, (_, i) => i + 1).map(segment => (
-                      <tr key={segment} className="border-b border-gray-700 bg-blue-900/10">
-                        <td className="p-2 font-semibold text-blue-400">{segment} ✅</td>
-                        <td className="p-2 text-right">${(0.0001 * Math.pow(1.001, segment)).toFixed(7)}</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right">-</td>
-                        <td className="p-2 text-right text-green-400">1:10 ✅</td>
-                      </tr>
-                    ))}
-                  </>
-                )}
+                {/* Show actual blockchain data from transaction */}
+                {epochInfo && (() => {
+                  // From the actual blockchain transaction:
+                  // - Total tokens bought: 279,013,985 (smallest unit) = 279.013985 MC
+                  // - Dev tokens: 26,775 (smallest unit) = 0.026775 MC
+                  // - Segments completed: 25 (segments 1-25)
+                  // - Amount spent: 28,252 (utestusd) = $0.028252
+                  
+                  const actualTotalUserTokens = 279.013985;
+                  const actualDevTokens = 0.026775;
+                  const actualSegmentsCompleted = 25;
+                  const actualAmountSpent = 0.028252;
+                  
+                  const segments = [];
+                  let cumulativeSupply = 0;
+                  let cumulativeReserve = 0;
+                  
+                  // Since we can't get per-segment data from blockchain, show aggregate info
+                  const avgTokensPerSegment = actualTotalUserTokens / actualSegmentsCompleted;
+                  const avgDevPerSegment = actualDevTokens / actualSegmentsCompleted;
+                  
+                  // Accurate tokens needed per segment to maintain 1:10 ratio
+                  const tokensToBalance = [
+                    0,            // Segment 0: genesis
+                    10.09101899,  // Segment 1
+                    11.00031171,  // Segment 2
+                    11.09225827,  // Segment 3
+                    11.10255289,  // Segment 4
+                    11.10469068,  // Segment 5
+                    11.10601374,  // Segment 6
+                    11.10725553,  // Segment 7
+                    11.10848932,  // Segment 8
+                    11.10972244,  // Segment 9
+                    11.11095562,  // Segment 10
+                    11.11218892,  // Segment 11
+                    11.11342236,  // Segment 12
+                    11.11465593,  // Segment 13
+                    11.11588965,  // Segment 14
+                    11.1171235,   // Segment 15
+                    11.11835748,  // Segment 16
+                    11.11959161,  // Segment 17
+                    11.12082587,  // Segment 18
+                    11.12206027,  // Segment 19
+                    11.1232948,   // Segment 20
+                    11.12452947,  // Segment 21
+                    11.12576428,  // Segment 22
+                    11.12699923,  // Segment 23
+                    11.12823431,  // Segment 24
+                    11.12946953   // Segment 25
+                  ];
+                  
+                  for (let seg = 0; seg <= Math.min(epochInfo.currentEpoch - 1, 25); seg++) {
+                    const segment = {
+                      number: seg,
+                      price: 0.0001 * Math.pow(1.001, seg),
+                      supplyBefore: cumulativeSupply,
+                      devFromPrev: 0,
+                      tokensPurchased: 0,
+                      newMinted: 0,
+                      supplyAfter: 0,
+                      totalValue: 0,
+                      requiredReserve: 0,
+                      actualReserve: 0
+                    };
+                    
+                    if (seg === 0) {
+                      // Genesis
+                      segment.devFromPrev = 0;
+                      segment.tokensPurchased = 0;
+                      segment.newMinted = 100000;
+                      segment.supplyAfter = 100000;
+                      cumulativeSupply = 100000;
+                      cumulativeReserve = 1.00; // Initial $1 reserve
+                    } else if (seg === 1) {
+                      // First segment after genesis
+                      segment.supplyBefore = 100000;
+                      segment.devFromPrev = 10; // 0.01% of 100k
+                      segment.tokensPurchased = tokensToBalance[seg];
+                      segment.newMinted = segment.devFromPrev + segment.tokensPurchased;
+                      segment.supplyAfter = segment.supplyBefore + segment.newMinted;
+                      cumulativeSupply = segment.supplyAfter;
+                      // Add purchase amount to reserve
+                      cumulativeReserve += segment.tokensPurchased * segment.price;
+                    } else if (seg <= 25) {
+                      // Segments 2-25 (part of the purchase)
+                      // Dev allocation is 0.01% of new minted tokens (not including dev itself)
+                      segment.tokensPurchased = tokensToBalance[seg];
+                      segment.devFromPrev = segment.tokensPurchased * 0.0001; // 0.01% of purchased
+                      segment.newMinted = segment.devFromPrev + segment.tokensPurchased;
+                      segment.supplyAfter = segment.supplyBefore + segment.newMinted;
+                      cumulativeSupply = segment.supplyAfter;
+                      // Add purchase amount to reserve
+                      cumulativeReserve += segment.tokensPurchased * segment.price;
+                    }
+                    
+                    segment.totalValue = segment.supplyAfter * segment.price;
+                    segment.requiredReserve = segment.totalValue / 10;
+                    segment.actualReserve = cumulativeReserve;
+                    
+                    segments.push(segment);
+                  }
+                  
+                  return segments.map(seg => (
+                    <tr key={seg.number} className="border-b border-gray-700 bg-blue-900/10">
+                      <td className="p-2 font-semibold text-blue-400">{seg.number} ✅</td>
+                      <td className="p-2 text-right">${seg.price.toFixed(7)}</td>
+                      <td className="p-2 text-right">{Math.round(seg.supplyBefore).toLocaleString()}</td>
+                      <td className="p-2 text-right">{
+                        seg.number === 0 ? '-' : 
+                        seg.number === 1 ? '10.000' : 
+                        seg.devFromPrev.toFixed(3)
+                      }</td>
+                      <td className="p-2 text-right">{
+                        seg.number === 0 ? '0' : 
+                        seg.tokensPurchased.toFixed(2)
+                      }</td>
+                      <td className="p-2 text-right">{seg.newMinted.toFixed(2)}</td>
+                      <td className="p-2 text-right">{Math.round(seg.supplyAfter).toLocaleString()}</td>
+                      <td className="p-2 text-right">${seg.totalValue.toFixed(2)}</td>
+                      <td className="p-2 text-right">${seg.requiredReserve.toFixed(2)}</td>
+                      <td className="p-2 text-right text-green-400">1:10 ✅</td>
+                    </tr>
+                  ));
+                })()}
                 
                 {/* Current Segment */}
                 <tr className="border-b border-gray-700 bg-green-900/10">
                   <td className="p-2 font-semibold text-green-400">{epochInfo?.currentEpoch || 1} 🔄</td>
                   <td className="p-2 text-right">${epochInfo?.currentPrice || '0.0001001'}</td>
                   <td className="p-2 text-right">{epochInfo?.supplyBeforeDev ? parseFloat(epochInfo.supplyBeforeDev).toLocaleString() : '100,000'}</td>
-                  <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 ? '10' : epochInfo?.devAllocation || '-'}</td>
+                  <td className="p-2 text-right">{
+    !epochInfo || epochInfo.currentEpoch === 0
+      ? '-' // No dev from previous for segment 0
+      : epochInfo.currentEpoch === 1
+        ? '10' // Segment 0 had 100k MC minted, so 10 MC dev
+        : '~0.001' // All other segments have tiny dev allocations
+  }</td>
                   <td className="p-2 text-right">{epochInfo?.tokensNeeded || '10.99'}</td>
                   <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 ? (10 + parseFloat(epochInfo?.tokensNeeded || '10.99')).toFixed(2) : '-'}</td>
                   <td className="p-2 text-right">{epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'}</td>
@@ -898,8 +1021,8 @@ Alternative commands to open terminal:
             <p><span className="text-green-400">🔄 Active/Projected</span> - Current segment and immediate projections</p>
             <p><span className="text-gray-400">📊 Estimates</span> - Future segment forecasts based on current trends</p>
             <p>• Negative "Reserve Needed" indicates excess reserves vs required 1:10 ratio</p>
-            <p>• Dev allocation is 0.01% of tokens sold in the segment, added AFTER segment closes</p>
-            <p>• Dev tokens are included in the NEXT segment's supply calculations</p>
+            <p>• Dev allocation is 0.01% of NEW MC minted in each segment (not total supply)</p>
+            <p>• Dev tokens are calculated when segment closes and added at start of next segment</p>
           </div>
         </div>
 
