@@ -24,8 +24,8 @@ export const OverviewPage: React.FC = () => {
         const totalSupply = await fetchAPI('/cosmos/bank/v1beta1/total');
         if (totalSupply && totalSupply.supply) {
           totalSupply.supply.forEach((token: any) => {
-            if (token.denom === 'ulc') {
-              // Convert from ulc (micro) to LC
+            if (token.denom === 'ALC') {
+              // Convert from smallest unit to ALC (6 decimals)
               const lcAmount = parseInt(token.amount || '0') / 1_000_000;
               setLcSupply(lcAmount.toLocaleString());
             } else if (token.denom === 'utestusd') {

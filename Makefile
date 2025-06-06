@@ -51,6 +51,30 @@ test: govet govulncheck test-unit
 
 all: install
 
+###############################################################################
+###                                Blockchain                               ###
+###############################################################################
+
+init: init-clean
+	@echo "Initializing blockchain with default configuration..."
+	@./scripts/init_default.sh
+
+init-clean:
+	@echo "Cleaning blockchain data..."
+	@rm -rf ~/.mychain
+
+fresh-start: init-clean
+	@echo "Starting fresh blockchain..."
+	@./fresh-start.sh
+
+start:
+	@echo "Starting blockchain..."
+	@mychaind start --api.enable --api.swagger --api.enabled-unsafe-cors
+
+stop:
+	@echo "Stopping blockchain..."
+	@pkill -f mychaind || true
+
 install:
 	@echo "--> ensure dependencies have not been modified"
 	@go mod verify

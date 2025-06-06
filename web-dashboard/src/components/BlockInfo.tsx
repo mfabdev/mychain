@@ -65,7 +65,7 @@ export const BlockInfo: React.FC = () => {
         };
 
         supply.supply?.forEach((coin: any) => {
-          if (coin.denom === 'alc') {
+          if (coin.denom === 'ALC') {
             supplyMap.alc = (parseInt(coin.amount) / 1000000).toFixed(2);
           } else if (coin.denom === 'maincoin') {
             supplyMap.maincoin = (parseInt(coin.amount) / 1000000).toFixed(2);
