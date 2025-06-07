@@ -1,6 +1,9 @@
 package types
 
-import "cosmossdk.io/collections"
+import (
+	"cosmossdk.io/collections"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 const (
 	// ModuleName defines the module name
@@ -17,3 +20,16 @@ const (
 
 // ParamsKey is the prefix to retrieve all Params
 var ParamsKey = collections.NewPrefix(0) // "p_mychain"
+
+var (
+	// TransactionRecordPrefix is the prefix for transaction records
+	TransactionRecordPrefix = []byte{0x01}
+	
+	// StakingDistributionPrefix is the prefix for staking distribution records
+	StakingDistributionPrefix = []byte{0x02}
+)
+
+// GetStakingDistributionKey returns the key for a staking distribution record
+func GetStakingDistributionKey(height int64) []byte {
+	return append(StakingDistributionPrefix, sdk.Uint64ToBigEndian(uint64(height))...)
+}

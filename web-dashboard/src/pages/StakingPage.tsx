@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StakingManager } from '../components/StakingManager';
 import { QuickStake } from '../components/QuickStake';
 import { StakingRewardsHistory } from '../components/StakingRewardsHistory';
+import { StakingAPRDisplay } from '../components/StakingAPRDisplay';
+import { StakingDistributionHistory } from '../components/StakingDistributionHistory';
 import { useKeplr } from '../hooks/useKeplr';
 import { fetchAPI } from '../utils/api';
 
@@ -28,10 +30,13 @@ export const StakingPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Staking</h1>
-        <span className="text-sm text-gray-400">Earn 10% APR</span>
+        <span className="text-sm text-gray-400">Dynamic APR based on staking ratio</span>
       </div>
       
       <div className="grid gap-6">
+        {/* Staking APR Display - Always show */}
+        <StakingAPRDisplay />
+
         {/* Connection Notice */}
         {!isConnected && (
           <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-6 text-center">
@@ -52,6 +57,9 @@ export const StakingPage: React.FC = () => {
         
         {/* Staking Rewards History */}
         <StakingRewardsHistory />
+        
+        {/* Staking Distribution History */}
+        <StakingDistributionHistory />
 
         {/* Validator Information */}
         <div className="bg-gray-800 rounded-lg p-6">
@@ -73,7 +81,7 @@ export const StakingPage: React.FC = () => {
                   <p><span className="text-gray-400">Total Delegated:</span> 90,000 ALC</p>
                   <p><span className="text-gray-400">Self Delegation:</span> 90,000 ALC</p>
                   <p><span className="text-gray-400">Voting Power:</span> 100%</p>
-                  <p><span className="text-gray-400">Rewards Rate:</span> 10% APR</p>
+                  <p><span className="text-gray-400">Rewards Rate:</span> Dynamic APR</p>
                 </div>
               </div>
             </div>
@@ -98,7 +106,7 @@ export const StakingPage: React.FC = () => {
             <div className="bg-gray-700/30 rounded-lg p-4">
               <h3 className="font-semibold mb-2 text-blue-400">Staking Benefits</h3>
               <ul className="text-sm text-gray-300 space-y-1">
-                <li>• Earn 10% annual rewards</li>
+                <li>• Earn dynamic annual rewards (20% of supply)</li>
                 <li>• Help secure the network</li>
                 <li>• Participate in governance</li>
                 <li>• Compound rewards automatically</li>

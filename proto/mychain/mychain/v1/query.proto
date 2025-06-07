@@ -7,6 +7,7 @@ import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "mychain/mychain/v1/params.proto";
+import "mychain/mychain/v1/query_staking.proto";
 
 option go_package = "mychain/x/mychain/types";
 
@@ -20,6 +21,16 @@ service Query {
   // TransactionHistory queries transaction history for an address
   rpc TransactionHistory(QueryTransactionHistoryRequest) returns (QueryTransactionHistoryResponse) {
     option (google.api.http).get = "/mychain/mychain/v1/transaction-history/{address}";
+  }
+  
+  // StakingInfo queries current staking information
+  rpc StakingInfo(QueryStakingInfoRequest) returns (QueryStakingInfoResponse) {
+    option (google.api.http).get = "/mychain/mychain/v1/staking-info";
+  }
+  
+  // StakingDistributionHistory queries staking distribution history
+  rpc StakingDistributionHistory(QueryStakingDistributionHistoryRequest) returns (QueryStakingDistributionHistoryResponse) {
+    option (google.api.http).get = "/mychain/mychain/v1/staking-distribution-history";
   }
 }
 

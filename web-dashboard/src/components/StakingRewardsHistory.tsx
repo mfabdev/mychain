@@ -31,7 +31,7 @@ export const StakingRewardsHistory: React.FC = () => {
 
         // Get current supply
         const supply = await fetchAPI('/cosmos/bank/v1beta1/supply');
-        const alcSupply = supply.supply?.find((s: any) => s.denom === 'alc');
+        const alcSupply = supply.supply?.find((s: any) => s.denom === 'ulc');
         const currentSupply = parseInt(alcSupply?.amount || '0');
 
         // Initial supply was 100,000,000,000 (100,000 ALC with 6 decimals)

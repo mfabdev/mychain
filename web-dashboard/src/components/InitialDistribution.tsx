@@ -31,7 +31,7 @@ export const InitialDistribution: React.FC = () => {
 
         // Get current supply to show actual available amount
         const supply = await fetchAPI('/cosmos/bank/v1beta1/supply');
-        const alcSupply = supply.supply?.find((s: any) => s.denom === 'alc');
+        const alcSupply = supply.supply?.find((s: any) => s.denom === 'ulc');
         const currentTotalSupply = parseInt(alcSupply?.amount || '0') / 1000000;
         
         // Calculate actual unstaked amount (total supply - staked)

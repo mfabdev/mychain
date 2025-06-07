@@ -1,0 +1,49 @@
+syntax = "proto3";
+package mychain.mychain.v1;
+
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "mychain/x/mychain/types";
+
+// QueryStakingInfoRequest is request type for the Query/StakingInfo RPC method.
+message QueryStakingInfoRequest {}
+
+// QueryStakingInfoResponse is response type for the Query/StakingInfo RPC method.
+message QueryStakingInfoResponse {
+  StakingInfo info = 1;
+}
+
+// StakingInfo contains current staking information
+message StakingInfo {
+  string total_supply = 1;
+  string total_staked = 2;
+  string effective_apr = 3;
+  string annual_rewards = 4;
+  string hourly_rewards = 5;
+  int64 num_delegators = 6;
+  int64 next_distribution_height = 7;
+}
+
+// QueryStakingDistributionHistoryRequest is request type for the Query/StakingDistributionHistory RPC method.
+message QueryStakingDistributionHistoryRequest {
+  uint64 limit = 1;
+  uint64 offset = 2;
+}
+
+// QueryStakingDistributionHistoryResponse is response type for the Query/StakingDistributionHistory RPC method.
+message QueryStakingDistributionHistoryResponse {
+  repeated StakingDistributionRecord distributions = 1;
+  uint64 total = 2;
+}
+
+// StakingDistributionRecord represents a staking reward distribution event
+message StakingDistributionRecord {
+  int64 height = 1;
+  int64 timestamp = 2;
+  string total_supply = 3;
+  string total_staked = 4;
+  string rewards_distributed = 5;
+  string effective_apr = 6;
+  int64 num_delegators = 7;
+}

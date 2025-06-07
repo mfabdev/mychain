@@ -9,6 +9,11 @@ export const OverviewPage: React.FC = () => {
   const [lcSupply, setLcSupply] = useState<string>('0');
   const [testusdSupply, setTestusdSupply] = useState<string>('0');
   const [loading, setLoading] = useState(true);
+  const [inflationData, setInflationData] = useState<{
+    currentRate: string;
+    bondedRatio: string;
+    totalStaked: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchTokenData = async () => {
@@ -24,8 +29,8 @@ export const OverviewPage: React.FC = () => {
         const totalSupply = await fetchAPI('/cosmos/bank/v1beta1/supply');
         if (totalSupply && totalSupply.supply) {
           totalSupply.supply.forEach((token: any) => {
-            if (token.denom === 'ALC') {
-              // Convert from smallest unit to ALC (6 decimals)
+            if (token.denom === 'ulc') {
+              // Convert from smallest unit to LC (6 decimals)
               const lcAmount = parseInt(token.amount || '0') / 1_000_000;
               setLcSupply(lcAmount.toLocaleString());
             } else if (token.denom === 'utestusd') {
@@ -33,6 +38,24 @@ export const OverviewPage: React.FC = () => {
               const testusdAmount = parseInt(token.amount || '0') / 1_000_000;
               setTestusdSupply(testusdAmount.toLocaleString());
             }
+          });
+        }
+
+        // Fetch inflation data
+        const inflation = await fetchAPI('/cosmos/mint/v1beta1/inflation');
+        const pool = await fetchAPI('/cosmos/staking/v1beta1/pool');
+        
+        if (inflation && pool) {
+          const currentInflation = parseFloat(inflation.inflation) * 100;
+          const totalLC = totalSupply.supply?.find((s: any) => s.denom === 'ulc');
+          const totalLCAmount = parseInt(totalLC?.amount || '0');
+          const bondedTokens = parseInt(pool.pool?.bonded_tokens || '0');
+          const bondedRatio = totalLCAmount > 0 ? (bondedTokens / totalLCAmount) * 100 : 0;
+          
+          setInflationData({
+            currentRate: currentInflation.toFixed(2),
+            bondedRatio: bondedRatio.toFixed(2),
+            totalStaked: (bondedTokens / 1_000_000).toLocaleString()
           });
         }
       } catch (error) {
@@ -72,13 +95,16 @@ export const OverviewPage: React.FC = () => {
             </p>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <p className="text-sm text-gray-400">Network Status</p>
-                <p className="text-lg font-bold text-green-400">Active</p>
+                <p className="text-sm text-gray-400">Inflation Rate</p>
+                <p className="text-lg font-bold text-green-400">{inflationData?.currentRate || '100'}%</p>
               </div>
               <div>
-                <p className="text-sm text-gray-400">Validators</p>
-                <p className="text-lg font-bold text-yellow-400">1</p>
+                <p className="text-sm text-gray-400">Bonded Ratio</p>
+                <p className="text-lg font-bold text-yellow-400">{inflationData?.bondedRatio || '90'}%</p>
               </div>
+            </div>
+            <div className="text-sm text-gray-400 mb-2">
+              Staked: {inflationData?.totalStaked || '90,000'} LC / Goal: 50%
             </div>
             <Link 
               to="/staking" 

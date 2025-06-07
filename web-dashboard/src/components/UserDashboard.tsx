@@ -96,22 +96,25 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
               <p className="text-2xl font-bold text-blue-300">
                 {formatAmount(getCoinBalance('alc'), 6)}
               </p>
+              <p className="text-xs text-gray-500 mt-1">Chain: ulc</p>
             </div>
           )}
           {getCoinBalance('maincoin') !== '0' && (
             <div className="bg-purple-900/30 border border-purple-500/30 p-4 rounded-lg">
-              <p className="text-sm text-purple-400 mb-1">MainCoin</p>
+              <p className="text-sm text-purple-400 mb-1">MainCoin (MC)</p>
               <p className="text-2xl font-bold text-purple-300">
                 {formatAmount(getCoinBalance('maincoin'), 6)}
               </p>
+              <p className="text-xs text-gray-500 mt-1">Chain: umc</p>
             </div>
           )}
           {getCoinBalance('testusd') !== '0' && (
             <div className="bg-green-900/30 border border-green-500/30 p-4 rounded-lg">
-              <p className="text-sm text-green-400 mb-1">Test USD</p>
+              <p className="text-sm text-green-400 mb-1">Test USD (TUSD)</p>
               <p className="text-2xl font-bold text-green-300">
                 {formatAmount(getCoinBalance('testusd'), 6)}
               </p>
+              <p className="text-xs text-gray-500 mt-1">Chain: utestusd</p>
             </div>
           )}
           {balances.length === 0 && (

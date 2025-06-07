@@ -20,6 +20,7 @@ type Keeper struct {
 	authority []byte
 	
 	stakingKeeper types.StakingKeeper
+	bankKeeper    types.BankKeeper
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]
@@ -30,7 +31,8 @@ func NewKeeper(
 	cdc codec.Codec,
 	addressCodec address.Codec,
 	authority []byte,
-
+	stakingKeeper types.StakingKeeper,
+	bankKeeper types.BankKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -39,10 +41,12 @@ func NewKeeper(
 	sb := collections.NewSchemaBuilder(storeService)
 
 	k := Keeper{
-		storeService: storeService,
-		cdc:          cdc,
-		addressCodec: addressCodec,
-		authority:    authority,
+		storeService:  storeService,
+		cdc:           cdc,
+		addressCodec:  addressCodec,
+		authority:     authority,
+		stakingKeeper: stakingKeeper,
+		bankKeeper:    bankKeeper,
 
 		Params: collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 	}
@@ -59,4 +63,9 @@ func NewKeeper(
 // GetAuthority returns the module's authority.
 func (k Keeper) GetAuthority() []byte {
 	return k.authority
+}
+
+// SetStakingKeeper sets the staking keeper (called after initialization)
+func (k *Keeper) SetStakingKeeper(sk types.StakingKeeper) {
+	k.stakingKeeper = sk
 }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    <div id="results"></div>
+    
+    <script>
+        const testAPIs = async () => {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test validators
+                const validatorsResponse = await fetch('http://localhost:1317/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED');
+                const validators = await validatorsResponse.json();
+                results.innerHTML += `<p>Validators: ${JSON.stringify(validators.validators?.length || 0)} found</p>`;
+                console.log('Validators:', validators);
+                
+                // Test supply
+                const supplyResponse = await fetch('http://localhost:1317/cosmos/bank/v1beta1/supply');
+                const supply = await supplyResponse.json();
+                results.innerHTML += `<p>Supply: ${JSON.stringify(supply.supply)}</p>`;
+                console.log('Supply:', supply);
+                
+                // Test node info
+                const nodeResponse = await fetch('http://localhost:1317/cosmos/base/tendermint/v1beta1/node_info');
+                const nodeInfo = await nodeResponse.json();
+                results.innerHTML += `<p>Chain ID: ${nodeInfo.default_node_info?.network}</p>`;
+                console.log('Node info:', nodeInfo);
+                
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            }
+        };
+        
+        testAPIs();
+    </script>
+</body>
+</html>

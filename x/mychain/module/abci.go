@@ -9,8 +9,19 @@ import (
 	"mychain/x/mychain/keeper"
 )
 
-// EndBlock - currently no operations needed
+// BeginBlock - handles beginning of block processing
+func BeginBlock(ctx sdk.Context, k keeper.Keeper) error {
+	// Track SDK minting module inflation
+	// This runs AFTER the mint module has already minted new tokens
+	return k.RecordMintingIfOccurred(ctx)
+}
+
+// EndBlock - handles end of block processing
 func EndBlock(ctx sdk.Context, k keeper.Keeper) error {
+	// Custom staking rewards DISABLED - using SDK minting module instead
+	// The SDK minting module provides dynamic inflation based on bonding ratio
+	// Configuration: 50% goal bonded, 7-100% inflation range, 93% rate change
+	
 	// Transaction recording is now handled directly in message handlers
 	// and decorators, not through events in EndBlock
 	return nil
