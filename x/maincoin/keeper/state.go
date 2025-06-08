@@ -77,9 +77,18 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 	)
 	
 	if reserveNeededDec.GT(epsilon) {
-		// Calculate tokens needed at current price
-		// reserveNeededDec is in utestusd, currentPriceInUtestusd is utestusd per MC
-		tokensNeededInMC := reserveNeededDec.Quo(currentPriceInUtestusd)
+		// CRITICAL: Use correct formula with 0.9 factor
+		// When buying X tokens at price P:
+		// - Supply increases by X
+		// - Reserve increases by X * P
+		// - New required reserve = 0.1 * (Supply + X) * P
+		// Therefore: X = Reserve Deficit / (0.9 * P)
+		//
+		// Apply 0.9 factor to the price
+		priceWith09Factor := currentPriceInUtestusd.Mul(math.LegacyNewDecWithPrec(9, 1)) // 0.9
+		
+		// Calculate tokens needed with correct formula
+		tokensNeededInMC := reserveNeededDec.Quo(priceWith09Factor)
 		// Convert from MC to smallest unit (multiply by 1,000,000 for 6 decimals)
 		tokensNeededDec := tokensNeededInMC.Mul(math.LegacyNewDec(1000000))
 		// Round up to ensure we meet the requirement
@@ -88,10 +97,11 @@ func (k Keeper) CalculateTokensNeeded(ctx context.Context) (math.Int, error) {
 		sdkCtx.Logger().Info("CalculateTokensNeeded result DETAILED",
 			"reserveNeededDec_utestusd", reserveNeededDec.String(),
 			"currentPriceInUtestusd_per_MC", currentPriceInUtestusd.String(),
+			"priceWith09Factor", priceWith09Factor.String(),
 			"tokensNeededInMC", tokensNeededInMC.String(),
 			"tokensNeededDec_smallest_unit", tokensNeededDec.String(),
 			"tokensNeeded_smallest_unit", tokensNeeded.String(),
-			"calculation", fmt.Sprintf("%s utestusd / %s utestusd/MC = %s MC = %s smallest_unit",
+			"calculation", fmt.Sprintf("%s utestusd / (0.9 * %s utestusd/MC) = %s MC = %s smallest_unit",
 				reserveNeededDec.String(), currentPriceInUtestusd.String(), tokensNeededInMC.String(), tokensNeeded.String()),
 		)
 		
