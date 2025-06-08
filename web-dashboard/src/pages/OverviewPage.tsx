@@ -33,8 +33,8 @@ export const OverviewPage: React.FC = () => {
               // Convert from smallest unit to LC (6 decimals)
               const lcAmount = parseInt(token.amount || '0') / 1_000_000;
               setLcSupply(lcAmount.toLocaleString());
-            } else if (token.denom === 'utestusd') {
-              // Convert from utestusd (micro) to TestUSD
+            } else if (token.denom === 'utusd') {
+              // Convert from utusd (micro) to TestUSD
               const testusdAmount = parseInt(token.amount || '0') / 1_000_000;
               setTestusdSupply(testusdAmount.toLocaleString());
             }
@@ -91,7 +91,7 @@ export const OverviewPage: React.FC = () => {
               <h2 className="text-xl font-bold">Staking</h2>
             </div>
             <p className="text-gray-300 mb-4">
-              Stake your ALC tokens to earn rewards and help secure the network.
+              Stake your LC tokens to earn rewards and help secure the network.
             </p>
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -159,7 +159,7 @@ export const OverviewPage: React.FC = () => {
               className="bg-gray-700 hover:bg-gray-600 rounded-lg p-4 text-center transition-colors"
             >
               <span className="text-2xl block mb-2">🔒</span>
-              <span className="text-sm font-medium">Stake ALC</span>
+              <span className="text-sm font-medium">Stake LC</span>
             </Link>
             
             <Link 

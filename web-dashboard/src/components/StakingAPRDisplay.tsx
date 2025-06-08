@@ -94,7 +94,7 @@ export const StakingAPRDisplay: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
           <p className="text-sm text-gray-600 mb-1">Staking Ratio</p>
           <p className="text-3xl font-bold text-blue-600">{stakingRatio.toFixed(1)}%</p>
-          <p className="text-xs text-gray-500 mt-1">{formatNumber(totalStaked)} / {formatNumber(totalSupply)} ALC</p>
+          <p className="text-xs text-gray-500 mt-1">{formatNumber(totalStaked)} / {formatNumber(totalSupply)} LC</p>
         </div>
       </div>
 
@@ -143,8 +143,8 @@ export const StakingAPRDisplay: React.FC = () => {
       <div className="mt-4 p-4 bg-blue-50 rounded-lg">
         <h3 className="font-semibold text-sm mb-2">How Rewards Work</h3>
         <ul className="text-xs text-gray-600 space-y-1">
-          <li>• 20% annual rewards calculated on <strong>total supply</strong> ({formatNumber(totalSupply)} ALC)</li>
-          <li>• Distributed only to <strong>staked tokens</strong> ({formatNumber(totalStaked)} ALC)</li>
+          <li>• 20% annual rewards calculated on <strong>total supply</strong> ({formatNumber(totalSupply)} LC)</li>
+          <li>• Distributed only to <strong>staked tokens</strong> ({formatNumber(totalStaked)} LC)</li>
           <li>• Lower staking ratio = Higher effective APR for stakers</li>
           <li>• Rewards distributed every hour (720 blocks)</li>
         </ul>

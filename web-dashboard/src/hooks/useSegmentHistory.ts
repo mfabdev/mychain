@@ -39,34 +39,36 @@ export const useSegmentHistory = (options: UseSegmentHistoryOptions = {}) => {
   const generateCalculatedSegments = useCallback((currentEpoch: number): SegmentData[] => {
     const segments: SegmentData[] = [];
     
-    // Accurate tokens needed per segment to maintain 1:10 ratio
+    // Actual tokens minted per segment from blockchain (in MC)
+    // These values come from the blockchain query and represent the actual tokens purchased
+    // to maintain the 1:10 reserve ratio using formula: Reserve Deficit / (0.9 × Price)
     const tokensToBalance = [
       0,            // Segment 0: genesis
-      10.09101899,  // Segment 1
-      11.00031171,  // Segment 2
-      11.09225827,  // Segment 3
-      11.10255289,  // Segment 4
-      11.10469068,  // Segment 5
-      11.10601374,  // Segment 6
-      11.10725553,  // Segment 7
-      11.10848932,  // Segment 8
-      11.10972244,  // Segment 9
-      11.11095562,  // Segment 10
-      11.11218892,  // Segment 11
-      11.11342236,  // Segment 12
-      11.11465593,  // Segment 13
-      11.11588965,  // Segment 14
-      11.1171235,   // Segment 15
-      11.11835748,  // Segment 16
-      11.11959161,  // Segment 17
-      11.12082587,  // Segment 18
-      11.12206027,  // Segment 19
-      11.1232948,   // Segment 20
-      11.12452947,  // Segment 21
-      11.12576428,  // Segment 22
-      11.12699923,  // Segment 23
-      11.12823431,  // Segment 24
-      11.12946953   // Segment 25
+      12.211122,    // Segment 1 (actual from blockchain: 12211122 uMC)
+      11.102612,    // Segment 2 (actual from blockchain: 11102612 uMC)
+      11.103832,    // Segment 3 (actual from blockchain: 11103832 uMC)
+      11.105065,    // Segment 4 (actual from blockchain: 11105065 uMC)
+      11.106298,    // Segment 5 (actual from blockchain: 11106298 uMC)
+      11.107531,    // Segment 6 (actual from blockchain: 11107531 uMC)
+      11.108764,    // Segment 7 (actual from blockchain: 11108764 uMC)
+      11.109997,    // Segment 8 (actual from blockchain: 11109997 uMC)
+      11.111230,    // Segment 9 (actual from blockchain: 11111230 uMC)
+      11.112464,    // Segment 10 (actual from blockchain: 11112464 uMC)
+      11.113698,    // Segment 11 (actual from blockchain: 11113698 uMC)
+      11.114931,    // Segment 12 (actual from blockchain: 11114931 uMC)
+      11.116165,    // Segment 13 (actual from blockchain: 11116165 uMC)
+      11.117399,    // Segment 14 (actual from blockchain: 11117399 uMC)
+      11.118634,    // Segment 15 (actual from blockchain: 11118634 uMC)
+      11.119867,    // Segment 16 (actual from blockchain: 11119867 uMC)
+      11.121102,    // Segment 17 (actual from blockchain: 11121102 uMC)
+      11.122337,    // Segment 18 (actual from blockchain: 11122337 uMC)
+      11.123571,    // Segment 19 (actual from blockchain: 11123571 uMC)
+      11.124807,    // Segment 20 (actual from blockchain: 11124807 uMC)
+      11.126041,    // Segment 21 (actual from blockchain: 11126041 uMC)
+      11.127276,    // Segment 22 (actual from blockchain: 11127276 uMC)
+      11.128512,    // Segment 23 (actual from blockchain: 11128512 uMC)
+      11.129747,    // Segment 24 (actual from blockchain: 11129747 uMC)
+      11.130983     // Segment 25 (actual from blockchain: 11130983 uMC)
     ];
     
     let cumulativeSupply = 0;
@@ -85,14 +87,15 @@ export const useSegmentHistory = (options: UseSegmentHistoryOptions = {}) => {
         cumulativeReserve = 1.00;
       } else if (i === 1) {
         // First segment after genesis
-        devAllocation = 10; // 0.01% of 100k
+        devAllocation = 10; // 0.01% of 100k genesis supply
         mcPurchased = tokensToBalance[i];
         cumulativeSupply += devAllocation + mcPurchased;
         cumulativeReserve += mcPurchased * price;
       } else if (i <= 25) {
-        // Other segments
+        // Other segments: dev allocation is 0.01% of the PREVIOUS segment's purchased tokens
+        const prevPurchased = tokensToBalance[i - 1];
+        devAllocation = prevPurchased * 0.0001; // 0.01% of previous segment's purchase
         mcPurchased = tokensToBalance[i];
-        devAllocation = mcPurchased * 0.0001; // 0.01% of purchased
         cumulativeSupply += devAllocation + mcPurchased;
         cumulativeReserve += mcPurchased * price;
       }

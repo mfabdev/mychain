@@ -38,7 +38,7 @@ export const RewardsBreakdown: React.FC = () => {
             try {
               const delegatorAddr = val.operator_address.replace('valoper', '');
               const rewards = await fetchAPI(`/cosmos/distribution/v1beta1/delegators/${delegatorAddr}/rewards`);
-              const alcReward = rewards.total?.find((r: any) => r.denom === 'alc');
+              const alcReward = rewards.total?.find((r: any) => r.denom === 'ulc');
               const unclaimedAmount = alcReward ? parseFloat(alcReward.amount) / 1000000 : 0;
               
               return {
@@ -91,19 +91,19 @@ export const RewardsBreakdown: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-700/50 rounded-lg p-4">
           <p className="text-sm text-gray-400 mb-1">Initial Supply</p>
-          <p className="text-2xl font-bold">{rewardsData.initialSupply.toFixed(2)} ALC</p>
+          <p className="text-2xl font-bold">{rewardsData.initialSupply.toFixed(2)} LC</p>
         </div>
         <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
           <p className="text-sm text-blue-400 mb-1">Total Distributed</p>
-          <p className="text-2xl font-bold text-blue-300">+{rewardsData.totalDistributed.toFixed(2)} ALC</p>
+          <p className="text-2xl font-bold text-blue-300">+{rewardsData.totalDistributed.toFixed(2)} LC</p>
         </div>
         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
           <p className="text-sm text-green-400 mb-1">Claimed Rewards</p>
-          <p className="text-2xl font-bold text-green-300">{rewardsData.totalClaimed.toFixed(2)} ALC</p>
+          <p className="text-2xl font-bold text-green-300">{rewardsData.totalClaimed.toFixed(2)} LC</p>
         </div>
         <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4">
           <p className="text-sm text-yellow-400 mb-1">Unclaimed Rewards</p>
-          <p className="text-2xl font-bold text-yellow-300">{rewardsData.totalUnclaimed.toFixed(2)} ALC</p>
+          <p className="text-2xl font-bold text-yellow-300">{rewardsData.totalUnclaimed.toFixed(2)} LC</p>
         </div>
       </div>
 
@@ -112,15 +112,15 @@ export const RewardsBreakdown: React.FC = () => {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Initial Supply:</span>
-            <span className="font-mono">{rewardsData.initialSupply.toFixed(2)} ALC</span>
+            <span className="font-mono">{rewardsData.initialSupply.toFixed(2)} LC</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">+ Staking Rewards Distributed:</span>
-            <span className="font-mono text-blue-400">+{rewardsData.totalDistributed.toFixed(2)} ALC</span>
+            <span className="font-mono text-blue-400">+{rewardsData.totalDistributed.toFixed(2)} LC</span>
           </div>
           <div className="border-t border-gray-600 pt-2 flex justify-between font-semibold">
             <span>Current Total Supply:</span>
-            <span className="font-mono text-purple-400">{rewardsData.totalSupply.toFixed(2)} ALC</span>
+            <span className="font-mono text-purple-400">{rewardsData.totalSupply.toFixed(2)} LC</span>
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export const RewardsBreakdown: React.FC = () => {
                   {val.address.slice(0, 10)}...{val.address.slice(-8)}
                 </span>
                 <span className="text-yellow-400 font-semibold">
-                  {val.unclaimedRewards.toFixed(6)} ALC
+                  {val.unclaimedRewards.toFixed(6)} LC
                 </span>
               </div>
             ))}
@@ -149,10 +149,10 @@ export const RewardsBreakdown: React.FC = () => {
 
       <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
         <p className="text-sm text-blue-400">
-          <strong>Understanding the Numbers:</strong> The blockchain started with 100,000 ALC, of which 90,000 ALC 
-          was staked by validators and 10,000 ALC remained unstaked. Through staking rewards (10% APR on the 90,000 
-          staked ALC), {rewardsData.totalDistributed.toFixed(2)} ALC has been distributed. Of this, 
-          {rewardsData.totalClaimed.toFixed(2)} ALC has been claimed and {rewardsData.totalUnclaimed.toFixed(2)} ALC 
+          <strong>Understanding the Numbers:</strong> The blockchain started with 100,000 LC, of which 90,000 LC 
+          was staked by validators and 10,000 LC remained unstaked. Through staking rewards (10% APR on the 90,000 
+          staked LC), {rewardsData.totalDistributed.toFixed(2)} LC has been distributed. Of this, 
+          {rewardsData.totalClaimed.toFixed(2)} LC has been claimed and {rewardsData.totalUnclaimed.toFixed(2)} LC 
           remains unclaimed but is already part of the total supply.
         </p>
       </div>

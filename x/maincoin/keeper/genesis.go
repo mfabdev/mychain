@@ -38,7 +38,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: CurrentPrice set to %s\n", genState.CurrentPrice.String())
 
 	// Check if bank module already has MainCoin supply
-	bankSupply := k.bankKeeper.GetSupply(ctx, "maincoin")
+	bankSupply := k.bankKeeper.GetSupply(ctx, types.MainCoinDenom)
 	fmt.Fprintf(os.Stderr, "MAINCOIN DEBUG: Bank module has existing supply: %s\n", bankSupply.String())
 
 	// Validate that bank supply matches our genesis state

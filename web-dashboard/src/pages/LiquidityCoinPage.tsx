@@ -10,6 +10,8 @@ export const LiquidityCoinPage: React.FC = () => {
     bondedRatio: string;
     totalStaked: string;
     annualProvisions: string;
+    totalSupply: string;
+    liquidSupply: string;
   } | null>(null);
 
   useEffect(() => {
@@ -24,12 +26,15 @@ export const LiquidityCoinPage: React.FC = () => {
         const totalLCAmount = parseInt(totalLC?.amount || '0');
         const bondedTokens = parseInt(pool.pool?.bonded_tokens || '0');
         const bondedRatio = totalLCAmount > 0 ? (bondedTokens / totalLCAmount) * 100 : 0;
+        const liquidTokens = totalLCAmount - bondedTokens;
         
         setInflationInfo({
           currentRate: (parseFloat(inflation.inflation) * 100).toFixed(2),
           bondedRatio: bondedRatio.toFixed(2),
           totalStaked: (bondedTokens / 1_000_000).toLocaleString(),
-          annualProvisions: (parseFloat(annualProvisions.annual_provisions) / 1_000_000).toLocaleString()
+          annualProvisions: (parseFloat(annualProvisions.annual_provisions) / 1_000_000).toLocaleString(),
+          totalSupply: (totalLCAmount / 1_000_000).toLocaleString(),
+          liquidSupply: (liquidTokens / 1_000_000).toLocaleString()
         });
       } catch (error) {
         console.error('Failed to fetch inflation data:', error);
@@ -43,29 +48,29 @@ export const LiquidityCoinPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">LiquidityCoin (ALC)</h1>
+        <h1 className="text-3xl font-bold">LiquidityCoin (LC)</h1>
         <span className="text-sm text-gray-400">Native Staking Token</span>
       </div>
       
       <div className="grid gap-6">
-        {/* ALC Overview */}
+        {/* LC Overview */}
         <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">ALC Overview</h2>
+          <h2 className="text-xl font-bold mb-4">LC Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Total Supply</p>
-              <p className="text-2xl font-bold text-blue-400">100,000.00</p>
-              <p className="text-xs text-gray-500">ALC</p>
+              <p className="text-2xl font-bold text-blue-400">{inflationInfo?.totalSupply || '100,000'}</p>
+              <p className="text-xs text-gray-500">LC</p>
             </div>
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Staked</p>
-              <p className="text-2xl font-bold text-green-400">90,000.00</p>
-              <p className="text-xs text-gray-500">ALC (90%)</p>
+              <p className="text-2xl font-bold text-green-400">{inflationInfo?.totalStaked || '90,000'}</p>
+              <p className="text-xs text-gray-500">LC ({inflationInfo?.bondedRatio || '90'}%)</p>
             </div>
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Liquid</p>
-              <p className="text-2xl font-bold text-yellow-400">10,000.00</p>
-              <p className="text-xs text-gray-500">ALC (10%)</p>
+              <p className="text-2xl font-bold text-yellow-400">{inflationInfo?.liquidSupply || '10,000'}</p>
+              <p className="text-xs text-gray-500">LC ({((parseFloat(inflationInfo?.liquidSupply?.replace(/,/g, '') || '10000') / parseFloat(inflationInfo?.totalSupply?.replace(/,/g, '') || '100000')) * 100).toFixed(1)}%)</p>
             </div>
           </div>
         </div>

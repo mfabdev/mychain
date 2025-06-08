@@ -116,21 +116,21 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           },
           currencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           feeCurrencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           stakeCurrency: {
-            coinDenom: 'ALC',
-            coinMinimalDenom: 'alc',
+            coinDenom: 'LC',
+            coinMinimalDenom: 'ulc',
             coinDecimals: 6,
           },
           gasPriceStep: {
@@ -212,21 +212,21 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           },
           currencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           feeCurrencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           stakeCurrency: {
-            coinDenom: 'ALC',
-            coinMinimalDenom: 'alc',
+            coinDenom: 'LC',
+            coinMinimalDenom: 'ulc',
             coinDecimals: 6,
           },
           gasPriceStep: {
@@ -311,21 +311,21 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           },
           currencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           feeCurrencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
             },
           ],
           stakeCurrency: {
-            coinDenom: 'ALC',
-            coinMinimalDenom: 'alc',
+            coinDenom: 'LC',
+            coinMinimalDenom: 'ulc',
             coinDecimals: 6,
           },
           gasPriceStep: {
@@ -413,14 +413,14 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       {/* Notice about current staking situation */}
       {parseFloat(balance) === 0 && (
         <div className="mb-4 p-4 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
-          <p className="text-yellow-400 font-semibold mb-2">No ALC Balance Available</p>
+          <p className="text-yellow-400 font-semibold mb-2">No LC Balance Available</p>
           <p className="text-sm text-yellow-300">
-            Currently, most ALC tokens (100,000) are in the genesis account. To stake:
+            Currently, most LC tokens (100,000) are in the genesis account. To stake:
           </p>
           <ol className="text-sm text-yellow-300 mt-2 ml-4 list-decimal">
             <li>Import the genesis account with the mnemonic/private key</li>
-            <li>Or request a transfer from someone who has ALC tokens</li>
-            <li>Once you have ALC, you can stake them here to earn 10% APR</li>
+            <li>Or request a transfer from someone who has LC tokens</li>
+            <li>Once you have LC, you can stake them here to earn 10% APR</li>
           </ol>
           <p className="text-xs text-gray-400 mt-2">
             Genesis account: cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4
@@ -432,15 +432,15 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-700/50 rounded-lg p-4">
           <p className="text-sm text-gray-400 mb-1">Available Balance</p>
-          <p className="text-2xl font-bold">{formatAmount(balance)} ALC</p>
+          <p className="text-2xl font-bold">{formatAmount(balance)} LC</p>
         </div>
         <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
           <p className="text-sm text-purple-400 mb-1">Total Staked</p>
-          <p className="text-2xl font-bold text-purple-300">{getTotalStaked()} ALC</p>
+          <p className="text-2xl font-bold text-purple-300">{getTotalStaked()} LC</p>
         </div>
         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
           <p className="text-sm text-green-400 mb-1">Unclaimed Rewards</p>
-          <p className="text-2xl font-bold text-green-300">{getTotalRewards()} ALC</p>
+          <p className="text-2xl font-bold text-green-300">{getTotalRewards()} LC</p>
           {parseFloat(getTotalRewards()) > 0 && (
             <button
               onClick={handleClaimRewards}
@@ -474,7 +474,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          Stake ALC
+          Stake LC
         </button>
         <button
           onClick={() => setActiveTab('unstake')}
@@ -484,7 +484,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          Unstake ALC
+          Unstake LC
         </button>
       </div>
 
@@ -535,7 +535,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Available: {formatAmount(balance)} ALC
+              Available: {formatAmount(balance)} LC
             </p>
           </div>
 
@@ -544,7 +544,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
             disabled={!selectedValidator || !stakeAmount || parseFloat(stakeAmount) <= 0 || txLoading}
             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed"
           >
-            {txLoading ? 'Processing...' : 'Stake ALC'}
+            {txLoading ? 'Processing...' : 'Stake LC'}
           </button>
         </div>
       )}
@@ -564,9 +564,9 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-semibold">{validator?.description?.moniker || 'Unknown Validator'}</p>
-                          <p className="text-sm text-gray-400">Staked: {formatAmount(del.amount)} ALC</p>
+                          <p className="text-sm text-gray-400">Staked: {formatAmount(del.amount)} LC</p>
                           {parseFloat(del.rewards) > 0 && (
-                            <p className="text-sm text-green-400">Rewards: {formatAmount(del.rewards)} ALC</p>
+                            <p className="text-sm text-green-400">Rewards: {formatAmount(del.rewards)} LC</p>
                           )}
                         </div>
                       </div>
@@ -596,7 +596,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Total staked: {getTotalStaked()} ALC
+                  Total staked: {getTotalStaked()} LC
                 </p>
               </div>
 
@@ -605,7 +605,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
                 disabled={!unstakeAmount || parseFloat(unstakeAmount) <= 0 || txLoading}
                 className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed"
               >
-                {txLoading ? 'Processing...' : 'Unstake ALC'}
+                {txLoading ? 'Processing...' : 'Unstake LC'}
               </button>
 
               <p className="text-xs text-gray-400 text-center">

@@ -18,10 +18,10 @@ const (
 	GovModuleName = "gov"
 	
 	// MainCoin denomination
-	MainCoinDenom = "maincoin"
+	MainCoinDenom = "umc"
 	
 	// TestUSD denomination
-	TestUSDDenom = "utestusd"
+	TestUSDDenom = "utusd"
 	
 	// Event types
 	EventTypeBuyMaincoin = "buy_maincoin"

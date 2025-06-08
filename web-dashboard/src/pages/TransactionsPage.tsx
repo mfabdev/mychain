@@ -131,7 +131,7 @@ export const TransactionsPage: React.FC = () => {
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Gas Used</p>
               <p className="text-2xl font-bold text-yellow-400">0</p>
-              <p className="text-xs text-gray-500">ALC fees paid</p>
+              <p className="text-xs text-gray-500">LC fees paid</p>
             </div>
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Success Rate</p>
@@ -203,7 +203,7 @@ export const TransactionsPage: React.FC = () => {
         <div className="bg-gray-700/20 rounded-lg p-4">
           <div className="text-xs text-gray-500 space-y-1">
             <p>• All transactions are recorded on the blockchain and publicly verifiable</p>
-            <p>• Transaction fees are paid in ALC tokens</p>
+            <p>• Transaction fees are paid in LC tokens</p>
             <p>• Block time is approximately 5 seconds</p>
             <p>• Connect your wallet to see your personal transaction history</p>
           </div>

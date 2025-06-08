@@ -44,23 +44,23 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
           },
           currencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
               coinGeckoId: 'cosmos',
             },
           ],
           feeCurrencies: [
             {
-              coinDenom: 'ALC',
-              coinMinimalDenom: 'alc',
+              coinDenom: 'LC',
+              coinMinimalDenom: 'ulc',
               coinDecimals: 6,
               coinGeckoId: 'cosmos',
             },
           ],
           stakeCurrency: {
-            coinDenom: 'ALC',
-            coinMinimalDenom: 'alc',
+            coinDenom: 'LC',
+            coinMinimalDenom: 'ulc',
             coinDecimals: 6,
             coinGeckoId: 'cosmos',
           },
@@ -102,7 +102,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       if (result.code === 0) {
         setResult({ 
           success: true, 
-          message: `Successfully staked ${amount} ALC! You'll start earning ~${(parseFloat(amount) * 0.1 / 365).toFixed(2)} ALC per day.` 
+          message: `Successfully staked ${amount} LC! You'll start earning ~${(parseFloat(amount) * 0.1 / 365).toFixed(2)} LC per day.` 
         });
         setAmount('');
       } else {
@@ -116,7 +116,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
     }
   };
 
-  const balanceInALC = (parseInt(balance) / 1000000).toFixed(2);
+  const balanceInLC = (parseInt(balance) / 1000000).toFixed(2);
 
   return (
     <div className="bg-gradient-to-r from-purple-800 to-purple-600 rounded-lg p-6 mb-8">
@@ -126,10 +126,10 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       
       <div className="bg-black/20 rounded-lg p-4 mb-4">
         <p className="text-lg mb-2">
-          You have <span className="font-bold text-2xl">{balanceInALC} ALC</span> available
+          You have <span className="font-bold text-2xl">{balanceInLC} LC</span> available
         </p>
         <p className="text-sm opacity-90">
-          Stake your ALC with the "test" validator to earn 10% APR
+          Stake your LC with the "test" validator to earn 10% APR
         </p>
       </div>
 
@@ -145,7 +145,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold mb-2">Amount to Stake (ALC)</label>
+          <label className="block text-sm font-semibold mb-2">Amount to Stake (LC)</label>
           <div className="flex gap-2">
             <input
               type="number"
@@ -163,7 +163,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
               90,000
             </button>
             <button
-              onClick={() => setAmount(balanceInALC)}
+              onClick={() => setAmount(balanceInLC)}
               className="px-4 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
               disabled={loading}
             >
@@ -171,7 +171,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
             </button>
           </div>
           <p className="text-xs mt-1 opacity-80">
-            Recommended: 90,000 ALC (keeping 10,000 for transactions)
+            Recommended: 90,000 LC (keeping 10,000 for transactions)
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
           disabled={loading || !amount || parseFloat(amount) <= 0}
           className="w-full py-4 bg-white text-purple-700 hover:bg-gray-100 disabled:bg-gray-500 disabled:text-gray-300 rounded-lg font-bold text-lg transition-colors disabled:cursor-not-allowed"
         >
-          {loading ? 'Processing Transaction...' : `Stake ${amount || '0'} ALC Now`}
+          {loading ? 'Processing Transaction...' : `Stake ${amount || '0'} LC Now`}
         </button>
 
         <div className="text-sm opacity-90 space-y-1">

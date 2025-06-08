@@ -40,11 +40,29 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
 
     try {
       console.log('Fetching transactions for address:', address);
+      
+      // Get current block height to filter out old transactions
+      const latestBlock = await fetchAPI('/cosmos/base/tendermint/v1beta1/blocks/latest');
+      const currentHeight = parseInt(latestBlock.block.header.height);
+      
       const response = await fetchAPI(`/mychain/mychain/v1/transaction-history/${address}?limit=100`);
       console.log('Transaction response:', response);
       if (response && response.transactions) {
-        setTransactions(response.transactions);
-        console.log('Set transactions:', response.transactions.length);
+        // Filter out transactions from old blockchain runs
+        // Only show transactions from the current blockchain instance
+        // Assuming the blockchain was restarted recently, only show recent transactions
+        const recentTransactions = response.transactions.filter((tx: TransactionRecord) => {
+          // Filter out transactions with invalid timestamps (future dates)
+          const txDate = new Date(tx.timestamp);
+          const now = new Date();
+          if (txDate > now) return false;
+          
+          // Only show transactions from recent blocks (within current height)
+          return tx.height <= currentHeight && tx.height > 0;
+        });
+        
+        setTransactions(recentTransactions);
+        console.log('Set transactions:', recentTransactions.length, 'out of', response.transactions.length);
       }
     } catch (err: any) {
       console.error('Failed to fetch transaction history:', err);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatNumber } from '../utils/formatters';
+import { SegmentCalculationExplanation } from './SegmentCalculationExplanation';
 
 interface SegmentHistoryEntry {
   segmentNumber: number;
@@ -27,6 +28,7 @@ export const SegmentHistoryTable: React.FC<SegmentHistoryTableProps> = ({
 }) => {
   const [sortField, setSortField] = useState<keyof SegmentHistoryEntry>('segmentNumber');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const handleSort = (field: keyof SegmentHistoryEntry) => {
     if (sortField === field) {
@@ -111,15 +113,18 @@ export const SegmentHistoryTable: React.FC<SegmentHistoryTableProps> = ({
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Reserve Status
             </th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Calculations
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {sortedSegments.map((segment) => (
-            <tr 
-              key={segment.segmentNumber}
-              onClick={() => onSegmentClick?.(segment)}
-              className="hover:bg-gray-50 cursor-pointer transition-colors"
-            >
+          {sortedSegments.map((segment, index) => (
+            <React.Fragment key={segment.segmentNumber}>
+              <tr 
+                onClick={() => onSegmentClick?.(segment)}
+                className="hover:bg-gray-50 cursor-pointer transition-colors"
+              >
               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                 {segment.segmentNumber}
               </td>
@@ -151,7 +156,41 @@ export const SegmentHistoryTable: React.FC<SegmentHistoryTableProps> = ({
                    `Surplus ${formatUSD(segment.reserveDeficit)}`}
                 </span>
               </td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedRow(expandedRow === segment.segmentNumber ? null : segment.segmentNumber);
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                >
+                  {expandedRow === segment.segmentNumber ? 'Hide Math' : 'Show Math'}
+                </button>
+              </td>
             </tr>
+            {expandedRow === segment.segmentNumber && (
+              <tr>
+                <td colSpan={10} className="px-4 py-3 bg-gray-50">
+                  <SegmentCalculationExplanation
+                    segmentNumber={segment.segmentNumber}
+                    supplyBefore={
+                      index === 0 
+                        ? 0 
+                        : parseFloat(sortedSegments[index - 1]?.totalSupply || '100000')
+                    }
+                    devFromPrev={parseFloat(segment.devAllocation)}
+                    tokensPurchased={parseFloat(segment.mcPurchased)}
+                    price={parseFloat(segment.pricePerMC)}
+                    reserveBefore={
+                      index === 0 
+                        ? 0 
+                        : parseFloat(sortedSegments[index - 1]?.actualReserve || '1.0')
+                    }
+                  />
+                </td>
+              </tr>
+            )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>

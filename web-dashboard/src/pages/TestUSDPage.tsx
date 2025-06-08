@@ -14,16 +14,24 @@ export const TestUSDPage: React.FC = () => {
   useEffect(() => {
     const fetchTestUSDData = async () => {
       try {
-        // Fetch TestUSD module data
-        const [supplyResponse, paramsResponse] = await Promise.all([
-          fetchAPI('/mychain/testusd/v1/total_supply'),
-          fetchAPI('/mychain/testusd/v1/params')
-        ]);
+        // Fetch bank supply to get TestUSD amount
+        const supplyResponse = await fetchAPI('/cosmos/bank/v1beta1/supply');
+        const tusdSupply = supplyResponse.supply?.find((s: any) => s.denom === 'utusd');
+        const totalSupply = tusdSupply?.amount || '0';
+        
+        // Try to fetch params, but don't fail if it doesn't exist
+        let params = null;
+        try {
+          const paramsResponse = await fetchAPI('/mychain/testusd/v1/params');
+          params = paramsResponse.params;
+        } catch (paramError) {
+          console.log('TestUSD params endpoint not available, using defaults');
+        }
 
         setTestUSDData({
-          totalSupply: supplyResponse.total_supply || '0',
+          totalSupply: totalSupply,
           bridgeStatus: 'Active',
-          params: paramsResponse.params
+          params: params
         });
       } catch (error) {
         console.error('Error fetching TestUSD data:', error);

@@ -92,7 +92,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {getCoinBalance('alc') !== '0' && (
             <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg">
-              <p className="text-sm text-blue-400 mb-1">LiquidityCoin (ALC)</p>
+              <p className="text-sm text-blue-400 mb-1">LiquidityCoin (LC)</p>
               <p className="text-2xl font-bold text-blue-300">
                 {formatAmount(getCoinBalance('alc'), 6)}
               </p>
@@ -133,7 +133,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
             <div>
               <p className="text-sm text-gray-400">Pending Rewards</p>
               <p className="text-xl font-bold text-gray-200">
-                {rewards ? formatAmount(rewards.pendingLc, 6) : '0'} ALC
+                {rewards ? formatAmount(rewards.pendingLc, 6) : '0'} LC
               </p>
             </div>
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg">
@@ -145,7 +145,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
             <div>
               <p className="text-sm text-gray-400">Total Claimed</p>
               <p className="text-xl font-bold text-gray-200">
-                {rewards ? formatAmount(rewards.claimedLc, 6) : '0'} ALC
+                {rewards ? formatAmount(rewards.claimedLc, 6) : '0'} LC
               </p>
             </div>
             <div className="text-sm text-gray-400">
@@ -159,10 +159,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
             <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg">
               <p className="text-sm font-semibold text-blue-400 mb-2">Estimated Daily Rewards</p>
               <p className="text-lg font-bold text-blue-300">
-                ~{calculateDailyRewards()} ALC
+                ~{calculateDailyRewards()} LC
               </p>
               <p className="text-xs text-blue-400 mt-1">
-                Based on {formatAmount(getCoinBalance('alc'), 6)} ALC staked at 10% APR
+                Based on {formatAmount(getCoinBalance('ulc'), 6)} LC staked at 10% APR
               </p>
             </div>
           )}
@@ -172,7 +172,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
       {/* Balance History */}
       {lcBalanceHistory.length > 1 && (
         <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">ALC Balance History</h3>
+          <h3 className="text-xl font-semibold mb-4">LC Balance History</h3>
           <div className="bg-gray-700/30 rounded-lg p-4 max-h-64 overflow-y-auto">
             {lcBalanceHistory.slice().reverse().map((entry, index) => {
               const prevBalance = index < lcBalanceHistory.length - 1 
@@ -185,7 +185,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
                 <div key={entry.timestamp} className="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
                   <div>
                     <p className="text-sm font-medium">
-                      {formatAmount(entry.balance, 6)} ALC
+                      {formatAmount(entry.balance, 6)} LC
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(entry.timestamp).toLocaleTimeString()}
@@ -194,7 +194,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ address }) => {
                   {isIncrease && balanceChange > 0 && (
                     <div className="text-right">
                       <p className="text-sm font-medium text-green-400">
-                        +{formatAmount(balanceChange.toString(), 6)} ALC
+                        +{formatAmount(balanceChange.toString(), 6)} LC
                       </p>
                       <p className="text-xs text-green-500">Staking Reward</p>
                     </div>

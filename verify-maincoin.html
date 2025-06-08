@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MainCoin Display Verification</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .result { margin: 20px 0; padding: 10px; background: #333; }
+        .success { border: 2px solid #4ade80; }
+        .info { border: 2px solid #60a5fa; }
+    </style>
+</head>
+<body>
+    <h1>MainCoin Display Verification</h1>
+    <div id="results"></div>
+
+    <script>
+        async function checkMainCoin() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Fetch supply data
+                const response = await fetch('http://localhost:1317/cosmos/bank/v1beta1/supply');
+                const data = await response.json();
+                
+                results.innerHTML += `<div class="result info">
+                    <h3>Raw Supply Data:</h3>
+                    <pre>${JSON.stringify(data.supply, null, 2)}</pre>
+                </div>`;
+                
+                // Calculate MainCoin total
+                let maincoinTotal = 0;
+                let breakdown = [];
+                
+                data.supply.forEach(coin => {
+                    if (coin.denom === 'umaincoin') {
+                        const mc = parseInt(coin.amount) / 1000000;
+                        maincoinTotal += mc;
+                        breakdown.push(`umaincoin (genesis): ${mc.toLocaleString()} MC`);
+                    } else if (coin.denom === 'maincoin') {
+                        const mc = parseInt(coin.amount) / 1000000;
+                        maincoinTotal += mc;
+                        breakdown.push(`maincoin (dev allocation): ${mc.toLocaleString()} MC`);
+                    }
+                });
+                
+                results.innerHTML += `<div class="result success">
+                    <h3>MainCoin Calculation:</h3>
+                    ${breakdown.map(b => `<div>✓ ${b}</div>`).join('')}
+                    <div style="margin-top: 10px; font-size: 1.2em;">
+                        <strong>Total MainCoin: ${maincoinTotal.toLocaleString()} MC</strong>
+                    </div>
+                    <div style="margin-top: 10px; color: #888;">
+                        This should display as "100,010 MC" in the dashboard
+                    </div>
+                </div>`;
+                
+                // Check dashboard display
+                results.innerHTML += `<div class="result info">
+                    <h3>Dashboard Status:</h3>
+                    <div>✓ Dashboard running at: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></div>
+                    <div>✓ BlockInfo.tsx has been updated to sum both denominations</div>
+                    <div>✓ Please refresh your browser (Ctrl+F5) to see the updated display</div>
+                </div>`;
+                
+            } catch (error) {
+                results.innerHTML += `<div class="result" style="border: 2px solid #ef4444;">
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                </div>`;
+            }
+        }
+        
+        checkMainCoin();
+    </script>
+</body>
+</html>

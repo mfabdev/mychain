@@ -1,0 +1,37 @@
+# Claude Context File
+
+## Quick Reference Numbers (NEVER CHANGE)
+- LC: 100,000 (100,000,000,000 ulc)
+- MC: 100,000 at genesis (dev gets 10 MC at segment 1)
+- TUSD: 100,000 (100,000,000,000 utestusd)
+- Staked: 90,000 LC (90%)
+- Liquid: 10,000 LC (10%)
+- MC Price: $0.0001 initial, +0.1% per segment
+- Dev: 0.01% on ALL MC (genesis=10, segment 1=10)
+- Segments: End at 1:10 ratio (reserve:MC value)
+
+## Key Files to Check
+1. CANONICAL_BLOCKCHAIN_CONFIG.md - Source of truth
+2. CLAUDE.md - AI context
+3. fresh-launch-complete.sh - Launch script
+
+## Current Implementation
+- SDK minting: 50% goal, 7-100% inflation, 93% rate change
+- Initial inflation: 100% APR
+- Minting events tracked in transaction history
+- Web dashboard shows correct amounts
+
+## Common Commands
+```bash
+# Fresh start
+./fresh-launch-complete.sh
+
+# Start blockchain
+mychaind start
+
+# Check balances
+mychaind query bank balances cosmos1sqlsc5024sszglyh7pswk5hfpc5xtl77xrgn5a
+```
+
+## Git Repository
+https://github.com/mfabdev/mychain

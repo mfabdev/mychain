@@ -55,8 +55,14 @@ func (k Keeper) RecordMintingIfOccurred(ctx sdk.Context) error {
 		inflationRate := sdkmath.LegacyNewDecFromInt(annualMinted).Quo(sdkmath.LegacyNewDecFromInt(lastSupply))
 		
 		// Get bonded ratio
-		bondedTokens := k.stakingKeeper.TotalBondedTokens(ctx)
-		bondedRatio := sdkmath.LegacyNewDecFromInt(bondedTokens).Quo(sdkmath.LegacyNewDecFromInt(currentSupply.Amount))
+		var bondedRatio sdkmath.LegacyDec
+		if k.stakingKeeper != nil {
+			bondedTokens := k.stakingKeeper.TotalBondedTokens(ctx)
+			bondedRatio = sdkmath.LegacyNewDecFromInt(bondedTokens).Quo(sdkmath.LegacyNewDecFromInt(currentSupply.Amount))
+		} else {
+			// At genesis, assume 0% bonded
+			bondedRatio = sdkmath.LegacyZeroDec()
+		}
 		
 		// Create mint transaction record
 		mintTx := TransactionHistory{

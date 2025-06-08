@@ -1,0 +1,93 @@
+{
+  "chain_id": "mychain",
+  "node_moniker": "test",
+  
+  "initial_balances": {
+    "admin_address": "mychain1wfcn8eep79ulweqmt4cesarwlwm54xka93qqvh",
+    "validator_address": "mychain16x03wcp37kx5e8ehckjxvwcgk9j0cqnhcccnty",
+    "liquidity_coin": {
+      "denom": "ulc",
+      "amount": "100000000000",
+      "display": "100,000 ALC",
+      "decimals": 6
+    },
+    "test_usd": {
+      "denom": "utestusd", 
+      "amount": "100000000000",
+      "display": "100,000 TUSD",
+      "decimals": 6
+    }
+  },
+  
+  "staking": {
+    "initial_stake": "90000000000ulc",
+    "display": "90,000 ALC",
+    "bond_denom": "ulc",
+    "unbonding_time": "1814400s",
+    "validator_commission": "0.100000000000000000"
+  },
+  
+  "sdk_minting": {
+    "mint_denom": "ulc",
+    "inflation_rate_change": "0.930000000000000000",
+    "inflation_max": "1.000000000000000000",
+    "inflation_min": "0.070000000000000000",
+    "goal_bonded": "0.500000000000000000",
+    "blocks_per_year": "6311520",
+    "initial_inflation": "1.000000000000000000"
+  },
+  
+  "maincoin": {
+    "genesis_supply": {
+      "denom": "umaincoin",
+      "amount": "100000000000",
+      "display": "100,000 MC",
+      "decimals": 6
+    },
+    "initial_price": "0.0001",
+    "price_increment_per_segment": "0.001",
+    "dev_allocation_percentage": "0.0001",
+    "reserve_ratio_target": "0.1",
+    "initial_reserve": {
+      "denom": "utestusd",
+      "amount": "1000000",
+      "display": "$1.00"
+    },
+    "current_segment": 1,
+    "dev_allocation": {
+      "denom": "maincoin",
+      "amount": "10000000",
+      "display": "10 MC"
+    }
+  },
+  
+  "dex": {
+    "lc_reward_percent": "0.1",
+    "match_reward": "0.003"
+  },
+  
+  "governance": {
+    "voting_period": "172800s",
+    "min_deposit": "10000000ulc",
+    "quorum": "0.334",
+    "threshold": "0.5",
+    "veto_threshold": "0.334"
+  },
+  
+  "consensus": {
+    "block_time": "5s",
+    "max_validators": 100
+  },
+  
+  "api_endpoints": {
+    "rpc": "http://localhost:26657",
+    "api": "http://localhost:1317",
+    "grpc": "localhost:9090",
+    "grpc_web": "localhost:9091"
+  },
+  
+  "web_dashboard": {
+    "url": "http://localhost:3000",
+    "api_endpoint": "http://localhost:1317"
+  }
+}

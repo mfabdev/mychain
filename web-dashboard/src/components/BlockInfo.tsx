@@ -17,9 +17,9 @@ interface ChainData {
 }
 
 interface SupplyData {
-  alc: string;
-  maincoin: string;
-  testusd: string;
+  lc: string;
+  mc: string;
+  tusd: string;
 }
 
 export const BlockInfo: React.FC = () => {
@@ -61,42 +61,25 @@ export const BlockInfo: React.FC = () => {
         // Fetch total supply
         const supply = await fetchAPI('/cosmos/bank/v1beta1/supply');
         const supplyMap: SupplyData = {
-          alc: '0',
-          maincoin: '0',
-          testusd: '0',
+          lc: '0',
+          mc: '0',
+          tusd: '0',
         };
 
-        // Track MainCoin total from both denominations
-        let umcTotal = 0;
-        let maincoinTotal = 0;
-        
         console.log('Supply data:', supply.supply); // Debug log
         
         supply.supply?.forEach((coin: any) => {
           console.log(`Processing coin: ${coin.denom} = ${coin.amount}`); // Debug log
           
           if (coin.denom === 'ulc') {
-            supplyMap.alc = (parseInt(coin.amount) / 1000000).toFixed(2);
-          } else if (coin.denom === 'umain') {
-            umcTotal = parseInt(coin.amount) / 1000000;
-          } else if (coin.denom === 'maincoin' || coin.denom === 'umain') {
-            // Both "maincoin" and "umain" are MainCoin denominations
-            // "maincoin" is the dev allocation (10,000,000 = 10 MC)
-            // Initial supply should be 100,000 MC + 10 MC = 100,010 MC
-            maincoinTotal = parseInt(coin.amount) / 1000000;
-          } else if (coin.denom === 'utestusd') {
-            // TestUSD should show the full amount, not divided
-            // 100000 utestusd = 100,000 TestUSD (not 0.10)
-            supplyMap.testusd = (parseInt(coin.amount) / 1).toFixed(2);
+            supplyMap.lc = (parseInt(coin.amount) / 1000000).toFixed(0);
+          } else if (coin.denom === 'umc') {
+            // All MainCoin now uses umc denomination
+            supplyMap.mc = (parseInt(coin.amount) / 1000000).toFixed(0);
+          } else if (coin.denom === 'utusd') {
+            supplyMap.tusd = (parseInt(coin.amount) / 1000000).toFixed(0);
           }
         });
-        
-        console.log(`MainCoin totals: umc=${umcTotal}, maincoin=${maincoinTotal}, total=${umcTotal + maincoinTotal}`); // Debug log
-        
-        // MainCoin should be 100,000 (initial) + 10 (dev allocation) = 100,010
-        // Since we only see 10,000,000 maincoin in supply, that's the 10 MC dev allocation
-        // The initial 100,000 MC must be tracked separately or not yet minted
-        supplyMap.maincoin = (100000 + maincoinTotal).toFixed(2);
 
         setSupplyData(supplyMap);
       } catch (error) {
@@ -109,9 +92,9 @@ export const BlockInfo: React.FC = () => {
           totalTransactions: 0,
         });
         setSupplyData({
-          alc: '100,000.00',
-          maincoin: '10.00',
-          testusd: '0.10',
+          lc: '100,000',
+          mc: '100,010',
+          tusd: '100,000',
         });
       } finally {
         setLoading(false);
@@ -185,31 +168,31 @@ export const BlockInfo: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 rounded p-4 border border-blue-500/30">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-blue-400 font-semibold">LiquidityCoin (ALC)</span>
+                <span className="text-blue-400 font-semibold">LiquidityCoin (LC)</span>
                 <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs">Native</span>
               </div>
-              <div className="text-2xl font-bold">{supplyData.alc} ALC</div>
+              <div className="text-2xl font-bold">{supplyData.lc} LC</div>
               <div className="text-gray-400 text-sm mt-1">Total Supply</div>
-              <div className="text-gray-500 text-xs mt-2">Chain denom: ulc (1 ALC = 1,000,000 ulc)</div>
+              <div className="text-gray-500 text-xs mt-2">Chain denom: ulc (1 LC = 1,000,000 ulc)</div>
             </div>
             <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 rounded p-4 border border-purple-500/30">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-purple-400 font-semibold">MAINCOIN (MC)</span>
+                <span className="text-purple-400 font-semibold">MainCoin (MC)</span>
                 <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs">Bonding</span>
               </div>
-              <div className="text-2xl font-bold">{supplyData.maincoin} MC</div>
-              <div className="text-gray-400 text-sm mt-1">Total Supply</div>
+              <div className="text-2xl font-bold">{supplyData.mc} MC</div>
+              <div className="text-gray-400 text-sm mt-1">Total Supply (Segment 1)</div>
               <div className="text-gray-500 text-xs mt-2">Chain denom: umc (1 MC = 1,000,000 umc)</div>
-              <div className="text-gray-500 text-xs">Includes dev allocation from genesis</div>
+              <div className="text-gray-500 text-xs">Includes 10 MC dev allocation</div>
             </div>
             <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 rounded p-4 border border-green-500/30">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-green-400 font-semibold">TESTUSD (TUSD)</span>
+                <span className="text-green-400 font-semibold">TestUSD (TUSD)</span>
                 <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs">Stable</span>
               </div>
-              <div className="text-2xl font-bold">{supplyData.testusd} TUSD</div>
+              <div className="text-2xl font-bold">{supplyData.tusd} TUSD</div>
               <div className="text-gray-400 text-sm mt-1">Total Supply</div>
-              <div className="text-gray-500 text-xs mt-2">Chain denom: utestusd (1 TUSD = 1 utestusd)</div>
+              <div className="text-gray-500 text-xs mt-2">Chain denom: utusd (1 TUSD = 1,000,000 utusd)</div>
             </div>
           </div>
         )}
