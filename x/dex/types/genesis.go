@@ -20,15 +20,15 @@ func DefaultGenesis() *GenesisState {
 		UserRewards:    []UserReward{},
 		LiquidityTiers: []LiquidityTier{
 			// MC/USDC tiers
-			{Id: 1, PriceDeviation: math.LegacyZeroDec(), BidVolumeCap: math.LegacyMustNewDecFromStr("0.02"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.01"), WindowDurationSeconds: 3600},        // T1: 0%, 2%/1%, 1h
-			{Id: 2, PriceDeviation: math.LegacyMustNewDecFromStr("-0.03"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.05"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.03"), WindowDurationSeconds: 7200},   // T2: -3%, 5%/3%, 2h
-			{Id: 3, PriceDeviation: math.LegacyMustNewDecFromStr("-0.08"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.08"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.04"), WindowDurationSeconds: 14400},  // T3: -8%, 8%/4%, 4h
-			{Id: 4, PriceDeviation: math.LegacyMustNewDecFromStr("-0.12"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.12"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.05"), WindowDurationSeconds: 28800}, // T4: -12%, 12%/5%, 8h
+			{Id: 1, PriceDeviation: math.LegacyZeroDec(), BidVolumeCap: math.LegacyMustNewDecFromStr("0.02"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.01"), WindowDurationSeconds: 172800},      // T1: 0%, 2%/1%, 48h
+			{Id: 2, PriceDeviation: math.LegacyMustNewDecFromStr("-0.03"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.05"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.03"), WindowDurationSeconds: 259200},  // T2: -3%, 5%/3%, 72h
+			{Id: 3, PriceDeviation: math.LegacyMustNewDecFromStr("-0.08"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.08"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.04"), WindowDurationSeconds: 345600}, // T3: -8%, 8%/4%, 96h
+			{Id: 4, PriceDeviation: math.LegacyMustNewDecFromStr("-0.12"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.12"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.05"), WindowDurationSeconds: 432000}, // T4: -12%, 12%/5%, 120h
 			// MC/LC tiers (higher thresholds)
-			{Id: 5, PriceDeviation: math.LegacyZeroDec(), BidVolumeCap: math.LegacyMustNewDecFromStr("0.02"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.01"), WindowDurationSeconds: 3600},        // T1: 0%, 2%/1%, 1h
-			{Id: 6, PriceDeviation: math.LegacyMustNewDecFromStr("-0.08"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.05"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.03"), WindowDurationSeconds: 7200},   // T2: -8%, 5%/3%, 2h
-			{Id: 7, PriceDeviation: math.LegacyMustNewDecFromStr("-0.12"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.08"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.04"), WindowDurationSeconds: 14400}, // T3: -12%, 8%/4%, 4h
-			{Id: 8, PriceDeviation: math.LegacyMustNewDecFromStr("-0.16"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.12"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.05"), WindowDurationSeconds: 28800}, // T4: -16%, 12%/5%, 8h
+			{Id: 5, PriceDeviation: math.LegacyZeroDec(), BidVolumeCap: math.LegacyMustNewDecFromStr("0.02"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.01"), WindowDurationSeconds: 172800},      // T1: 0%, 2%/1%, 48h
+			{Id: 6, PriceDeviation: math.LegacyMustNewDecFromStr("-0.08"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.05"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.03"), WindowDurationSeconds: 259200},  // T2: -8%, 5%/3%, 72h
+			{Id: 7, PriceDeviation: math.LegacyMustNewDecFromStr("-0.12"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.08"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.04"), WindowDurationSeconds: 345600}, // T3: -12%, 8%/4%, 96h
+			{Id: 8, PriceDeviation: math.LegacyMustNewDecFromStr("-0.16"), BidVolumeCap: math.LegacyMustNewDecFromStr("0.12"), AskVolumeCap: math.LegacyMustNewDecFromStr("0.05"), WindowDurationSeconds: 432000}, // T4: -16%, 12%/5%, 120h
 		},
 		VolumeTrackers:   []VolumeTracker{},
 		PriceReferences:  []PriceReference{},

@@ -10,7 +10,7 @@ const (
 	DefaultMinOrderAmount           = "1000000"     // 1 USDT minimum
 	DefaultLCInitialSupply          = "100000"      // 100,000 LC
 	DefaultLCExchangeRate           = "0.0001"      // 0.0001 MC per 1 LC
-	DefaultBaseRewardRate           = "100"         // 100 LC per second per quote unit
+	DefaultBaseRewardRate           = "0.222"       // For 7% annual returns in LC tokens
 	DefaultLCDenom                  = "liquiditycoin"
 )
 
@@ -33,7 +33,7 @@ func DefaultParams() Params {
 		math.LegacyMustNewDecFromStr(DefaultLCExchangeRate),
 		math.NewIntFromUint64(1000000),
 		math.NewIntFromUint64(100000),
-		math.NewIntFromUint64(100),
+		math.LegacyMustNewDecFromStr(DefaultBaseRewardRate).TruncateInt(),
 		DefaultLCDenom,
 	)
 }
