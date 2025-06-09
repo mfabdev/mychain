@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { OverviewPage } from './pages/OverviewPage';
 import { MainCoinPage } from './pages/MainCoinPage';
 import { MainCoinSegmentHistoryPage } from './pages/MainCoinSegmentHistoryPage';
+import SegmentPurchaseDetailsPage from './pages/SegmentPurchaseDetailsPage';
 import { LiquidityCoinPage } from './pages/LiquidityCoinPage';
 import { TestUSDPage } from './pages/TestUSDPage';
 import { StakingPage } from './pages/StakingPage';
@@ -42,6 +43,7 @@ function App() {
               <Route path="/" element={<OverviewPage />} />
               <Route path="/maincoin" element={<MainCoinPage address={address} isConnected={isConnected} client={client} />} />
               <Route path="/maincoin/history" element={<MainCoinSegmentHistoryPage />} />
+              <Route path="/maincoin/purchase/:startSegment/:endSegment" element={<SegmentPurchaseDetailsPage />} />
               <Route path="/liquiditycoin" element={<LiquidityCoinPage />} />
               <Route path="/testusd" element={<TestUSDPage />} />
               <Route path="/staking" element={<StakingPage />} />

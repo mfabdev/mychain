@@ -8,9 +8,23 @@ interface OrderBookEntry {
   total: string;
 }
 
+interface Order {
+  id: string;
+  maker: string;
+  pair_id: string;
+  is_buy: boolean;
+  price: { denom: string; amount: string };
+  amount: { denom: string; amount: string };
+  filled_amount: { denom: string; amount: string };
+  created_at: string;
+  updated_at: string;
+}
+
 export const DEXPage: React.FC = () => {
-  const { address, balance, isConnected } = useKeplr();
+  const { address, isConnected } = useKeplr();
   const [orderBook, setOrderBook] = useState<{buy: OrderBookEntry[], sell: OrderBookEntry[]} | null>(null);
+  const [allOrders, setAllOrders] = useState<{buy: Order[], sell: Order[]}>({buy: [], sell: []});
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPair, setSelectedPair] = useState<string>('1'); // Default to pair ID 1 (MC/TestUSD)
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
@@ -20,6 +34,7 @@ export const DEXPage: React.FC = () => {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderStatus, setOrderStatus] = useState<string>('');
   const [generatedCommand, setGeneratedCommand] = useState<string>('');
+  const [useDirectExecution, setUseDirectExecution] = useState(true); // Default to direct execution
 
   useEffect(() => {
     const fetchDEXData = async () => {
@@ -30,6 +45,17 @@ export const DEXPage: React.FC = () => {
         // Parse the actual order book format
         const buyOrders = orderBookResponse.buy_orders || [];
         const sellOrders = orderBookResponse.sell_orders || [];
+        
+        // Store full order data
+        setAllOrders({
+          buy: buyOrders,
+          sell: sellOrders
+        });
+
+        // Filter orders for current user (hardcoded admin address)
+        const adminAddress = 'cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz';
+        const userOrders = [...buyOrders, ...sellOrders].filter(order => order.maker === adminAddress);
+        setMyOrders(userOrders);
         
         // Transform orders into display format
         const transformOrder = (order: any) => {
@@ -55,6 +81,8 @@ export const DEXPage: React.FC = () => {
           buy: [],
           sell: []
         });
+        setAllOrders({buy: [], sell: []});
+        setMyOrders([]);
       }
       setLoading(false);
     };
@@ -85,37 +113,65 @@ export const DEXPage: React.FC = () => {
     setGeneratedCommand('');
 
     try {
-      const response = await fetch('http://localhost:3003/execute-tx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: orderType === 'buy' ? 'dex-buy' : 'dex-sell',
-          pairId: selectedPair,
-          price: price,
-          orderAmount: amount,
-          from: 'admin'
-        })
-      });
+      if (useDirectExecution) {
+        // Direct execution through terminal server
+        const response = await fetch('http://localhost:3003/execute-tx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'dex-order',
+            orderType: orderType,
+            pair: selectedPair,
+            price: price,
+            amount: amount,
+            amountDenom: 'umc',
+            priceDenom: selectedPair === '1' ? 'utusd' : 'ulc'
+          })
+        });
 
-      const result = await response.json();
-      
-      if (result.cliCommand) {
-        setGeneratedCommand(result.cliCommand);
-        setOrderStatus('⚠️ ' + result.message);
-      } else if (result.success) {
-        setOrderStatus('✅ Order placed successfully!');
-        setPrice('');
-        setAmount('');
-        // Refresh order book
-        setTimeout(() => {
-          setSelectedPair(selectedPair); // Trigger refresh
-        }, 2000);
+        const result = await response.json();
+        
+        if (result.success) {
+          setOrderStatus('✅ Order placed successfully!');
+          setPrice('');
+          setAmount('');
+          setTotal('');
+          // Refresh order book
+          setTimeout(() => {
+            window.location.reload(); // Force refresh to get latest data
+          }, 2000);
+        } else {
+          setOrderStatus(`❌ Error: ${result.error || 'Failed to place order'}`);
+        }
       } else {
-        setOrderStatus('❌ ' + (result.error || 'Failed to place order'));
+        // Generate CLI command for manual execution
+        const priceInMicro = Math.floor(parseFloat(price) * 1000000);
+        const amountInMicro = Math.floor(parseFloat(amount) * 1000000);
+        const priceDenom = selectedPair === '1' ? 'utusd' : 'ulc';
+        const amountDenom = 'umc';
+        
+        const cliCommand = `mychaind tx dex create-order ${selectedPair} ${orderType === 'buy' ? '--is-buy' : ''} --amount ${amountInMicro}${amountDenom} --price ${priceInMicro}${priceDenom} --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --gas 300000 --keyring-backend test -y`;
+        
+        setGeneratedCommand(cliCommand);
+        setOrderStatus('⚠️ Please run the generated command in your terminal');
       }
     } catch (error) {
-      console.error('Order placement error:', error);
-      setOrderStatus('❌ Error placing order');
+      // Terminal server not available - generate CLI command directly
+      console.error('Terminal server not available, generating CLI command');
+      
+      // Convert amounts to micro units
+      const priceInMicro = Math.floor(parseFloat(price) * 1000000);
+      const amountInMicro = Math.floor(parseFloat(amount) * 1000000);
+      
+      // Determine denoms based on pair
+      const priceDenom = selectedPair === '1' ? 'utusd' : 'ulc';
+      const amountDenom = 'umc';
+      
+      // Generate CLI command
+      const cliCommand = `mychaind tx dex create-order ${selectedPair} ${orderType === 'buy' ? '--is-buy' : ''} --amount ${amountInMicro}${amountDenom} --price ${priceInMicro}${priceDenom} --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --gas 300000 --keyring-backend test -y`;
+      
+      setGeneratedCommand(cliCommand);
+      setOrderStatus('⚠️ Web transactions are not available. Please use the CLI command below.');
     } finally {
       setIsPlacingOrder(false);
     }
@@ -165,7 +221,32 @@ export const DEXPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Order Form */}
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Place Order</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Place Order</h2>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-400">Direct Execution:</label>
+                <button
+                  onClick={() => setUseDirectExecution(!useDirectExecution)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    useDirectExecution ? 'bg-green-600' : 'bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      useDirectExecution ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+            
+            {/* Connection Status */}
+            {useDirectExecution && (
+              <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-3 mb-4">
+                <p className="text-blue-400 font-semibold text-sm">🚀 Direct Execution Mode</p>
+                <p className="text-xs text-gray-300">Orders will be executed directly through the admin account.</p>
+              </div>
+            )}
             
             <div className="space-y-4">
               {/* Order Type */}
@@ -255,11 +336,10 @@ export const DEXPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Balance Info */}
+              {/* Fee Info */}
               <div className="text-xs text-gray-500 space-y-1">
-                <p>Available: {balance ? `${(parseFloat(balance.mc) / 1000000).toFixed(2)} MC` : '0.00 MC'}</p>
-                <p>Available: {balance ? `${(parseFloat(balance.tusd) / 1000000).toFixed(2)} TestUSD` : '0.00 TestUSD'}</p>
-                <p>Fee: 0.5%</p>
+                <p>Trading Fee: 0.5%</p>
+                <p>Min Order: 0.01 MC</p>
               </div>
             </div>
           </div>
@@ -354,18 +434,58 @@ export const DEXPage: React.FC = () => {
             {/* Open Orders */}
             <div>
               <h3 className="text-lg font-semibold mb-2">Open Orders</h3>
-              <div className="bg-gray-700/30 rounded-lg p-4 text-center text-gray-400">
-                <p>No open orders</p>
-                <p className="text-sm">Your active orders will appear here</p>
-              </div>
+              {myOrders.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left p-2">ID</th>
+                        <th className="text-left p-2">Type</th>
+                        <th className="text-left p-2">Pair</th>
+                        <th className="text-right p-2">Price</th>
+                        <th className="text-right p-2">Amount</th>
+                        <th className="text-right p-2">Filled</th>
+                        <th className="text-right p-2">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myOrders.map((order) => {
+                        const priceValue = parseFloat(order.price.amount) / 1000000;
+                        const amountValue = parseFloat(order.amount.amount) / 1000000;
+                        const filledValue = parseFloat(order.filled_amount.amount) / 1000000;
+                        const totalValue = priceValue * amountValue / 1000000; // Corrected calculation
+                        
+                        return (
+                          <tr key={order.id} className="border-b border-gray-700">
+                            <td className="p-2">#{order.id}</td>
+                            <td className={`p-2 ${order.is_buy ? 'text-green-400' : 'text-red-400'}`}>
+                              {order.is_buy ? 'Buy' : 'Sell'}
+                            </td>
+                            <td className="p-2">MC/{order.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
+                            <td className="p-2 text-right">{priceValue.toFixed(6)}</td>
+                            <td className="p-2 text-right">{amountValue.toFixed(2)} MC</td>
+                            <td className="p-2 text-right">{filledValue.toFixed(2)} MC</td>
+                            <td className="p-2 text-right">{totalValue.toFixed(6)} {order.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-gray-700/30 rounded-lg p-4 text-center text-gray-400">
+                  <p>No open orders</p>
+                  <p className="text-sm">Your active orders will appear here</p>
+                </div>
+              )}
             </div>
 
             {/* Order History */}
             <div>
               <h3 className="text-lg font-semibold mb-2">Order History</h3>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center text-gray-400">
-                <p>No order history</p>
-                <p className="text-sm">Your completed orders will appear here</p>
+                <p>No completed orders</p>
+                <p className="text-sm">Filled orders are not yet tracked</p>
               </div>
             </div>
           </div>

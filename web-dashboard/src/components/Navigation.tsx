@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { API_ENDPOINTS, BLOCKCHAIN_CONFIG } from '../utils/config';
 
 interface NavItemProps {
   to: string;
@@ -24,6 +25,34 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isActive }) => (
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
+  const [blockHeight, setBlockHeight] = useState<string>('Loading...');
+  const [isConnected, setIsConnected] = useState<boolean>(true);
+
+  useEffect(() => {
+    // Fetch block height immediately
+    fetchBlockHeight();
+    
+    // Set up interval to fetch every 2 seconds
+    const interval = setInterval(fetchBlockHeight, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchBlockHeight = async () => {
+    try {
+      const response = await fetch(`${BLOCKCHAIN_CONFIG.restEndpoint}${API_ENDPOINTS.latestBlock}`);
+      if (response.ok) {
+        const data = await response.json();
+        const height = data.block?.header?.height || 'N/A';
+        setBlockHeight(`#${height}`);
+        setIsConnected(true);
+      } else {
+        setIsConnected(false);
+      }
+    } catch (error) {
+      setIsConnected(false);
+    }
+  };
 
   const navItems = [
     { to: '/', icon: '🏠', label: 'Overview' },
@@ -60,8 +89,8 @@ export const Navigation: React.FC = () => {
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
         <div className="text-xs text-gray-500 space-y-1">
           <p>MyChain Testnet</p>
-          <p>Block Height: #4</p>
-          <p>Status: 🟢 Active</p>
+          <p>Block Height: {blockHeight}</p>
+          <p>Status: {isConnected ? '🟢 Active' : '🔴 Disconnected'}</p>
         </div>
       </div>
     </nav>

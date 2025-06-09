@@ -61,7 +61,9 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 	var lockAmount sdk.Coin
 	if msg.IsBuy {
 		// For buy orders, lock quote currency (price * amount)
-		totalQuote := msg.Price.Amount.Mul(msg.Amount.Amount)
+		// Price is per whole unit (1 MC = 1,000,000 umc), so divide amount by 1,000,000
+		amountInWholeUnits := msg.Amount.Amount.Quo(math.NewInt(1000000))
+		totalQuote := msg.Price.Amount.Mul(amountInWholeUnits)
 		lockAmount = sdk.NewCoin(msg.Price.Denom, totalQuote)
 	} else {
 		// For sell orders, lock base currency

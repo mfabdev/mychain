@@ -114,9 +114,9 @@ func (k Keeper) CalculateMarketPrice(ctx context.Context, pairID uint64) math.Le
 	
 	// Default prices based on pair type
 	if pair.BaseDenom == "umc" && pair.QuoteDenom == "utusd" {
-		return math.LegacyMustNewDecFromStr("0.0001") // $0.0001 per MC
+		return math.LegacyMustNewDecFromStr("100") // 100 utusd per umc = $0.0001 per MC
 	} else if pair.BaseDenom == "umc" && pair.QuoteDenom == "ulc" {
-		return math.LegacyMustNewDecFromStr("10000") // 10,000 LC per MC
+		return math.LegacyMustNewDecFromStr("10") // 10 ulc per umc = 0.00001 LC per MC
 	}
 	
 	return math.LegacyOneDec() // Default to 1:1

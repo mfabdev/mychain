@@ -111,19 +111,19 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
       }
     } catch (error) {
       console.error('Failed to fetch epoch info:', error);
-      // Correct values for Segment 1 with initial dev allocation
+      // Set N/A values when API is not available
       setEpochInfo({
-        currentEpoch: 1,
-        currentPrice: '0.0001001',
-        supplyBeforeDev: '100000',
-        devAllocation: '10',
-        totalSupply: '100010',
-        totalValue: '10.011001',
-        requiredReserve: '1.0011001',
-        currentReserve: '1.0',
-        reserveNeeded: '0.0011001',
-        tokensNeeded: '10.99',
-        usdcCollected: '0'
+        currentEpoch: 0,
+        currentPrice: 'N/A',
+        supplyBeforeDev: 'N/A',
+        devAllocation: 'N/A',
+        totalSupply: 'N/A',
+        totalValue: 'N/A',
+        requiredReserve: 'N/A',
+        currentReserve: 'N/A',
+        reserveNeeded: 'N/A',
+        tokensNeeded: 'N/A',
+        usdcCollected: 'N/A'
       });
     }
   };
@@ -189,7 +189,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
         
         // Generate the CLI command for the user
         const amountInMicro = Math.floor(parseFloat(buyAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utestusd --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000alc --keyring-backend test -y`;
+        const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utusd --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --keyring-backend test -y`;
         
         setGeneratedCommand(cliCommand);
         setCommandType('buy');
@@ -255,7 +255,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
         
         // Generate the CLI command for the user
         const amountInMicro = Math.floor(parseFloat(sellAmount) * 1000000);
-        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000alc --keyring-backend test -y`;
+        const cliCommand = `mychaind tx maincoin sell-maincoin ${amountInMicro}maincoin --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --keyring-backend test -y`;
         
         setGeneratedCommand(cliCommand);
         setCommandType('sell');
@@ -536,7 +536,7 @@ Alternative commands to open terminal:
                   />
                 </div>
                 <div className="text-xs text-gray-500">
-                  <p>Starting Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'} per MC</p>
+                  <p>Starting Price: {epochInfo && epochInfo.currentPrice !== 'N/A' ? `$${epochInfo.currentPrice}` : 'N/A'} per MC</p>
                   <p>Final Price: Depends on segments crossed</p>
                   <p>Average Price: Calculated automatically</p>
                 </div>
@@ -570,7 +570,7 @@ Alternative commands to open terminal:
                   />
                 </div>
                 <div className="text-xs text-gray-500">
-                  <p>Current Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'} per MC</p>
+                  <p>Current Price: {epochInfo && epochInfo.currentPrice !== 'N/A' ? `$${epochInfo.currentPrice}` : 'N/A'} per MC</p>
                   <p>Sells at current segment price</p>
                   <p>No segment crossing on sells</p>
                 </div>
@@ -701,9 +701,9 @@ Alternative commands to open terminal:
               <h3 className="font-semibold mb-2 text-purple-400">⭐ Reserve Management</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Target ratio: 1:10 (reserves:MC value)</li>
-                <li>• Current: ${epochInfo ? epochInfo.currentReserve : '1.000000'} reserves</li>
-                <li>• Required: ${epochInfo ? epochInfo.requiredReserve : '1.0011001'} reserves</li>
-                <li>• Need: {epochInfo ? epochInfo.tokensNeeded : '10.99'} MC sales</li>
+                <li>• Current: {epochInfo && epochInfo.currentReserve !== 'N/A' ? `$${epochInfo.currentReserve}` : 'N/A'} reserves</li>
+                <li>• Required: {epochInfo && epochInfo.requiredReserve !== 'N/A' ? `$${epochInfo.requiredReserve}` : 'N/A'} reserves</li>
+                <li>• Need: {epochInfo && epochInfo.tokensNeeded !== 'N/A' ? `${epochInfo.tokensNeeded} MC` : 'N/A'} sales</li>
                 <li>• 🔄 Nearly balanced system</li>
               </ul>
             </div>
@@ -769,9 +769,9 @@ Alternative commands to open terminal:
               <h3 className="font-semibold mb-2 text-green-400">Current Segment Status</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Segment: {epochInfo ? `#${epochInfo.currentEpoch}` : 'Loading...'}</li>
-                <li>• Current Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'}</li>
-                <li>• MC Needed: {epochInfo ? epochInfo.tokensNeeded : '0.99'} to reach 1:10</li>
-                <li>• Reserve Gap: ${epochInfo ? epochInfo.reserveNeeded : '0.00001'}</li>
+                <li>• Current Price: {epochInfo && epochInfo.currentPrice !== 'N/A' ? `$${epochInfo.currentPrice}` : 'N/A'}</li>
+                <li>• MC Needed: {epochInfo && epochInfo.tokensNeeded !== 'N/A' ? epochInfo.tokensNeeded : 'N/A'} to reach 1:10</li>
+                <li>• Reserve Gap: {epochInfo && epochInfo.reserveNeeded !== 'N/A' ? `$${epochInfo.reserveNeeded}` : 'N/A'}</li>
                 <li>• When sold → Move to next segment</li>
               </ul>
             </div>
@@ -800,7 +800,20 @@ Alternative commands to open terminal:
 
         {/* Segment History and Forecast */}
         <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Segment History & Forecast</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Segment History & Forecast</h2>
+            <div className="flex gap-4">
+              <Link 
+                to="/maincoin/purchase/25/76" 
+                className="text-green-400 hover:text-green-300 text-sm"
+              >
+                View Detailed Purchase Breakdown (Segments 25→76) →
+              </Link>
+              <Link to="/maincoin/history" className="text-blue-400 hover:text-blue-300 text-sm">
+                View Full History →
+              </Link>
+            </div>
+          </div>
           
           {/* Blockchain Transaction Summary */}
           <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
@@ -882,10 +895,10 @@ Alternative commands to open terminal:
                   const avgTokensPerSegment = actualTotalUserTokens / actualSegmentsCompleted;
                   const avgDevPerSegment = actualDevTokens / actualSegmentsCompleted;
                   
-                  // Accurate tokens needed per segment to maintain 1:10 ratio
+                  // Tokens needed per segment using formula: X = (0.1 * S * P - R) / (0.9 * P)
                   const tokensToBalance = [
                     0,            // Segment 0: genesis
-                    10.09101899,  // Segment 1
+                    12.21012211,  // Segment 1 (corrected with 0.9 factor)
                     11.00031171,  // Segment 2
                     11.09225827,  // Segment 3
                     11.10255289,  // Segment 4
@@ -988,9 +1001,9 @@ Alternative commands to open terminal:
                 
                 {/* Current Segment */}
                 <tr className="border-b border-gray-700 bg-green-900/10">
-                  <td className="p-2 font-semibold text-green-400">{epochInfo?.currentEpoch || 1} 🔄</td>
-                  <td className="p-2 text-right">${epochInfo?.currentPrice || '0.0001001'}</td>
-                  <td className="p-2 text-right">{epochInfo?.supplyBeforeDev ? parseFloat(epochInfo.supplyBeforeDev).toLocaleString() : '100,000'}</td>
+                  <td className="p-2 font-semibold text-green-400">{epochInfo?.currentEpoch || 'N/A'} 🔄</td>
+                  <td className="p-2 text-right">{epochInfo?.currentPrice !== 'N/A' ? `$${epochInfo?.currentPrice}` : 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo?.supplyBeforeDev && epochInfo.supplyBeforeDev !== 'N/A' ? parseFloat(epochInfo.supplyBeforeDev).toLocaleString() : 'N/A'}</td>
                   <td className="p-2 text-right">{
     !epochInfo || epochInfo.currentEpoch === 0
       ? '-' // No dev from previous for segment 0
@@ -998,11 +1011,11 @@ Alternative commands to open terminal:
         ? '10' // Segment 0 had 100k MC minted, so 10 MC dev
         : '~0.001' // All other segments have tiny dev allocations
   }</td>
-                  <td className="p-2 text-right">{epochInfo?.tokensNeeded || '10.99'}</td>
-                  <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 ? (10 + parseFloat(epochInfo?.tokensNeeded || '10.99')).toFixed(2) : '-'}</td>
-                  <td className="p-2 text-right">{epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'}</td>
-                  <td className="p-2 text-right">${epochInfo?.totalValue || '10.0121'}</td>
-                  <td className="p-2 text-right">${epochInfo?.requiredReserve || '1.00121'}</td>
+                  <td className="p-2 text-right">{epochInfo?.tokensNeeded || 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 && epochInfo?.tokensNeeded !== 'N/A' ? (10 + parseFloat(epochInfo.tokensNeeded)).toFixed(2) : '-'}</td>
+                  <td className="p-2 text-right">{epochInfo && epochInfo.totalSupply !== 'N/A' ? parseFloat(epochInfo.totalSupply).toLocaleString() : 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo?.totalValue !== 'N/A' ? `$${epochInfo?.totalValue}` : 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo?.requiredReserve !== 'N/A' ? `$${epochInfo?.requiredReserve}` : 'N/A'}</td>
                   <td className="p-2 text-right text-yellow-400">~1:10</td>
                 </tr>
                 

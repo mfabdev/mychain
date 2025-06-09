@@ -20,19 +20,41 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 - Dev allocation: 0.01% on ALL MC including genesis
 - Segments: End when reserve reaches 10% of MC value (1:10 ratio)
 
-### 3. Key Features Implemented
+### 3. Standard Denominations (CRITICAL)
+**ALWAYS use these exact denominations:**
+- `ulc` - LiquidityCoin (NOT alc)
+- `umc` - MainCoin (NOT maincoin)
+- `utusd` - TestUSD (NOT utestusd)
+
+### 4. Launch and Initialization
+**SINGLE SOURCE OF TRUTH**: `scripts/unified-launch.sh`
+```bash
+# Fresh start
+./scripts/unified-launch.sh --reset
+
+# Development mode
+./scripts/unified-launch.sh --reset --dev
+
+# AWS deployment
+./scripts/unified-launch.sh --reset --aws --systemd
+```
+
+**DO NOT USE deprecated scripts** - they have been archived to `deprecated_scripts/`
+
+### 5. Key Features Implemented
 - SDK minting with 50% goal bonded, 7-100% inflation
 - Transaction history tracking for all modules
 - Minting event recording in BeginBlock
 - Web dashboard with inflation display
+- DEX module with 7% annual LC rewards (base_reward_rate: 222)
 
-### 4. Important Files
+### 6. Important Files
+- **Launch Script**: scripts/unified-launch.sh (ALWAYS USE THIS)
 - **Configuration**: CANONICAL_BLOCKCHAIN_CONFIG.md (ALWAYS CHECK FIRST)
-- **Launch Script**: fresh-launch-complete.sh
 - **Mint Tracker**: x/mychain/keeper/mint_recorder.go
-- **Init Script**: scripts/init_correct_amounts.sh
+- **Transaction Recorder**: x/mychain/keeper/transaction_recorder.go
 
-### 5. Common Issues and Fixes
+### 7. Common Issues and Fixes
 
 #### Wrong Token Amounts
 - ALWAYS use 100,000,000,000 for 100,000 tokens
@@ -40,7 +62,9 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 
 #### Denomination Issues
 - Use "ulc" NOT "alc"
-- All queries and code should reference "ulc"
+- Use "umc" NOT "maincoin" 
+- Use "utusd" NOT "utestusd"
+- All queries and code should reference these standard denoms
 
 #### Display Issues
 - MC should show 100,000 at genesis (dev allocation comes later)
@@ -48,12 +72,15 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 - LC should show 100,000 (not 100)
 - MC price starts at $0.0001 per MC
 
-### 6. Commands to Remember
+#### DEX Reward Rate
+- Use 222 NOT "0.222" (string truncates to 0)
+- This gives 7% annual LC rewards
+
+### 8. Commands to Remember
 
 #### Start Fresh Blockchain
 ```bash
-./fresh-launch-complete.sh
-mychaind start
+./scripts/unified-launch.sh --reset
 ```
 
 #### Check Configuration
@@ -66,21 +93,34 @@ cat CANONICAL_BLOCKCHAIN_CONFIG.md
 mychaind query bank balances cosmos1sqlsc5024sszglyh7pswk5hfpc5xtl77xrgn5a
 mychaind query staking validators
 mychaind query mint params
+mychaind query dex params
 ```
 
-### 7. Session Context
+### 9. Terminal Server for Web Dashboard
+The web dashboard can use Direct Execution mode when terminal server is running:
+- Location: `/home/dk/go/src/myrollapps/mychain/web-dashboard/terminal-server.js`
+- Port: 3003
+- Start command: `cd web-dashboard && nohup node terminal-server.js > terminal-server.log 2>&1 &`
+- Check if running: `lsof -i:3003`
+- Fallback: Dashboard works without it by generating CLI commands
+
+### 10. Session Context
 When continuing sessions, ALWAYS:
 1. Read CANONICAL_BLOCKCHAIN_CONFIG.md first
 2. Check recent SESSION_SUMMARY files
 3. Verify current git commit
-4. Ask user if unsure about any numbers
+4. Use scripts/unified-launch.sh for any launch/init tasks
+5. Ask user if unsure about any numbers
+6. Check if terminal server is needed for web dashboard
 
-### 8. DO NOT
+### 11. DO NOT
 - Make up new token amounts
 - Change established parameters
 - Use different denominations
 - Forget the 1:1,000,000 conversion
 - Ignore the canonical configuration
+- Use deprecated launch scripts
+- Create new launch/init scripts (use unified-launch.sh)
 
 ## How to Use This File
 
@@ -90,4 +130,4 @@ When continuing sessions, ALWAYS:
 4. Update this file if user provides new permanent information
 
 ## Last Updated
-January 7, 2025 - SDK minting implementation with transaction history
+January 8, 2025 - Consolidated all launch scripts into unified-launch.sh

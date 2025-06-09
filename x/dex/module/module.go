@@ -131,13 +131,14 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
+	// TODO: Fix price update panic
 	// Check if reference prices need updating (every 3 hours)
-	if am.keeper.ShouldUpdatePrices(ctx) {
-		if err := am.keeper.UpdateReferencePrices(ctx); err != nil {
-			// Log error but don't halt the chain
-			am.keeper.Logger(ctx).Error("failed to update reference prices", "error", err)
-		}
-	}
+	// if am.keeper.ShouldUpdatePrices(ctx) {
+	// 	if err := am.keeper.UpdateReferencePrices(ctx); err != nil {
+	// 		// Log error but don't halt the chain
+	// 		am.keeper.Logger(ctx).Error("failed to update reference prices", "error", err)
+	// 	}
+	// }
 	return nil
 }
 
