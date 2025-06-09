@@ -40,7 +40,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
   const [commandType, setCommandType] = useState('');
   const [txStatus, setTxStatus] = useState<string>('');
   const [txHash, setTxHash] = useState<string>('');
-  const [useDirectExecution, setUseDirectExecution] = useState(false);
+  const [useDirectExecution, setUseDirectExecution] = useState(true); // Default to direct execution
   const [lastPurchaseDetails, setLastPurchaseDetails] = useState<any>(null);
 
   useEffect(() => {
@@ -470,18 +470,27 @@ Alternative commands to open terminal:
           </div>
           
           {/* Connection Status */}
-          {!isConnected && (
-            <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4 mb-4">
-              <p className="text-yellow-400 font-semibold">⚠️ Wallet Not Connected</p>
-              <p className="text-sm text-gray-300">Please connect your Keplr wallet to trade MainCoin.</p>
+          {useDirectExecution ? (
+            <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4 mb-4">
+              <p className="text-blue-400 font-semibold">🚀 Direct Execution Mode</p>
+              <p className="text-sm text-gray-300">Transactions will be executed directly through the admin account.</p>
             </div>
-          )}
-          
-          {isConnected && (
-            <div className="bg-green-900/20 border border-green-500 rounded-lg p-4 mb-4">
-              <p className="text-green-400 font-semibold">✅ Wallet Connected</p>
-              <p className="text-sm text-gray-300">Address: {address}</p>
-            </div>
+          ) : (
+            <>
+              {!isConnected && (
+                <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4 mb-4">
+                  <p className="text-yellow-400 font-semibold">⚠️ Wallet Not Connected</p>
+                  <p className="text-sm text-gray-300">Please connect your Keplr wallet to trade MainCoin.</p>
+                </div>
+              )}
+              
+              {isConnected && (
+                <div className="bg-green-900/20 border border-green-500 rounded-lg p-4 mb-4">
+                  <p className="text-green-400 font-semibold">✅ Wallet Connected</p>
+                  <p className="text-sm text-gray-300">Address: {address}</p>
+                </div>
+              )}
+            </>
           )}
           
           {/* Transaction Status */}

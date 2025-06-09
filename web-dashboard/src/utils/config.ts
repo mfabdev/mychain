@@ -124,10 +124,24 @@ export const API_ENDPOINTS = {
   balance: (address: string) => `/cosmos/bank/v1beta1/balances/${address}`,
   totalSupply: '/cosmos/bank/v1beta1/supply',
   
-  // Custom module endpoints (only existing ones)
-  // maincoinPrice: '/mychain/maincoin/v1/current_price', // Not implemented
-  // maincoinSegment: '/mychain/maincoin/v1/segment_info', // Not implemented  
-  // dexOrderBook: (pairId: string) => `/mychain/dex/v1/order_book/${pairId}`, // Not implemented
+  // Custom module endpoints
+  maincoinPrice: '/mychain/maincoin/v1/current_price',
+  maincoinSegment: '/mychain/maincoin/v1/segment_info',
+  maincoinParams: '/mychain/maincoin/v1/params',
+  maincoinSegmentHistory: '/mychain/maincoin/v1/segment_history',
+  maincoinSegmentHistoryDetailed: '/mychain/maincoin/v1/segment_history_detailed',
+  dexOrderBook: (pairId: string) => `/mychain/dex/v1/order_book/${pairId}`,
   dexUserRewards: (address: string) => `/mychain/dex/v1/user_rewards/${address}`,
-  // dexTierInfo: '/mychain/dex/v1/tier_info', // Not implemented
+  dexTierInfo: (pairId: string) => `/mychain/dex/v1/tier_info/${pairId}`,
+  dexLCInfo: '/mychain/dex/v1/lc_info',
+  dexParams: '/mychain/dex/v1/params',
+  testusdBridgeStatus: '/mychain/testusd/v1/bridge_status',
+  testusdTotalSupply: '/mychain/testusd/v1/total_supply',
+  testusdParams: '/mychain/testusd/v1/params',
+  
+  // MyChain module endpoints
+  mychainTransactionHistory: (address: string) => `/mychain/mychain/v1/transaction-history/${address}`,
+  mychainParams: '/mychain/mychain/v1/params',
+  mychainStakingInfo: '/mychain/mychain/v1/staking-info',
+  mychainStakingDistributionHistory: '/mychain/mychain/v1/staking-distribution-history'
 };

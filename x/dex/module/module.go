@@ -11,8 +11,10 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"mychain/x/dex/client/cli"
 	"mychain/x/dex/keeper"
 	"mychain/x/dex/types"
 )
@@ -64,6 +66,11 @@ func (AppModule) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtim
 	if err := types.RegisterQueryHandlerClient(clientCtx.CmdContext, mux, types.NewQueryClient(clientCtx)); err != nil {
 		panic(err)
 	}
+}
+
+// GetTxCmd returns the transaction commands for the module
+func (AppModule) GetTxCmd() *cobra.Command {
+	return cli.GetTxCmd()
 }
 
 // RegisterInterfaces registers a module's interface types and their concrete implementations as proto.Message.

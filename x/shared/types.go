@@ -22,7 +22,7 @@ const (
 	ReserveRatio       = 10    // 10:1 ratio
 
 	// DEX constants
-	MCUSDCPairID   = 1
+	MCTUSDPairID   = 1
 	MCLCPairID     = 2
 	BaseRewardRate = 100 // LC per second per quote unit
 )

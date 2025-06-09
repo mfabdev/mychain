@@ -43,22 +43,34 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:      true, // skipped because authority gated
 				},
 				{
-					RpcMethod:      "CreateOrder",
-					Use:            "create-order [pair-id] [price] [amount] [is-buy]",
-					Short:          "Send a create-order tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "pair_id"}, {ProtoField: "price"}, {ProtoField: "amount"}, {ProtoField: "is_buy"}},
+					RpcMethod: "CreateOrder",
+					Skip:      true, // Skip autocli due to Coin parsing issues
 				},
 				{
-					RpcMethod:      "CancelOrder",
-					Use:            "cancel-order [order-id]",
-					Short:          "Send a cancel-order tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "order_id"}},
+					RpcMethod: "CancelOrder",
+					Skip:      true, // Using custom CLI implementation
 				},
 				{
-					RpcMethod:      "ClaimRewards",
-					Use:            "claim-rewards ",
-					Short:          "Send a claim-rewards tx",
+					RpcMethod: "ClaimRewards",
+					Skip:      true, // Using custom CLI implementation
+				},
+				{
+					RpcMethod:      "CreateTradingPair",
+					Use:            "create-trading-pair [base-denom] [quote-denom]",
+					Short:          "Create a new trading pair (admin only)",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "base_denom"}, {ProtoField: "quote_denom"}},
+				},
+				{
+					RpcMethod:      "InitDexState",
+					Use:            "init-dex-state",
+					Short:          "Initialize DEX state with default configuration (admin only)",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
+				},
+				{
+					RpcMethod:      "UpdateDexParams",
+					Use:            "update-dex-params",
+					Short:          "Update DEX parameters (admin only)",
+					Skip:           true, // We'll implement a custom command for this
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

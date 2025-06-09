@@ -30,6 +30,15 @@ service Msg {
 
   // ClaimOrderRewards defines the ClaimOrderRewards RPC.
   rpc ClaimOrderRewards(MsgClaimOrderRewards) returns (MsgClaimOrderRewardsResponse);
+
+  // CreateTradingPair defines the CreateTradingPair RPC.
+  rpc CreateTradingPair(MsgCreateTradingPair) returns (MsgCreateTradingPairResponse);
+
+  // InitDexState defines the InitDexState RPC.
+  rpc InitDexState(MsgInitDexState) returns (MsgInitDexStateResponse);
+
+  // UpdateDexParams defines the UpdateDexParams RPC.
+  rpc UpdateDexParams(MsgUpdateDexParams) returns (MsgUpdateDexParamsResponse);
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -111,3 +120,38 @@ message MsgClaimOrderRewardsResponse {
   ];
   repeated uint64 claimed_orders = 2;
 }
+
+// MsgCreateTradingPair defines the MsgCreateTradingPair message.
+message MsgCreateTradingPair {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string base_denom = 2;
+  string quote_denom = 3;
+}
+
+// MsgCreateTradingPairResponse defines the MsgCreateTradingPairResponse message.
+message MsgCreateTradingPairResponse {
+  uint64 pair_id = 1;
+}
+
+// MsgInitDexState defines the MsgInitDexState message.
+message MsgInitDexState {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgInitDexStateResponse defines the MsgInitDexStateResponse message.
+message MsgInitDexStateResponse {}
+
+// MsgUpdateDexParams defines the MsgUpdateDexParams message.
+message MsgUpdateDexParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgUpdateDexParamsResponse defines the MsgUpdateDexParamsResponse message.
+message MsgUpdateDexParamsResponse {}
