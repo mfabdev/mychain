@@ -5,6 +5,8 @@ import (
 
 	"mychain/x/dex/types"
 
+	"cosmossdk.io/collections"
+	"cosmossdk.io/math"
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -15,10 +17,29 @@ func (k msgServer) ClaimRewards(ctx context.Context, msg *types.MsgClaimRewards)
 		return nil, errorsmod.Wrap(err, "invalid user address")
 	}
 
-	// Get user rewards
+	// First, accumulate any recent rewards for this user
+	recentRewards, err := k.CalculateRewardsSinceLastUpdate(ctx, msg.User)
+	if err != nil {
+		k.Logger(ctx).Error("failed to calculate recent rewards", "user", msg.User, "error", err)
+		recentRewards = math.ZeroInt()
+	}
+
+	// Get stored user rewards
 	userRewards, err := k.UserRewards.Get(ctx, msg.User)
 	if err != nil {
-		return nil, errorsmod.Wrapf(types.ErrNoRewardsAvailable, "no rewards found for user %s", msg.User)
+		// No stored rewards, check if there are recent rewards
+		if recentRewards.IsZero() {
+			return nil, errorsmod.Wrapf(types.ErrNoRewardsAvailable, "no rewards found for user %s", msg.User)
+		}
+		// Create new user rewards entry
+		userRewards = types.UserReward{
+			Address:         msg.User,
+			TotalRewards:    recentRewards,
+			ClaimedRewards:  math.ZeroInt(),
+		}
+	} else {
+		// Add recent rewards to stored rewards
+		userRewards.TotalRewards = userRewards.TotalRewards.Add(recentRewards)
 	}
 
 	// Calculate claimable rewards
@@ -56,8 +77,35 @@ func (k msgServer) ClaimRewards(ctx context.Context, msg *types.MsgClaimRewards)
 		return nil, err
 	}
 
-	// Emit event
+	// Update order reward info timestamps for all user orders
+	// This prevents double counting of recent rewards
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentTime := sdkCtx.BlockTime()
+	err = k.UserOrders.Walk(ctx, collections.NewPrefixedPairRange[string, uint64](msg.User), 
+		func(key collections.Pair[string, uint64], orderID uint64) (bool, error) {
+			// Get order reward info
+			orderRewardInfo, err := k.OrderRewards.Get(ctx, orderID)
+			if err != nil {
+				return false, nil // Skip if no reward info
+			}
+			
+			// Update last claim time
+			orderRewardInfo.LastClaimedTime = currentTime.Unix()
+			orderRewardInfo.LastUpdated = currentTime.Unix()
+			
+			// Save updated info
+			if err := k.OrderRewards.Set(ctx, orderID, orderRewardInfo); err != nil {
+				k.Logger(ctx).Error("failed to update order reward info after claim", "orderID", orderID, "error", err)
+			}
+			
+			return false, nil
+		})
+	
+	if err != nil {
+		k.Logger(ctx).Error("failed to update order timestamps after claim", "user", msg.User, "error", err)
+	}
+
+	// Emit event
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			"claim_rewards",

@@ -35,6 +35,9 @@ export const DEXPage: React.FC = () => {
   const [orderStatus, setOrderStatus] = useState<string>('');
   const [generatedCommand, setGeneratedCommand] = useState<string>('');
   const [useDirectExecution, setUseDirectExecution] = useState(true); // Default to direct execution
+  const [userRewards, setUserRewards] = useState<any>(null);
+  const [isClaimingRewards, setIsClaimingRewards] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<string>('');
 
   useEffect(() => {
     const fetchDEXData = async () => {
@@ -84,6 +87,18 @@ export const DEXPage: React.FC = () => {
         setAllOrders({buy: [], sell: []});
         setMyOrders([]);
       }
+      
+      // Fetch user rewards
+      try {
+        const adminAddress = 'cosmos1sqlsc5024sszglyh7pswk5hfpc5xtl77xrgn5a';
+        const rewardsResponse = await fetchAPI(`/mychain/dex/v1/user_rewards/${adminAddress}`);
+        if (rewardsResponse) {
+          setUserRewards(rewardsResponse);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user rewards:', error);
+      }
+      
       setLoading(false);
     };
 
@@ -174,6 +189,30 @@ export const DEXPage: React.FC = () => {
       setOrderStatus('⚠️ Web transactions are not available. Please use the CLI command below.');
     } finally {
       setIsPlacingOrder(false);
+    }
+  };
+
+  const handleClaimRewards = async () => {
+    setIsClaimingRewards(true);
+    setClaimStatus('');
+    
+    try {
+      if (useDirectExecution) {
+        // For now, generate CLI command as claim rewards isn't implemented in terminal server
+        const cliCommand = `mychaind tx dex claim-rewards --from admin --chain-id mychain --fees 50000ulc --gas 300000 --keyring-backend test -y`;
+        setGeneratedCommand(cliCommand);
+        setClaimStatus('⚠️ Please run the generated command to claim rewards');
+      } else {
+        // Generate CLI command
+        const cliCommand = `mychaind tx dex claim-rewards --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --gas 300000 --keyring-backend test -y`;
+        setGeneratedCommand(cliCommand);
+        setClaimStatus('⚠️ Please run the generated command to claim rewards');
+      }
+    } catch (error) {
+      console.error('Failed to claim rewards:', error);
+      setClaimStatus('❌ Failed to generate claim command');
+    } finally {
+      setIsClaimingRewards(false);
     }
   };
 
@@ -487,6 +526,116 @@ export const DEXPage: React.FC = () => {
                 <p>No completed orders</p>
                 <p className="text-sm">Filled orders are not yet tracked</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rewards Section */}
+        <div className="bg-gray-800 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">Liquidity Rewards</h2>
+          
+          <div className="space-y-4">
+            {/* Rewards Summary */}
+            <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Total Unclaimed Rewards</p>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {userRewards && userRewards.unclaimed_amount ? 
+                      `${(parseFloat(userRewards.unclaimed_amount.amount) / 1000000).toFixed(6)} LC` : 
+                      '0.000000 LC'
+                    }
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Total Earned (All Time)</p>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {userRewards && userRewards.total_earned ? 
+                      `${(parseFloat(userRewards.total_earned.amount) / 1000000).toFixed(6)} LC` : 
+                      '0.000000 LC'
+                    }
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Annual Reward Rate</p>
+                  <p className="text-2xl font-bold text-green-400">~7%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Claim Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleClaimRewards}
+                disabled={isClaimingRewards || !userRewards || !userRewards.unclaimed_amount || parseFloat(userRewards.unclaimed_amount.amount) === 0}
+                className={`px-6 py-3 rounded-lg font-semibold ${
+                  isClaimingRewards || !userRewards || !userRewards.unclaimed_amount || parseFloat(userRewards.unclaimed_amount.amount) === 0
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700'
+                }`}
+              >
+                {isClaimingRewards ? 'Processing...' : 'Claim Rewards'}
+              </button>
+            </div>
+
+            {/* Claim Status */}
+            {claimStatus && (
+              <div className={`text-center text-sm ${
+                claimStatus.includes('✅') ? 'text-green-400' : 
+                claimStatus.includes('❌') ? 'text-red-400' : 'text-yellow-400'
+              }`}>
+                {claimStatus}
+              </div>
+            )}
+
+            {/* Rewards by Order */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Rewards by Order</h3>
+              {userRewards && userRewards.order_rewards && userRewards.order_rewards.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left p-2">Order ID</th>
+                        <th className="text-left p-2">Pair</th>
+                        <th className="text-right p-2">Order Size</th>
+                        <th className="text-right p-2">Rewards Earned</th>
+                        <th className="text-right p-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userRewards.order_rewards.map((reward: any, index: number) => (
+                        <tr key={index} className="border-b border-gray-700">
+                          <td className="p-2">#{reward.order_id}</td>
+                          <td className="p-2">MC/{reward.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
+                          <td className="p-2 text-right">{(parseFloat(reward.order_amount.amount) / 1000000).toFixed(2)} MC</td>
+                          <td className="p-2 text-right text-purple-400">{(parseFloat(reward.reward_amount.amount) / 1000000).toFixed(6)} LC</td>
+                          <td className="p-2 text-right">
+                            <span className="text-xs bg-purple-600/20 text-purple-400 px-2 py-1 rounded">Unclaimed</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-gray-700/30 rounded-lg p-4 text-center text-gray-400">
+                  <p>No rewards earned yet</p>
+                  <p className="text-sm">Place orders to earn liquidity rewards</p>
+                </div>
+              )}
+            </div>
+
+            {/* Rewards Info */}
+            <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-400 mb-2">💎 How to Earn Rewards</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Place limit orders on any trading pair</li>
+                <li>• Rewards accumulate based on order size and time</li>
+                <li>• Base rate: 0.222% (annualized ~7%)</li>
+                <li>• Rewards are paid in LC tokens</li>
+                <li>• Claim anytime - no minimum required</li>
+              </ul>
             </div>
           </div>
         </div>

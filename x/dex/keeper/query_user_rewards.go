@@ -25,24 +25,22 @@ func (q queryServer) UserRewards(ctx context.Context, req *types.QueryUserReward
 		return nil, status.Error(codes.InvalidArgument, "invalid address")
 	}
 
-	// Get user rewards
+	// Get stored user rewards
+	// In the simplified system, rewards are auto-distributed
+	// so ClaimedRewards = TotalRewards (no pending)
 	userRewards, err := q.k.UserRewards.Get(ctx, req.Address)
 	if err != nil {
-		// No rewards found, return zero values
+		// No rewards yet
 		return &types.QueryUserRewardsResponse{
 			PendingLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
 			ClaimedLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
 		}, nil
 	}
 
-	// Calculate pending rewards (unclaimed)
-	pending := userRewards.TotalRewards.Sub(userRewards.ClaimedRewards)
-	if pending.IsNegative() {
-		pending = math.ZeroInt()
-	}
-
+	// In the simplified system, all rewards are auto-claimed
+	// Pending is always 0 since rewards are sent directly to users
 	return &types.QueryUserRewardsResponse{
-		PendingLc: sdk.NewCoin("liquiditycoin", pending),
-		ClaimedLc: sdk.NewCoin("liquiditycoin", userRewards.ClaimedRewards),
+		PendingLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
+		ClaimedLc: sdk.NewCoin("liquiditycoin", userRewards.TotalRewards),
 	}, nil
 }

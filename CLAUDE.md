@@ -47,12 +47,14 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 - Minting event recording in BeginBlock
 - Web dashboard with inflation display
 - DEX module with 7% annual LC rewards (base_reward_rate: 222)
+- DEX liquidity rewards: Tier-based distribution using mint module permissions
 
 ### 6. Important Files
 - **Launch Script**: scripts/unified-launch.sh (ALWAYS USE THIS)
 - **Configuration**: CANONICAL_BLOCKCHAIN_CONFIG.md (ALWAYS CHECK FIRST)
 - **Mint Tracker**: x/mychain/keeper/mint_recorder.go
 - **Transaction Recorder**: x/mychain/keeper/transaction_recorder.go
+- **DEX Rewards**: x/dex/keeper/lc_rewards_simple.go (tier-based distribution)
 
 ### 7. Common Issues and Fixes
 
@@ -130,4 +132,4 @@ When continuing sessions, ALWAYS:
 4. Update this file if user provides new permanent information
 
 ## Last Updated
-January 8, 2025 - Consolidated all launch scripts into unified-launch.sh
+January 9, 2025 - Added DEX liquidity rewards tier-based distribution using mint module

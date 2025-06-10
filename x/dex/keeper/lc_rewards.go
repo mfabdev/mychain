@@ -61,16 +61,66 @@ func (k Keeper) CalculateOrderLCRewards(ctx context.Context, order types.Order, 
 	}
 	
 	// Calculate quote value of remaining order
-	quoteValue := math.LegacyNewDecFromInt(remaining).Mul(math.LegacyNewDecFromInt(order.Price.Amount)).TruncateInt()
+	// Convert remaining amount from micro units to whole units (divide by 10^6)
+	remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
+	// Price is already in micro units, so convert to whole units as well
+	priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
+	// Calculate quote value in whole units
+	quoteValueDec := remainingWholeUnits.Mul(priceWholeUnits)
 	
-	// Reward Formula: (Order Value in Quote × Base Rate × Time) / 10^decimals
-	// Base Rate: 100 LC per second per quote unit
-	seconds := math.NewIntFromUint64(uint64(timeActive.Seconds()))
-	rewards := quoteValue.Mul(params.BaseRewardRate).Mul(seconds)
+	k.Logger(ctx).Info("Reward calculation step 1",
+		"orderId", order.Id,
+		"remaining", remaining,
+		"remainingWholeUnits", remainingWholeUnits,
+		"orderPrice", order.Price.Amount,
+		"priceWholeUnits", priceWholeUnits,
+		"quoteValueDec", quoteValueDec,
+	)
 	
-	// Apply decimals normalization (assuming 6 decimals for precision)
-	decimalsDiv := math.NewIntWithDecimal(1, 6) // 10^6
-	rewards = rewards.Quo(decimalsDiv)
+	// Reward Formula: Quote Value × Annual Rate × (Time / Year)
+	// Base Rate: 216000 = 21.6% annual rate
+	// Convert to decimal: 216000 / 1,000,000 = 0.216
+	annualRateDec := math.LegacyNewDecFromInt(params.BaseRewardRate).Quo(math.LegacyNewDec(1000000))
+	
+	// Calculate time fraction of year (seconds / seconds_per_year)
+	secondsDec := math.LegacyNewDec(int64(timeActive.Seconds()))
+	secondsPerYear := math.LegacyNewDec(365 * 24 * 60 * 60) // 31,536,000 seconds
+	timeFraction := secondsDec.Quo(secondsPerYear)
+	
+	// Calculate rewards: Quote Value × Annual Rate × Time Fraction
+	rewardsDec := quoteValueDec.Mul(annualRateDec).Mul(timeFraction)
+	
+	k.Logger(ctx).Info("Reward calculation step 2",
+		"orderId", order.Id,
+		"baseRewardRate", params.BaseRewardRate,
+		"annualRateDec", annualRateDec,
+		"timeActiveSeconds", timeActive.Seconds(),
+		"timeFraction", timeFraction,
+		"rewardsDec", rewardsDec,
+	)
+	
+	// Convert back to micro units (multiply by 10^6) and truncate to integer
+	rewardsInMicro := rewardsDec.Mul(math.LegacyNewDec(1000000))
+	rewards := rewardsInMicro.TruncateInt()
+	
+	k.Logger(ctx).Info("Reward calculation final",
+		"orderId", order.Id,
+		"rewardsInMicro", rewardsInMicro,
+		"finalRewards", rewards,
+	)
+	
+	// Debug logging
+	k.Logger(ctx).Info("LC reward calculation",
+		"orderId", order.Id,
+		"remaining", remaining,
+		"orderPrice", order.Price.Amount,
+		"quoteValue", quoteValueDec,
+		"annualRate", annualRateDec,
+		"timeActive", timeActive.Seconds(),
+		"timeFraction", timeFraction,
+		"rewardsDec", rewardsDec,
+		"rewards", rewards,
+	)
 	
 	return rewards, nil
 }
@@ -153,7 +203,19 @@ func (k Keeper) ExceedsVolumeCap(ctx context.Context, order types.Order, tier ty
 	}
 	
 	// Calculate order value in quote currency
-	orderValue := math.LegacyNewDecFromInt(order.Amount.Amount).Mul(math.LegacyNewDecFromInt(order.Price.Amount))
+	// Convert amount from micro units to whole units, price is already in micro units per whole unit
+	amountWholeUnits := math.LegacyNewDecFromInt(order.Amount.Amount).Quo(math.LegacyNewDec(1000000))
+	// order.Price.Amount is in micro quote per whole base (e.g., 106 utusd per MC)
+	// So order value = amount in whole units × price
+	orderValue := amountWholeUnits.Mul(math.LegacyNewDecFromInt(order.Price.Amount))
+	
+	k.Logger(ctx).Info("ExceedsVolumeCap debug",
+		"orderId", order.Id,
+		"mcTotalSupply", mcTotalSupply,
+		"amountWholeUnits", amountWholeUnits,
+		"orderPrice", order.Price.Amount,
+		"orderValue", orderValue,
+	)
 	
 	// Get volume cap percentage based on order type
 	var volumeCapPct math.LegacyDec
@@ -167,11 +229,25 @@ func (k Keeper) ExceedsVolumeCap(ctx context.Context, order types.Order, tier ty
 	mcSupplyValueInQuote := k.GetMCSupplyValueInQuote(ctx, order.PairId, mcTotalSupply)
 	maxVolume := volumeCapPct.Mul(mcSupplyValueInQuote)
 	
+	k.Logger(ctx).Info("Volume cap calculation",
+		"orderId", order.Id,
+		"volumeCapPct", volumeCapPct,
+		"mcSupplyValueInQuote", mcSupplyValueInQuote,
+		"maxVolume", maxVolume,
+	)
+	
 	// Get rolling volume for the tier's time window
 	rollingVolume := k.GetRollingVolume(ctx, order.PairId, tier.WindowDurationSeconds, order.IsBuy)
 	
 	// Check if adding this order would exceed the cap
 	newTotalVolume := rollingVolume.Add(orderValue)
+	
+	k.Logger(ctx).Info("Volume cap check",
+		"orderId", order.Id,
+		"rollingVolume", rollingVolume,
+		"newTotalVolume", newTotalVolume,
+		"exceeds", newTotalVolume.GT(maxVolume),
+	)
 	
 	return newTotalVolume.GT(maxVolume), nil
 }
@@ -179,21 +255,27 @@ func (k Keeper) ExceedsVolumeCap(ctx context.Context, order types.Order, tier ty
 // GetCurrentMarketPrice gets the current market price for a pair (placeholder - would need proper implementation)
 func (k Keeper) GetCurrentMarketPrice(ctx context.Context, pairID uint64) math.LegacyDec {
 	// TODO: Implement proper price oracle or use last trade price
-	// For now, return a placeholder price
-	return math.LegacyMustNewDecFromStr("0.0001")
+	// For now, return a placeholder price in micro units
+	// 0.0001 USD per MC = 100 micro USD per MC
+	return math.LegacyNewDec(100)
 }
 
 // GetMainCoinTotalSupply gets the total supply of MainCoin (placeholder)
 func (k Keeper) GetMainCoinTotalSupply(ctx context.Context) math.Int {
 	// TODO: Query MainCoin module for total supply
 	// For now, return a placeholder
-	return math.NewIntFromUint64(100000000) // 100M MC
+	// 100,000 MC = 100,000,000,000 umc
+	return math.NewIntFromUint64(100000000000) // 100k MC in micro units
 }
 
 // GetMCSupplyValueInQuote calculates MC total supply value in quote currency
 func (k Keeper) GetMCSupplyValueInQuote(ctx context.Context, pairID uint64, mcSupply math.Int) math.LegacyDec {
+	// mcSupply is in micro units, need to convert to whole units
+	mcSupplyWholeUnits := math.LegacyNewDecFromInt(mcSupply).Quo(math.LegacyNewDec(1000000))
+	// currentPrice is in micro quote units per whole base unit
 	currentPrice := k.GetCurrentMarketPrice(ctx, pairID)
-	return math.LegacyNewDecFromInt(mcSupply).Mul(currentPrice)
+	// Value = supply in whole units × price
+	return mcSupplyWholeUnits.Mul(currentPrice)
 }
 
 // GetRollingVolume gets the rolling volume for a pair in a time window
@@ -287,24 +369,59 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 	// Only track rewards for limit orders (non-market orders)
 	// Market orders are filled immediately so don't earn LC rewards
 	
+	k.Logger(ctx).Info("InitializeOrderRewards called",
+		"orderId", order.Id,
+		"orderPrice", order.Price.Amount,
+		"orderAmount", order.Amount,
+		"pairId", order.PairId,
+	)
+	
 	// Get market price to determine tier
 	marketPrice := k.GetCurrentMarketPrice(ctx, order.PairId)
+	
+	k.Logger(ctx).Info("Market price retrieved",
+		"orderId", order.Id,
+		"marketPrice", marketPrice,
+	)
 	
 	// Calculate price deviation
 	priceDeviation, err := k.CalculatePriceDeviation(order.Price.Amount, marketPrice)
 	if err != nil {
+		k.Logger(ctx).Error("Failed to calculate price deviation",
+			"orderId", order.Id,
+			"error", err,
+		)
 		return err
 	}
+	
+	k.Logger(ctx).Info("Price deviation calculated",
+		"orderId", order.Id,
+		"priceDeviation", priceDeviation,
+	)
 	
 	// Get current tier
 	tier, err := k.GetTierByDeviation(ctx, order.PairId, priceDeviation)
 	if err != nil {
+		k.Logger(ctx).Error("Failed to get tier by deviation",
+			"orderId", order.Id,
+			"error", err,
+		)
 		return err
 	}
+	
+	k.Logger(ctx).Info("Tier determined",
+		"orderId", order.Id,
+		"tierId", tier.Id,
+		"tierDeviation", tier.PriceDeviation,
+	)
 	
 	// Check volume caps
 	exceeds, err := k.ExceedsVolumeCap(ctx, order, tier)
 	if err != nil {
+		k.Logger(ctx).Error("Failed to check volume cap",
+			"orderId", order.Id,
+			"error", err,
+		)
 		return err
 	}
 	
@@ -329,17 +446,33 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 	
 	// Save OrderRewardInfo
 	if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+		k.Logger(ctx).Error("Failed to save OrderRewardInfo",
+			"orderId", order.Id,
+			"error", err,
+		)
 		return err
 	}
 	
 	// Update volume tracking
-	orderValue := math.LegacyNewDecFromInt(order.Amount.Amount).Mul(math.LegacyNewDecFromInt(order.Price.Amount)).TruncateInt()
+	// Convert amount from micro units to whole units, price is already in micro units per whole unit
+	amountWholeUnits := math.LegacyNewDecFromInt(order.Amount.Amount).Quo(math.LegacyNewDec(1000000))
+	orderValueDec := amountWholeUnits.Mul(math.LegacyNewDecFromInt(order.Price.Amount))
+	orderValue := orderValueDec.TruncateInt()
 	if err := k.UpdateVolumeTracker(ctx, order.PairId, order.IsBuy, orderValue); err != nil {
+		k.Logger(ctx).Error("Failed to update volume tracker",
+			"orderId", order.Id,
+			"error", err,
+		)
 		return err
 	}
 	
 	k.Logger(ctx).Info("LC rewards initialized for order", 
-		"orderId", order.Id, "tier", tier.Id, "priceDeviation", priceDeviation)
+		"orderId", order.Id, 
+		"tier", tier.Id, 
+		"priceDeviation", priceDeviation,
+		"startTime", orderRewardInfo.StartTime,
+		"lastClaimedTime", orderRewardInfo.LastClaimedTime,
+	)
 	
 	return nil
 }
@@ -350,6 +483,7 @@ func (k Keeper) CalculatePriceDeviation(orderPrice math.Int, marketPrice math.Le
 		return math.LegacyZeroDec(), nil
 	}
 	
+	// orderPrice is in micro units, marketPrice is also in micro units
 	orderPriceDec := math.LegacyNewDecFromInt(orderPrice)
 	deviation := orderPriceDec.Sub(marketPrice).Quo(marketPrice).Abs()
 	

@@ -1,0 +1,293 @@
+package keeper
+
+import (
+	"context"
+	"fmt"
+	"sort"
+
+	"mychain/x/dex/types"
+
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+const (
+	// Distribution frequency: every hour (720 blocks at 5s/block)
+	// Temporarily set to 100 for testing
+	BlocksPerHour = 100 // 720
+	// Blocks per year (365.25 days)
+	BlocksPerYear = 6311520
+)
+
+// DistributeLiquidityRewards distributes LC rewards to all liquidity providers
+func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	height := sdkCtx.BlockHeight()
+	
+	// Check if it's time to distribute (every hour)
+	if height%BlocksPerHour != 0 {
+		return nil
+	}
+	
+	k.Logger(ctx).Info("Distributing liquidity rewards", "height", height)
+	
+	// Get DEX parameters
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return err
+	}
+	
+	// Track eligible liquidity by tier for each trading pair
+	type tierLiquidity struct {
+		eligibleOrders []types.Order
+		totalValue     math.LegacyDec
+		tier           types.LiquidityTier
+	}
+	pairTierMap := make(map[uint64]map[uint32]*tierLiquidity) // pairID -> tierID -> liquidity
+	
+	// Walk through all orders to categorize by tier
+	err = k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
+		// Skip filled orders
+		remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
+		if remaining.IsZero() {
+			return false, nil
+		}
+		
+		// Get market price and calculate deviation
+		marketPrice := k.GetCurrentMarketPrice(ctx, order.PairId)
+		priceDeviation, err := k.CalculatePriceDeviation(order.Price.Amount, marketPrice)
+		if err != nil {
+			return false, nil
+		}
+		
+		// Get appropriate tier for this order
+		tier, err := k.GetTierByDeviation(ctx, order.PairId, priceDeviation)
+		if err != nil {
+			return false, nil
+		}
+		
+		// Initialize maps if needed
+		if _, exists := pairTierMap[order.PairId]; !exists {
+			pairTierMap[order.PairId] = make(map[uint32]*tierLiquidity)
+		}
+		if _, exists := pairTierMap[order.PairId][tier.Id]; !exists {
+			pairTierMap[order.PairId][tier.Id] = &tierLiquidity{
+				eligibleOrders: []types.Order{},
+				totalValue:     math.LegacyZeroDec(),
+				tier:           tier,
+			}
+		}
+		
+		// Add order to its tier
+		pairTierMap[order.PairId][tier.Id].eligibleOrders = append(
+			pairTierMap[order.PairId][tier.Id].eligibleOrders,
+			order,
+		)
+		
+		return false, nil
+	})
+	
+	if err != nil {
+		return err
+	}
+	
+	// Process each pair and tier to determine eligible orders based on volume caps
+	userRewardMap := make(map[string]math.Int) // Track rewards per user
+	totalRewardsToDistribute := math.ZeroInt()
+	
+	// Process each trading pair
+	for pairID, tierMap := range pairTierMap {
+		// Get MainCoin total supply for volume cap calculations
+		mcTotalSupply := k.GetMainCoinTotalSupply(ctx)
+		mcSupplyValueInQuote := k.GetMCSupplyValueInQuote(ctx, pairID, mcTotalSupply)
+		
+		// Process each tier
+		for tierID, tierLiq := range tierMap {
+			if len(tierLiq.eligibleOrders) == 0 {
+				continue
+			}
+			
+			// Sort orders by price (highest first for better liquidity)
+			// This prioritizes orders closer to market price
+			sortOrdersByPrice(tierLiq.eligibleOrders)
+			
+			// Calculate volume caps for this tier
+			bidVolumeCap := tierLiq.tier.BidVolumeCap.Mul(mcSupplyValueInQuote)
+			askVolumeCap := tierLiq.tier.AskVolumeCap.Mul(mcSupplyValueInQuote)
+			
+			// Process buy and sell orders separately with their respective caps
+			buyOrders := []types.Order{}
+			sellOrders := []types.Order{}
+			
+			for _, order := range tierLiq.eligibleOrders {
+				if order.IsBuy {
+					buyOrders = append(buyOrders, order)
+				} else {
+					sellOrders = append(sellOrders, order)
+				}
+			}
+			
+			// Process buy orders with bid volume cap
+			eligibleBuyValue := math.LegacyZeroDec()
+			for _, order := range buyOrders {
+				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
+				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
+				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
+				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
+				
+				// Check if adding this order exceeds the cap
+				if eligibleBuyValue.Add(orderValue).GT(bidVolumeCap) {
+					break // Volume cap reached
+				}
+				
+				eligibleBuyValue = eligibleBuyValue.Add(orderValue)
+				
+				// Calculate rewards for this order
+				orderRewards := calculateOrderRewards(orderValue, params.BaseRewardRate)
+				if orderRewards.IsPositive() {
+					if _, exists := userRewardMap[order.Maker]; !exists {
+						userRewardMap[order.Maker] = math.ZeroInt()
+					}
+					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
+					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
+				}
+			}
+			
+			// Process sell orders with ask volume cap
+			eligibleSellValue := math.LegacyZeroDec()
+			for _, order := range sellOrders {
+				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
+				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
+				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
+				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
+				
+				// Check if adding this order exceeds the cap
+				if eligibleSellValue.Add(orderValue).GT(askVolumeCap) {
+					break // Volume cap reached
+				}
+				
+				eligibleSellValue = eligibleSellValue.Add(orderValue)
+				
+				// Calculate rewards for this order
+				orderRewards := calculateOrderRewards(orderValue, params.BaseRewardRate)
+				if orderRewards.IsPositive() {
+					if _, exists := userRewardMap[order.Maker]; !exists {
+						userRewardMap[order.Maker] = math.ZeroInt()
+					}
+					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
+					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
+				}
+			}
+			
+			k.Logger(ctx).Info("Tier liquidity processed",
+				"pairId", pairID,
+				"tierId", tierID,
+				"eligibleBuyValue", eligibleBuyValue,
+				"eligibleSellValue", eligibleSellValue,
+				"bidVolumeCap", bidVolumeCap,
+				"askVolumeCap", askVolumeCap,
+			)
+		}
+	}
+	
+	// If no rewards to distribute, skip
+	if totalRewardsToDistribute.IsZero() {
+		k.Logger(ctx).Info("No eligible liquidity for rewards")
+		return nil
+	}
+	
+	k.Logger(ctx).Info("Total rewards to distribute",
+		"totalRewards", totalRewardsToDistribute,
+		"numProviders", len(userRewardMap),
+	)
+	
+	// Mint the total rewards using the mint module (which has minting permissions)
+	// First mint to the mint module, then transfer to DEX module
+	coins := sdk.NewCoins(sdk.NewCoin("liquiditycoin", totalRewardsToDistribute))
+	
+	// The mint module has permission to mint
+	err = k.bankKeeper.MintCoins(ctx, "mint", coins)
+	if err != nil {
+		return fmt.Errorf("failed to mint LC rewards: %w", err)
+	}
+	
+	// Transfer from mint module to DEX module for distribution
+	err = k.bankKeeper.SendCoinsFromModuleToModule(ctx, "mint", types.ModuleName, coins)
+	if err != nil {
+		return fmt.Errorf("failed to transfer LC rewards to DEX module: %w", err)
+	}
+	
+	// Distribute rewards to each eligible liquidity provider
+	for userAddr, userRewardsInt := range userRewardMap {
+		if userRewardsInt.IsZero() {
+			continue
+		}
+		
+		// Send rewards directly to the user
+		addr, err := k.addressCodec.StringToBytes(userAddr)
+		if err != nil {
+			k.Logger(ctx).Error("invalid address", "address", userAddr, "error", err)
+			continue
+		}
+		
+		userCoins := sdk.NewCoins(sdk.NewCoin("liquiditycoin", userRewardsInt))
+		err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, userCoins)
+		if err != nil {
+			k.Logger(ctx).Error("failed to send rewards", "user", userAddr, "error", err)
+			continue
+		}
+		
+		// Update user's total earned rewards for tracking
+		userReward, err := k.UserRewards.Get(ctx, userAddr)
+		if err != nil {
+			userReward = types.UserReward{
+				Address:        userAddr,
+				TotalRewards:   userRewardsInt,
+				ClaimedRewards: userRewardsInt, // Auto-claimed
+			}
+		} else {
+			userReward.TotalRewards = userReward.TotalRewards.Add(userRewardsInt)
+			userReward.ClaimedRewards = userReward.ClaimedRewards.Add(userRewardsInt)
+		}
+		
+		if err := k.UserRewards.Set(ctx, userAddr, userReward); err != nil {
+			k.Logger(ctx).Error("failed to update user rewards", "user", userAddr, "error", err)
+		}
+		
+		k.Logger(ctx).Info("Distributed LC rewards to user",
+			"user", userAddr,
+			"rewards", userRewardsInt,
+		)
+	}
+	
+	// Emit event
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"liquidity_rewards_distributed",
+			sdk.NewAttribute("height", fmt.Sprintf("%d", height)),
+			sdk.NewAttribute("total_rewards", totalRewardsToDistribute.String()),
+			sdk.NewAttribute("providers", fmt.Sprintf("%d", len(userRewardMap))),
+		),
+	)
+	
+	return nil
+}
+
+// calculateOrderRewards calculates hourly rewards for an order based on its value
+func calculateOrderRewards(orderValue math.LegacyDec, baseRewardRate math.Int) math.Int {
+	// Annual rate: baseRewardRate (e.g., 216000 = 21.6%)
+	annualRateDec := math.LegacyNewDecFromInt(baseRewardRate).Quo(math.LegacyNewDec(1000000))
+	hoursPerYear := math.LegacyNewDec(BlocksPerYear).Quo(math.LegacyNewDec(BlocksPerHour))
+	hourlyRate := annualRateDec.Quo(hoursPerYear)
+	
+	// Calculate hourly rewards
+	hourlyRewards := orderValue.Mul(hourlyRate)
+	return hourlyRewards.Mul(math.LegacyNewDec(1000000)).TruncateInt() // Convert to micro units
+}
+
+// sortOrdersByPrice sorts orders by price in descending order (highest first)
+func sortOrdersByPrice(orders []types.Order) {
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].Price.Amount.GT(orders[j].Price.Amount)
+	})
+}

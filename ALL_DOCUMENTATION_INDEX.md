@@ -5,6 +5,10 @@
 2. **BLOCKCHAIN_RELAUNCHED_CORRECTLY.md** - Current running state confirmation
 3. **WEB_DASHBOARD_ACCESS.md** - Dashboard access and features
 
+## Session Work (January 9, 2025)
+1. **SESSION_SUMMARY_JAN9_2025_DEX_REWARDS.md** - DEX liquidity rewards implementation
+2. **DEX_LIQUIDITY_REWARDS_IMPLEMENTATION.md** - Complete technical implementation details
+
 ## Session Work (January 7, 2025)
 1. **SESSION_SUMMARY_JAN07_2025.md** - Today's work summary
 2. **MAINCOIN_DISPLAY_UPDATE.md** - Fixed MC display to show 100,010
@@ -33,3 +37,4 @@
 - **LiquidityCoin**: ~100,011 ALC (with SDK minting)
 - **TestUSD**: 100,000 TUSD
 - **Segment**: 1 (1:10 ratio maintained)
+- **DEX Rewards**: Tier-based distribution working (9 LC distributed)
