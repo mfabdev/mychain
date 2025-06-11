@@ -48,6 +48,11 @@ service Query {
   rpc DynamicRewardState(QueryDynamicRewardStateRequest) returns (QueryDynamicRewardStateResponse) {
     option (google.api.http).get = "/mychain/dex/v1/dynamic_reward_state";
   }
+  
+  // LiquidityBalance Queries current buy/sell liquidity balance.
+  rpc LiquidityBalance(QueryLiquidityBalanceRequest) returns (QueryLiquidityBalanceResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/liquidity_balance";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -146,6 +151,54 @@ message QueryDynamicRewardStateResponse {
     (gogoproto.nullable) = false
   ];
   string price_ratio = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// QueryLiquidityBalanceRequest defines the QueryLiquidityBalanceRequest message.
+message QueryLiquidityBalanceRequest {
+  // Optional: filter by specific trading pair
+  uint64 pair_id = 1;
+}
+
+// QueryLiquidityBalanceResponse defines the QueryLiquidityBalanceResponse message.
+message QueryLiquidityBalanceResponse {
+  string buy_liquidity = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string sell_liquidity = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_liquidity = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  uint64 buy_order_count = 4;
+  uint64 sell_order_count = 5;
+  string buy_ratio = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string sell_ratio = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string balance_ratio = 8 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string buy_multiplier = 9 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string sell_multiplier = 10 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string current_apr = 11 [
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
