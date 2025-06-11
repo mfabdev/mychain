@@ -15,7 +15,7 @@ export const StakingPage: React.FC = () => {
       if (isConnected && address) {
         try {
           const balanceRes = await fetchAPI(`/cosmos/bank/v1beta1/balances/${address}`);
-          const alcBalance = balanceRes.balances?.find((b: any) => b.denom === 'alc');
+          const alcBalance = balanceRes.balances?.find((b: any) => b.denom === 'ulc');
           setUserBalance(alcBalance?.amount || '0');
         } catch (err) {
           console.error('Error fetching user balance:', err);
@@ -65,7 +65,7 @@ export const StakingPage: React.FC = () => {
               <div>
                 <h3 className="font-semibold mb-2">Active Validator</h3>
                 <div className="text-sm space-y-1">
-                  <p><span className="text-gray-400">Moniker:</span> test</p>
+                  <p><span className="text-gray-400">Moniker:</span> mychain-node</p>
                   <p><span className="text-gray-400">Commission:</span> 10%</p>
                   <p><span className="text-gray-400">Status:</span> <span className="text-green-400">Active</span></p>
                   <p><span className="text-gray-400">Uptime:</span> 100%</p>
@@ -93,7 +93,7 @@ export const StakingPage: React.FC = () => {
               <ol className="text-sm text-gray-300 space-y-1">
                 <li>1. Connect your Keplr wallet</li>
                 <li>2. Choose amount to stake</li>
-                <li>3. Select validator (test)</li>
+                <li>3. Validator is automatically selected (mychain-node)</li>
                 <li>4. Confirm transaction</li>
                 <li>5. Start earning rewards!</li>
               </ol>

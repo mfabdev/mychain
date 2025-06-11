@@ -20,8 +20,8 @@ export const BLOCKCHAIN_CONFIG = {
       initialSupply: 100000, // 100,000 LC
     },
     mainCoin: {
-      genesisDenom: 'umaincoin',
-      devDenom: 'maincoin', 
+      genesisDenom: 'umc',
+      devDenom: 'mc', 
       displayDenom: 'MC',
       decimals: 6,
       name: 'MainCoin',
@@ -33,7 +33,7 @@ export const BLOCKCHAIN_CONFIG = {
       reserveRatioTarget: 0.1,
     },
     testUSD: {
-      denom: 'utestusd',
+      denom: 'utusd',
       displayDenom: 'TUSD',
       decimals: 6,
       name: 'TestUSD',
@@ -79,12 +79,12 @@ export const CHAIN_INFO: ChainInfo = {
     coinType: 118,
   },
   bech32Config: {
-    bech32PrefixAccAddr: 'mychain',
-    bech32PrefixAccPub: 'mychainpub',
-    bech32PrefixValAddr: 'mychainvaloper',
-    bech32PrefixValPub: 'mychainvaloperpub',
-    bech32PrefixConsAddr: 'mychainvalcons',
-    bech32PrefixConsPub: 'mychainvalconspub',
+    bech32PrefixAccAddr: 'cosmos',
+    bech32PrefixAccPub: 'cosmospub',
+    bech32PrefixValAddr: 'cosmosvaloper',
+    bech32PrefixValPub: 'cosmosvaloperpub',
+    bech32PrefixConsAddr: 'cosmosvalcons',
+    bech32PrefixConsPub: 'cosmosvalconspub',
   },
   currencies: [
     {
@@ -94,12 +94,12 @@ export const CHAIN_INFO: ChainInfo = {
     },
     {
       coinDenom: 'MC',
-      coinMinimalDenom: 'umaincoin',
+      coinMinimalDenom: 'umc',
       coinDecimals: 6,
     },
     {
       coinDenom: 'TUSD',
-      coinMinimalDenom: 'utestusd',
+      coinMinimalDenom: 'utusd',
       coinDecimals: 6,
     },
   ],

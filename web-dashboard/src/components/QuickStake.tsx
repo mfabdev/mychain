@@ -7,12 +7,12 @@ interface QuickStakeProps {
 }
 
 export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
-  const [amount, setAmount] = useState('90000');
+  const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Hardcode the validator address since there's only one
-  const VALIDATOR_ADDRESS = 'cosmosvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0ae5egnx';
+  const VALIDATOR_ADDRESS = 'cosmosvaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmj59nwu';
 
   const handleStake = async () => {
     if (!window.keplr || !amount || parseFloat(amount) <= 0) return;
@@ -82,13 +82,13 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       );
 
       const stakeAmount = {
-        denom: 'alc',
+        denom: 'ulc',
         amount: (parseFloat(amount) * 1000000).toString()
       };
 
       const fee = {
-        amount: [{ denom: 'alc', amount: '5000' }],
-        gas: '200000'
+        amount: [{ denom: 'ulc', amount: '50000' }],
+        gas: '300000'
       };
 
       const result = await client.delegateTokens(
@@ -102,7 +102,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       if (result.code === 0) {
         setResult({ 
           success: true, 
-          message: `Successfully staked ${amount} LC! You'll start earning ~${(parseFloat(amount) * 0.1 / 365).toFixed(2)} LC per day.` 
+          message: `Successfully staked ${amount} LC! You'll start earning rewards based on the current APR (111.11%).` 
         });
         setAmount('');
       } else {
@@ -129,7 +129,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
           You have <span className="font-bold text-2xl">{balanceInLC} LC</span> available
         </p>
         <p className="text-sm opacity-90">
-          Stake your LC with the "test" validator to earn 10% APR
+          Stake your LC with the validator to earn rewards based on current inflation (111.11% APR)
         </p>
       </div>
 
@@ -156,11 +156,11 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
               disabled={loading}
             />
             <button
-              onClick={() => setAmount('90000')}
+              onClick={() => setAmount(Math.max(0, parseFloat(balanceInLC) - 100).toFixed(0))}
               className="px-4 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
               disabled={loading}
             >
-              90,000
+              {Math.max(0, parseFloat(balanceInLC) - 100).toFixed(0)}
             </button>
             <button
               onClick={() => setAmount(balanceInLC)}
@@ -171,7 +171,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
             </button>
           </div>
           <p className="text-xs mt-1 opacity-80">
-            Recommended: 90,000 LC (keeping 10,000 for transactions)
+            Recommended: Keep 100 LC for transaction fees
           </p>
         </div>
 
@@ -184,9 +184,10 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
         </button>
 
         <div className="text-sm opacity-90 space-y-1">
-          <p>✓ Validator: test (cosmosvaloper15se...gry88t)</p>
+          <p>✓ Validator: mychain-node ({VALIDATOR_ADDRESS.slice(0, 20)}...)</p>
           <p>✓ Commission: 10%</p>
-          <p>✓ Your effective APR: 9%</p>
+          <p>✓ Current Inflation Rate: 100% (decreasing towards 7%)</p>
+          <p>✓ Your effective APR: ~111.11% (inflation ÷ bonded ratio)</p>
           <p>✓ Unbonding period: 21 days</p>
         </div>
       </div>

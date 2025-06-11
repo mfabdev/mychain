@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	// Distribution frequency: every hour (720 blocks at 5s/block)
-	// Temporarily set to 1 for testing
-	BlocksPerHour = 1 // 720
+	// Distribution frequency: every 100 blocks for testing (normally 720 blocks at 5s/block)
+	BlocksPerHour = 100
 	// Blocks per year (365.25 days)
 	BlocksPerYear = 6311520
 )

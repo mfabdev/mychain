@@ -37,7 +37,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
     try {
       // Fetch user balance
       const balanceRes = await fetchAPI(`/cosmos/bank/v1beta1/balances/${address}`);
-      const alcBalance = balanceRes.balances?.find((b: any) => b.denom === 'alc');
+      const alcBalance = balanceRes.balances?.find((b: any) => b.denom === 'ulc');
       setBalance(alcBalance?.amount || '0');
 
       // Fetch validators
@@ -68,7 +68,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
             `/cosmos/distribution/v1beta1/delegators/${address}/rewards/${del.delegation.validator_address}`
           ).catch(() => ({ rewards: [] }));
           
-          const alcReward = rewardsRes.rewards?.find((r: any) => r.denom === 'alc');
+          const alcReward = rewardsRes.rewards?.find((r: any) => r.denom === 'ulc');
           
           return {
             validator: del.delegation.validator_address,
@@ -151,13 +151,13 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       );
 
       const amount = {
-        denom: 'alc',
+        denom: 'ulc',
         amount: (parseFloat(stakeAmount) * 1000000).toString()
       };
 
       const fee = {
-        amount: [{ denom: 'alc', amount: '5000' }],
-        gas: '200000'
+        amount: [{ denom: 'ulc', amount: '50000' }],
+        gas: '300000'
       };
 
       const result = await client.delegateTokens(
@@ -247,13 +247,13 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       );
 
       const amount = {
-        denom: 'alc',
+        denom: 'ulc',
         amount: (parseFloat(unstakeAmount) * 1000000).toString()
       };
 
       const fee = {
-        amount: [{ denom: 'alc', amount: '5000' }],
-        gas: '200000'
+        amount: [{ denom: 'ulc', amount: '50000' }],
+        gas: '300000'
       };
 
       const result = await client.undelegateTokens(
@@ -346,8 +346,8 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       );
 
       const fee = {
-        amount: [{ denom: 'alc', amount: '5000' }],
-        gas: '200000'
+        amount: [{ denom: 'ulc', amount: '50000' }],
+        gas: '300000'
       };
 
       // Claim rewards from all validators
