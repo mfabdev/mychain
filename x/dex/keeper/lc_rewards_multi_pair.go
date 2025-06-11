@@ -241,7 +241,7 @@ func (k Keeper) GetPairRewardConfigs(ctx context.Context, priceRatio math.Legacy
 			PairID:          1,
 			BuyRewardRatio:  math.LegacyMustNewDecFromStr("0.9"),  // 90% to buy side
 			SellRewardRatio: math.LegacyMustNewDecFromStr("0.1"),  // 10% to sell side
-			BuyVolumeCap:    liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.7")), // 70% of target
+			BuyVolumeCap:    liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% of liquidity target
 			SellVolumeCap:   k.calculateSellVolumeCap(ctx, priceRatio, mcSupply), // 1-6% based on conditions
 		},
 		{

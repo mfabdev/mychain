@@ -6,13 +6,11 @@ The MC/TUSD trading pair implements specific rules designed to create upward pri
 ## Reward Distribution Rules
 
 ### Buy Side (TUSD → MC)
-- **Reward Allocation**: 90% of all LC rewards
-- **Volume Cap**: 70% of dynamic liquidity target
+- **Volume Cap**: 12% of dynamic liquidity target
 - **Price Priority**: Highest bids get rewards first
 - **Interest Rate**: 7-100% APR (dynamic)
 
 ### Sell Side (MC → TUSD) - RESTRICTIVE
-- **Reward Allocation**: 10% of all LC rewards
 - **Volume Cap**: Only 1-6% of MC market cap
 - **Price Priority**: Highest asks get rewards first
 - **Interest Rate**: 7-100% APR for eligible orders
