@@ -11,6 +11,7 @@ import { TestUSDPage } from './pages/TestUSDPage';
 import { StakingPage } from './pages/StakingPage';
 import { DEXPage } from './pages/DEXPage';
 import { TransactionsPage } from './pages/TransactionsPage';
+import { PersonalDashboardPage } from './pages/PersonalDashboardPage';
 import { useKeplr } from './hooks/useKeplr';
 import './App.css';
 
@@ -41,6 +42,7 @@ function App() {
 
             <Routes>
               <Route path="/" element={<OverviewPage />} />
+              <Route path="/dashboard" element={<PersonalDashboardPage />} />
               <Route path="/maincoin" element={<MainCoinPage address={address} isConnected={isConnected} client={client} />} />
               <Route path="/maincoin/history" element={<MainCoinSegmentHistoryPage />} />
               <Route path="/maincoin/purchase/:startSegment/:endSegment" element={<SegmentPurchaseDetailsPage />} />

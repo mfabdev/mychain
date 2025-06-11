@@ -56,7 +56,7 @@ func (k msgServer) ClaimRewards(ctx context.Context, msg *types.MsgClaimRewards)
 	}
 
 	// Mint LC tokens to the user
-	lcCoins := sdk.NewCoins(sdk.NewCoin("liquiditycoin", requestedAmount))
+	lcCoins := sdk.NewCoins(sdk.NewCoin("ulc", requestedAmount))
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, lcCoins); err != nil {
 		return nil, err
 	}

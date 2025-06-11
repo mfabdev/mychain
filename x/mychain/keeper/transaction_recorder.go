@@ -29,6 +29,7 @@ const (
 	TxTypeDexCancelOrder  = "dex_cancel_order"
 	TxTypeDexOrderFilled  = "dex_order_filled"
 	TxTypeDexClaimRewards = "dex_claim_rewards"
+	TxTypeDexRewardDist   = "dex_reward_distribution"
 	TxTypeBridgeIn        = "bridge_in"
 	TxTypeBridgeOut       = "bridge_out"
 	TxTypeSwap            = "swap"

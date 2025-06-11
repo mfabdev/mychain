@@ -48,6 +48,7 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 - Web dashboard with inflation display
 - DEX module with 7% annual LC rewards (base_reward_rate: 222)
 - DEX liquidity rewards: Tier-based distribution using mint module permissions
+- DEX initialization: Automated in unified-launch.sh with proper error handling
 
 ### 6. Important Files
 - **Launch Script**: scripts/unified-launch.sh (ALWAYS USE THIS)
@@ -102,8 +103,10 @@ mychaind query dex params
 The web dashboard can use Direct Execution mode when terminal server is running:
 - Location: `/home/dk/go/src/myrollapps/mychain/web-dashboard/terminal-server.js`
 - Port: 3003
-- Start command: `cd web-dashboard && nohup node terminal-server.js > terminal-server.log 2>&1 &`
+- **AUTOMATIC**: Terminal server is now started automatically by unified-launch.sh
+- Manual start: `cd web-dashboard && nohup node terminal-server.js > terminal-server.log 2>&1 &`
 - Check if running: `lsof -i:3003`
+- Logs: `tail -f ~/.mychain/terminal-server.log`
 - Fallback: Dashboard works without it by generating CLI commands
 
 ### 10. Session Context
@@ -132,4 +135,5 @@ When continuing sessions, ALWAYS:
 4. Update this file if user provides new permanent information
 
 ## Last Updated
-January 9, 2025 - Added DEX liquidity rewards tier-based distribution using mint module
+January 10, 2025 - Fixed DEX initialization in unified-launch.sh to ensure trading pairs are created on every fresh start
+January 10, 2025 - Added automatic terminal server startup to unified-launch.sh for web dashboard transaction support

@@ -13,8 +13,8 @@ import (
 
 const (
 	// Distribution frequency: every hour (720 blocks at 5s/block)
-	// Temporarily set to 100 for testing
-	BlocksPerHour = 100 // 720
+	// Temporarily set to 1 for testing
+	BlocksPerHour = 1 // 720
 	// Blocks per year (365.25 days)
 	BlocksPerYear = 6311520
 )
@@ -203,7 +203,7 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 	
 	// Mint the total rewards using the mint module (which has minting permissions)
 	// First mint to the mint module, then transfer to DEX module
-	coins := sdk.NewCoins(sdk.NewCoin("liquiditycoin", totalRewardsToDistribute))
+	coins := sdk.NewCoins(sdk.NewCoin("ulc", totalRewardsToDistribute))
 	
 	// The mint module has permission to mint
 	err = k.bankKeeper.MintCoins(ctx, "mint", coins)
@@ -230,7 +230,7 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 			continue
 		}
 		
-		userCoins := sdk.NewCoins(sdk.NewCoin("liquiditycoin", userRewardsInt))
+		userCoins := sdk.NewCoins(sdk.NewCoin("ulc", userRewardsInt))
 		err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, userCoins)
 		if err != nil {
 			k.Logger(ctx).Error("failed to send rewards", "user", userAddr, "error", err)
@@ -258,6 +258,34 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 			"user", userAddr,
 			"rewards", userRewardsInt,
 		)
+		
+		// Record the reward distribution in transaction history
+		if k.transactionKeeper != nil {
+			// Use a unique tx hash for each user to avoid key conflicts
+			txHash := fmt.Sprintf("DEX-REWARD-%d-%s", height, userAddr[:8])
+			description := fmt.Sprintf("DEX liquidity rewards (100%% APR)")
+			
+			// Use RecordTransaction with the fixed txHash as metadata
+			err = k.transactionKeeper.RecordTransaction(
+				ctx,
+				userAddr,
+				"dex_reward_distribution",
+				description,
+				userCoins,
+				"dex_module",
+				userAddr,
+				txHash, // Pass txHash as metadata
+			)
+			if err != nil {
+				k.Logger(ctx).Error("failed to record reward transaction", "user", userAddr, "error", err)
+			} else {
+				k.Logger(ctx).Info("DEX reward transaction recorded",
+					"user", userAddr,
+					"height", height,
+					"txHash", txHash,
+					"amount", userCoins.String())
+			}
+		}
 	}
 	
 	// Emit event

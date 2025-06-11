@@ -163,7 +163,7 @@ func (k Keeper) GetTierByDeviation(ctx context.Context, pairID uint64, deviation
 	if pair.BaseDenom == "maincoin" && pair.QuoteDenom == "testusd" {
 		// MC/USDC tiers (1-4)
 		startTierID, endTierID = 1, 4
-	} else if pair.BaseDenom == "maincoin" && pair.QuoteDenom == "liquiditycoin" {
+	} else if pair.BaseDenom == "maincoin" && pair.QuoteDenom == "ulc" {
 		// MC/LC tiers (5-8)
 		startTierID, endTierID = 5, 8
 	} else {

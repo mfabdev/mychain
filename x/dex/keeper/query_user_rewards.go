@@ -32,15 +32,15 @@ func (q queryServer) UserRewards(ctx context.Context, req *types.QueryUserReward
 	if err != nil {
 		// No rewards yet
 		return &types.QueryUserRewardsResponse{
-			PendingLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
-			ClaimedLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
+			PendingLc: sdk.NewCoin("ulc", math.ZeroInt()),
+			ClaimedLc: sdk.NewCoin("ulc", math.ZeroInt()),
 		}, nil
 	}
 
 	// In the simplified system, all rewards are auto-claimed
 	// Pending is always 0 since rewards are sent directly to users
 	return &types.QueryUserRewardsResponse{
-		PendingLc: sdk.NewCoin("liquiditycoin", math.ZeroInt()),
-		ClaimedLc: sdk.NewCoin("liquiditycoin", userRewards.TotalRewards),
+		PendingLc: sdk.NewCoin("ulc", math.ZeroInt()),
+		ClaimedLc: sdk.NewCoin("ulc", userRewards.TotalRewards),
 	}, nil
 }

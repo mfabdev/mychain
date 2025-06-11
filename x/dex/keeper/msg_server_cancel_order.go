@@ -7,6 +7,7 @@ import (
 	"mychain/x/dex/types"
 
 	"cosmossdk.io/collections"
+	"cosmossdk.io/math"
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -37,7 +38,9 @@ func (k msgServer) CancelOrder(ctx context.Context, msg *types.MsgCancelOrder) (
 	var refundAmount sdk.Coin
 	if order.IsBuy {
 		// For buy orders, refund quote currency (price * remaining amount)
-		totalQuote := order.Price.Amount.Mul(remaining)
+		// Need to divide by 10^6 to account for micro units in multiplication
+		// Formula: (price_micro / 10^6) * (amount_micro / 10^6) * 10^6 = (price_micro * amount_micro) / 10^6
+		totalQuote := order.Price.Amount.Mul(remaining).Quo(math.NewInt(1000000))
 		refundAmount = sdk.NewCoin(order.Price.Denom, totalQuote)
 	} else {
 		// For sell orders, refund base currency

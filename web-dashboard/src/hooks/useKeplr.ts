@@ -11,10 +11,38 @@ declare global {
 }
 
 export const useKeplr = () => {
-  const [address, setAddress] = useState<string>('');
-  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState<string>(() => {
+    // Check localStorage for persisted address
+    return localStorage.getItem('mychain_wallet_address') || '';
+  });
+  const [isConnected, setIsConnected] = useState(() => {
+    // Check if we have a persisted connection
+    return !!localStorage.getItem('mychain_wallet_address');
+  });
   const [client, setClient] = useState<SigningStargateClient | null>(null);
   const [error, setError] = useState<string>('');
+
+  // Auto-reconnect on mount if we have a persisted connection
+  useEffect(() => {
+    const reconnect = async () => {
+      const savedAddress = localStorage.getItem('mychain_wallet_address');
+      const savedWalletType = localStorage.getItem('mychain_wallet_type') as 'keplr' | 'leap';
+      
+      if (savedAddress && savedWalletType && !client) {
+        try {
+          await connectWallet(savedWalletType);
+        } catch (err) {
+          // If reconnection fails, clear the persisted state
+          localStorage.removeItem('mychain_wallet_address');
+          localStorage.removeItem('mychain_wallet_type');
+          setAddress('');
+          setIsConnected(false);
+        }
+      }
+    };
+    
+    reconnect();
+  }, []); // Run once on mount
 
   const connectWallet = async (walletType: 'keplr' | 'leap' = 'keplr') => {
     try {
@@ -42,6 +70,10 @@ export const useKeplr = () => {
       if (accounts.length > 0) {
         setAddress(accounts[0].address);
         setIsConnected(true);
+        
+        // Persist the connection
+        localStorage.setItem('mychain_wallet_address', accounts[0].address);
+        localStorage.setItem('mychain_wallet_type', walletType);
 
         // Create signing client with custom amino types for our messages
         const aminoTypes = new AminoTypes({
@@ -93,6 +125,10 @@ export const useKeplr = () => {
     setAddress('');
     setIsConnected(false);
     setClient(null);
+    
+    // Clear persisted connection
+    localStorage.removeItem('mychain_wallet_address');
+    localStorage.removeItem('mychain_wallet_type');
   };
 
   return {

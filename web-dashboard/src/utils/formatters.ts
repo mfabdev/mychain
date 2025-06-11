@@ -51,5 +51,15 @@ export const shortenAddress = (address: string): string => {
 export const formatCoin = (coin: { denom: string; amount: string }): string => {
   const amount = parseInt(coin.amount) / 1_000_000;
   const denom = coin.denom.toUpperCase();
-  return `${amount.toLocaleString()} ${denom}`;
+  
+  // For very small amounts (less than 0.01), show more decimal places
+  if (amount < 0.01 && amount > 0) {
+    return `${amount.toFixed(6)} ${denom}`;
+  }
+  
+  // For normal amounts, show 2-6 decimal places as needed
+  return `${amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  })} ${denom}`;
 };

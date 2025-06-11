@@ -169,6 +169,20 @@ stop_existing_processes() {
         sleep 3
     fi
     
+    # Stop terminal server if running
+    if pgrep -f "terminal-server.js" > /dev/null; then
+        log_info "Stopping terminal server..."
+        pkill -f "terminal-server.js" || true
+        sleep 2
+    fi
+    
+    # Stop web server if running
+    if pgrep -f "serve -s build" > /dev/null; then
+        log_info "Stopping web server..."
+        pkill -f "serve -s build" || true
+        sleep 2
+    fi
+    
     log_info "All processes stopped"
 }
 
@@ -177,15 +191,30 @@ reset_chain_data() {
         log_section "Cleaning Blockchain Data"
         
         log_warn "Removing all blockchain data for fresh start..."
+        
+        # First check if we need to clean application.db separately
+        # This handles cases where the node was killed but data remains
+        if [ -d "$HOME_DIR/data/application.db" ]; then
+            log_info "Cleaning application database (transaction history)..."
+            rm -rf $HOME_DIR/data/application.db
+        fi
+        
+        # Remove all blockchain data
         rm -rf $HOME_DIR
         
         # Clean up any temp files
         rm -f /tmp/mychain_*
         rm -f /tmp/admin_key.json /tmp/validator_key.json
         
-        log_info "Blockchain data cleaned"
+        log_info "Blockchain data cleaned (including transaction history)"
     else
         log_info "Keeping existing blockchain data (--no-clean specified)"
+        
+        # Even with --no-clean, warn about transaction history
+        if [ -d "$HOME_DIR/data/application.db" ]; then
+            log_warn "Application database exists. Transaction history from previous runs will be preserved."
+            log_info "To clean transaction history only, run: rm -rf $HOME_DIR/data/application.db"
+        fi
     fi
 }
 
@@ -530,6 +559,22 @@ wait_for_node() {
         fi
         exit 1
     fi
+    
+    # Wait for API to be ready
+    log_info "Waiting for API to be ready..."
+    local api_retries=20
+    while [ $api_retries -gt 0 ]; do
+        if curl -s http://localhost:1317/cosmos/base/tendermint/v1beta1/blocks/latest >/dev/null 2>&1; then
+            log_info "API is ready!"
+            break
+        fi
+        api_retries=$((api_retries - 1))
+        sleep 1
+    done
+    
+    if [ $api_retries -eq 0 ]; then
+        log_warn "API not responding, but continuing..."
+    fi
 }
 
 initialize_modules() {
@@ -538,40 +583,93 @@ initialize_modules() {
     # Source addresses
     source $HOME_DIR/addresses.env
     
-    # Initialize DEX state
-    log_info "Initializing DEX module..."
-    $BINARY tx dex init-dex-state \
-        --from admin \
-        --chain-id $CHAIN_ID \
-        --keyring-backend $KEYRING_BACKEND \
-        --home $HOME_DIR \
-        --yes \
-        --broadcast-mode sync
+    # Check if DEX is already initialized
+    log_info "Checking DEX module status..."
+    local dex_params=$($BINARY query dex params 2>/dev/null | grep base_reward_rate | awk '{print $2}' | tr -d '"')
     
-    sleep 5
+    if [ "$dex_params" = "222" ]; then
+        log_info "DEX module already initialized"
+        
+        # Still verify trading pairs exist
+        if curl -s http://localhost:1317/mychain/dex/v1/order_book/1 2>&1 | grep -q "buy_orders"; then
+            log_info "Trading pairs already exist"
+            return 0
+        else
+            log_info "Trading pairs need to be created"
+        fi
+    else
+        # Initialize DEX state
+        log_info "Initializing DEX module..."
+        $BINARY tx dex init-dex-state --from admin --chain-id $CHAIN_ID --keyring-backend $KEYRING_BACKEND --home $HOME_DIR --yes --broadcast-mode sync --fees 50000ulc --gas 300000
+        
+        if [ $? -eq 0 ]; then
+            log_info "DEX module initialized successfully"
+        else
+            log_error "Failed to initialize DEX module"
+            return 1
+        fi
+        
+        sleep 5
+    fi
     
-    # Create trading pairs
-    log_info "Creating MC/TUSD trading pair..."
-    $BINARY tx dex create-trading-pair $MC_DENOM $TUSD_DENOM \
-        --from admin \
-        --chain-id $CHAIN_ID \
-        --keyring-backend $KEYRING_BACKEND \
-        --home $HOME_DIR \
-        --yes \
-        --broadcast-mode sync
+    # Check if trading pair 1 exists
+    if curl -s http://localhost:1317/mychain/dex/v1/order_book/1 2>&1 | grep -q "trading pair not found"; then
+        log_info "Creating MC/TUSD trading pair..."
+        $BINARY tx dex create-trading-pair $MC_DENOM $TUSD_DENOM --from admin --chain-id $CHAIN_ID --keyring-backend $KEYRING_BACKEND --home $HOME_DIR --yes --broadcast-mode sync --fees 50000ulc --gas 300000
+        
+        if [ $? -eq 0 ]; then
+            log_info "MC/TUSD trading pair created successfully"
+        else
+            log_error "Failed to create MC/TUSD trading pair"
+            return 1
+        fi
+        
+        sleep 2
+    else
+        log_info "MC/TUSD trading pair already exists"
+    fi
     
-    sleep 2
+    # Check if trading pair 2 exists
+    if curl -s http://localhost:1317/mychain/dex/v1/order_book/2 2>&1 | grep -q "trading pair not found"; then
+        log_info "Creating MC/LC trading pair..."
+        $BINARY tx dex create-trading-pair $MC_DENOM $LC_DENOM --from admin --chain-id $CHAIN_ID --keyring-backend $KEYRING_BACKEND --home $HOME_DIR --yes --broadcast-mode sync --fees 50000ulc --gas 300000
+        
+        if [ $? -eq 0 ]; then
+            log_info "MC/LC trading pair created successfully"
+        else
+            log_error "Failed to create MC/LC trading pair"
+            return 1
+        fi
+        
+        sleep 5
+    else
+        log_info "MC/LC trading pair already exists"
+    fi
     
-    log_info "Creating MC/LC trading pair..."
-    $BINARY tx dex create-trading-pair $MC_DENOM $LC_DENOM \
-        --from admin \
-        --chain-id $CHAIN_ID \
-        --keyring-backend $KEYRING_BACKEND \
-        --home $HOME_DIR \
-        --yes \
-        --broadcast-mode sync
+    # Final verification
+    log_info "Verifying trading pairs..."
+    local verified=true
     
-    sleep 5
+    if curl -s http://localhost:1317/mychain/dex/v1/order_book/1 2>&1 | grep -q "buy_orders"; then
+        log_info "✓ Trading pair 1 (MC/TUSD) verified"
+    else
+        log_error "✗ Trading pair 1 verification failed"
+        verified=false
+    fi
+    
+    if curl -s http://localhost:1317/mychain/dex/v1/order_book/2 2>&1 | grep -q "buy_orders"; then
+        log_info "✓ Trading pair 2 (MC/LC) verified"
+    else
+        log_error "✗ Trading pair 2 verification failed"
+        verified=false
+    fi
+    
+    if [ "$verified" = false ]; then
+        log_error "DEX initialization incomplete. Please check the logs."
+        return 1
+    fi
+    
+    log_info "DEX module initialization complete!"
 }
 
 build_dashboard() {
@@ -590,6 +688,42 @@ build_dashboard() {
         
         log_info "Dashboard built successfully"
         log_info "To start: cd $PROJECT_ROOT/web-dashboard && npm start"
+    fi
+}
+
+start_terminal_server() {
+    if [ "$SKIP_DASHBOARD" = false ] && [ -f "$PROJECT_ROOT/web-dashboard/terminal-server.js" ]; then
+        log_section "Starting Terminal Server"
+        
+        # Stop any existing terminal server
+        if pgrep -f "terminal-server.js" > /dev/null; then
+            log_info "Stopping existing terminal server..."
+            pkill -f "terminal-server.js" || true
+            sleep 2
+        fi
+        
+        # Start terminal server
+        cd $PROJECT_ROOT/web-dashboard
+        nohup node terminal-server.js > $HOME_DIR/terminal-server.log 2>&1 &
+        echo $! > $HOME_DIR/terminal-server.pid
+        
+        # Wait for terminal server to be ready
+        local retries=10
+        while [ $retries -gt 0 ]; do
+            if lsof -i:3003 >/dev/null 2>&1; then
+                log_info "Terminal server started successfully (PID: $(cat $HOME_DIR/terminal-server.pid))"
+                break
+            fi
+            retries=$((retries - 1))
+            sleep 1
+        done
+        
+        if [ $retries -eq 0 ]; then
+            log_warn "Terminal server may not have started properly"
+            log_info "Check logs: tail -f $HOME_DIR/terminal-server.log"
+        fi
+        
+        cd $PROJECT_ROOT
     fi
 }
 
@@ -674,6 +808,12 @@ print_summary() {
     echo -e "${GREEN}   MyChain Successfully Launched! 🚀${NC}"
     echo -e "${GREEN}=========================================${NC}"
     echo
+    echo -e "${YELLOW}FRESH BLOCKCHAIN STARTED${NC}"
+    echo "  • All previous data has been cleared"
+    echo "  • Starting from block 1"
+    echo "  • Transaction history will show only new transactions"
+    echo "  • DEX has no orders or trade history"
+    echo
     echo "Configuration:"
     echo "  Chain ID: $CHAIN_ID"
     echo "  Node Moniker: $MONIKER"
@@ -716,7 +856,9 @@ print_summary() {
     echo
     if [ "$SKIP_DASHBOARD" = false ]; then
         echo "Web Dashboard:"
-        echo "  cd $PROJECT_ROOT/web-dashboard && npm start"
+        echo "  Terminal Server: Running on port 3003"
+        echo "  To start dashboard: cd $PROJECT_ROOT/web-dashboard && npm start"
+        echo "  To check terminal server: tail -f $HOME_DIR/terminal-server.log"
         echo
     fi
     echo -e "${GREEN}=========================================${NC}"
@@ -746,6 +888,7 @@ main() {
     configure_node
     start_node
     wait_for_node
+    start_terminal_server
     initialize_modules
     build_dashboard
     verify_setup

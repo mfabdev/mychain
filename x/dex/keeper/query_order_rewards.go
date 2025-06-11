@@ -96,6 +96,6 @@ func (q queryServer) OrderRewards(ctx context.Context, req *types.QueryOrderRewa
 
 	return &types.QueryOrderRewardsResponse{
 		OrderRewards: orderRewards,
-		TotalPending: sdk.NewCoin("liquiditycoin", totalPending),
+		TotalPending: sdk.NewCoin("ulc", totalPending),
 	}, nil
 }

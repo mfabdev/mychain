@@ -52,6 +52,7 @@ func NewKeeper(
 	addressCodec address.Codec,
 	authority []byte,
 	bankKeeper types.BankKeeper,
+	transactionKeeper types.TransactionKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -65,6 +66,7 @@ func NewKeeper(
 		addressCodec: addressCodec,
 		authority:    authority,
 		bankKeeper:   bankKeeper,
+		transactionKeeper: transactionKeeper,
 
 		Params:          collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		NextOrderID:     collections.NewSequence(sb, types.NextOrderIDKey, "next_order_id"),

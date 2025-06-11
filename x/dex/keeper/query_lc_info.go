@@ -16,7 +16,7 @@ func (q queryServer) LCInfo(ctx context.Context, req *types.QueryLCInfoRequest) 
 	}
 
 	// Get LC total supply from bank module
-	lcSupply := q.k.bankKeeper.GetSupply(ctx, "liquiditycoin")
+	lcSupply := q.k.bankKeeper.GetSupply(ctx, "ulc")
 
 	// Get params for base reward rate
 	params, err := q.k.Params.Get(ctx)

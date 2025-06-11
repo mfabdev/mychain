@@ -10,7 +10,7 @@ interface TransactionRecord {
   amount: Array<{ denom: string; amount: string }>;
   from: string;
   to: string;
-  height: number;
+  height: number | string;
   timestamp: string;
 }
 
@@ -25,6 +25,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [showAll, setShowAll] = useState(false);
+  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
 
   useEffect(() => {
     if (address) {
@@ -45,24 +47,68 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
       const latestBlock = await fetchAPI('/cosmos/base/tendermint/v1beta1/blocks/latest');
       const currentHeight = parseInt(latestBlock.block.header.height);
       
-      const response = await fetchAPI(`/mychain/mychain/v1/transaction-history/${address}?limit=100`);
+      const response = await fetchAPI(`/mychain/mychain/v1/transaction-history/${address}?limit=1000`);
       console.log('Transaction response:', response);
       if (response && response.transactions) {
-        // Filter out transactions from old blockchain runs
-        // Only show transactions from the current blockchain instance
-        // Assuming the blockchain was restarted recently, only show recent transactions
+        // Simply validate timestamps and heights
         const recentTransactions = response.transactions.filter((tx: TransactionRecord) => {
           // Filter out transactions with invalid timestamps (future dates)
           const txDate = new Date(tx.timestamp);
           const now = new Date();
           if (txDate > now) return false;
           
-          // Only show transactions from recent blocks (within current height)
-          return tx.height <= currentHeight && tx.height > 0;
+          // Convert height to number for comparison
+          const txHeight = Number(tx.height);
+          
+          // Only show transactions from valid blocks
+          return txHeight <= currentHeight && txHeight > 0;
         });
         
-        setTransactions(recentTransactions);
-        console.log('Set transactions:', recentTransactions.length, 'out of', response.transactions.length);
+        // Sort transactions by height in descending order (newest first)
+        // If heights are equal, sort by timestamp
+        const sortedTransactions = recentTransactions.sort((a: TransactionRecord, b: TransactionRecord) => {
+          // Convert heights to numbers, handling both string and number types
+          const heightA = Number(a.height);
+          const heightB = Number(b.height);
+          
+          // First sort by height (descending)
+          if (heightA !== heightB) {
+            return heightB - heightA;
+          }
+          
+          // If heights are equal, sort by timestamp (descending)
+          const timeA = new Date(a.timestamp).getTime();
+          const timeB = new Date(b.timestamp).getTime();
+          return timeB - timeA;
+        });
+        
+        // Find continuous block ranges to filter out old disconnected transactions
+        let filteredTransactions = sortedTransactions;
+        if (sortedTransactions.length > 0) {
+          // Find the highest block height
+          const maxHeight = Math.max(...sortedTransactions.map((tx: TransactionRecord) => Number(tx.height)));
+          
+          // Filter to only include transactions that are part of a continuous range from the top
+          const continuousTransactions: TransactionRecord[] = [];
+          let lastHeight = maxHeight + 1;
+          
+          for (const tx of sortedTransactions) {
+            const txHeight = Number(tx.height);
+            // Only show recent transactions - within 500 blocks of current height
+            // This filters out old transactions from blockchain restarts
+            if (txHeight > currentHeight - 500) {
+              continuousTransactions.push(tx);
+            }
+          }
+          
+          filteredTransactions = continuousTransactions;
+        }
+        
+        // Store all transactions for "Show All" functionality
+        setAllTransactions(sortedTransactions);
+        // Set filtered transactions as default view
+        setTransactions(showAll ? sortedTransactions : filteredTransactions);
+        console.log('Set transactions:', filteredTransactions.length, 'out of', response.transactions.length);
       }
     } catch (err: any) {
       console.error('Failed to fetch transaction history:', err);
@@ -90,6 +136,8 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
         return '🔓';
       case 'dex_swap':
         return '🔄';
+      case 'dex_reward_distribution':
+        return '💎';
       default:
         return '•';
     }
@@ -99,6 +147,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
     switch (type) {
       case 'receive':
       case 'staking_reward':
+      case 'dex_reward_distribution':
         return 'text-green-600';
       case 'send':
       case 'fee':
@@ -114,10 +163,14 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
     }
   };
 
-  const filteredTransactions = transactions.filter(tx => {
+  // Apply type filter
+  const typeFilteredTransactions = (showAll ? allTransactions : transactions).filter(tx => {
     if (filter === 'all') return true;
     return tx.type === filter;
   });
+
+  // Show only recent transactions unless "show all" is selected
+  const displayedTransactions = showAll ? typeFilteredTransactions : typeFilteredTransactions.slice(0, 50);
 
   const transactionTypes = [
     { value: 'all', label: 'All Transactions' },
@@ -126,6 +179,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
     { value: 'buy_maincoin', label: 'MainCoin Purchases' },
     { value: 'sell_maincoin', label: 'MainCoin Sales' },
     { value: 'staking_reward', label: 'Staking Rewards' },
+    { value: 'dex_reward_distribution', label: 'DEX Rewards' },
     { value: 'delegate', label: 'Delegations' },
     { value: 'undelegate', label: 'Undelegations' },
   ];
@@ -143,13 +197,30 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Transaction History</h2>
-        <button
-          onClick={loadTransactions}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Refresh'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowAll(!showAll);
+              if (!showAll) {
+                // When showing all, use allTransactions
+                setTransactions(allTransactions);
+              } else {
+                // When showing recent, reapply the gap filter
+                loadTransactions();
+              }
+            }}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            {showAll ? 'Show Recent' : 'Show All'}
+          </button>
+          <button
+            onClick={loadTransactions}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={loading}
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -203,7 +274,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
                   Loading transactions...
                 </td>
               </tr>
-            ) : filteredTransactions.length === 0 ? (
+            ) : displayedTransactions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
                   <div>No transactions found for this address</div>
@@ -221,7 +292,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
                 </td>
               </tr>
             ) : (
-              filteredTransactions.map((tx) => (
+              displayedTransactions.map((tx) => (
                 <tr key={`${tx.height}-${tx.tx_hash}`} className="hover:bg-gray-700/30">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className={`text-lg ${getTypeColor(tx.type)}`}>
@@ -266,9 +337,19 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ address:
         </table>
       </div>
 
-      {transactions.length > 0 && (
+      {(transactions.length > 0 || allTransactions.length > 0) && (
         <div className="mt-4 text-sm text-gray-500">
-          Showing {filteredTransactions.length} of {transactions.length} transactions
+          <div>Showing {displayedTransactions.length} of {typeFilteredTransactions.length} filtered transactions</div>
+          {!showAll && typeFilteredTransactions.length > 50 && (
+            <div className="mt-2 text-xs text-gray-400">
+              Click "Show All" to see all {typeFilteredTransactions.length} transactions
+            </div>
+          )}
+          {showAll && allTransactions.length > transactions.length && (
+            <div className="mt-2 text-xs text-gray-400">
+              Showing all transactions including those with gaps in block sequence
+            </div>
+          )}
         </div>
       )}
     </div>

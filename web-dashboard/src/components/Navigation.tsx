@@ -56,6 +56,7 @@ export const Navigation: React.FC = () => {
 
   const navItems = [
     { to: '/', icon: '🏠', label: 'Overview' },
+    { to: '/dashboard', icon: '👤', label: 'My Dashboard' },
     { to: '/maincoin', icon: '🪙', label: 'MainCoin' },
     { to: '/liquiditycoin', icon: '💧', label: 'LiquidityCoin' },
     { to: '/testusd', icon: '💵', label: 'TestUSD' },
