@@ -727,6 +727,49 @@ start_terminal_server() {
     fi
 }
 
+start_web_dashboard() {
+    if [ "$SKIP_DASHBOARD" = false ] && [ -d "$PROJECT_ROOT/web-dashboard" ]; then
+        log_section "Starting Web Dashboard"
+        
+        # Stop any existing web dashboard on port 3000
+        if lsof -i:3000 >/dev/null 2>&1; then
+            log_info "Stopping existing web dashboard..."
+            # Find and kill process on port 3000
+            local pid=$(lsof -ti:3000)
+            if [ ! -z "$pid" ]; then
+                kill $pid 2>/dev/null || true
+                sleep 2
+            fi
+        fi
+        
+        # Start web dashboard
+        cd $PROJECT_ROOT/web-dashboard
+        nohup npm start > $HOME_DIR/web-dashboard.log 2>&1 &
+        echo $! > $HOME_DIR/web-dashboard.pid
+        
+        # Wait for web dashboard to be ready
+        log_info "Waiting for web dashboard to start..."
+        local retries=30
+        while [ $retries -gt 0 ]; do
+            if lsof -i:3000 >/dev/null 2>&1; then
+                log_info "Web dashboard started successfully (PID: $(cat $HOME_DIR/web-dashboard.pid))"
+                log_info "Access the dashboard at: http://localhost:3000"
+                break
+            fi
+            retries=$((retries - 1))
+            sleep 1
+        done
+        
+        if [ $retries -eq 0 ]; then
+            log_warn "Web dashboard may not have started properly"
+            log_info "Check logs: tail -f $HOME_DIR/web-dashboard.log"
+            log_info "Start manually: cd $PROJECT_ROOT/web-dashboard && npm start"
+        fi
+        
+        cd $PROJECT_ROOT
+    fi
+}
+
 verify_setup() {
     log_section "Verifying Setup"
     
@@ -857,8 +900,9 @@ print_summary() {
     if [ "$SKIP_DASHBOARD" = false ]; then
         echo "Web Dashboard:"
         echo "  Terminal Server: Running on port 3003"
-        echo "  To start dashboard: cd $PROJECT_ROOT/web-dashboard && npm start"
-        echo "  To check terminal server: tail -f $HOME_DIR/terminal-server.log"
+        echo "  Web Dashboard: http://localhost:3000"
+        echo "  Check dashboard logs: tail -f $HOME_DIR/web-dashboard.log"
+        echo "  Check terminal server logs: tail -f $HOME_DIR/terminal-server.log"
         echo
     fi
     echo -e "${GREEN}=========================================${NC}"
@@ -891,6 +935,7 @@ main() {
     start_terminal_server
     initialize_modules
     build_dashboard
+    start_web_dashboard
     verify_setup
     
     # Only cleanup if requested

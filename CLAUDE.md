@@ -127,6 +127,13 @@ When continuing sessions, ALWAYS:
 - Use deprecated launch scripts
 - Create new launch/init scripts (use unified-launch.sh)
 
+### 12. Web Dashboard Auto-Start
+As of January 11, 2025, the web dashboard now automatically starts when launching the blockchain:
+- The unified-launch.sh script builds and starts the dashboard on port 3000
+- No manual start required - just run `./scripts/unified-launch.sh`
+- Dashboard URL: http://localhost:3000
+- Use `--skip-dashboard` flag to disable auto-start if needed
+
 ## How to Use This File
 
 1. At session start, read this file
