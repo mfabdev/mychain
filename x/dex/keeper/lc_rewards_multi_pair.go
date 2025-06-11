@@ -242,7 +242,7 @@ func (k Keeper) GetPairRewardConfigs(ctx context.Context, priceRatio math.Legacy
 			BuyRewardRatio:  math.LegacyMustNewDecFromStr("0.9"),  // 90% to buy side
 			SellRewardRatio: math.LegacyMustNewDecFromStr("0.1"),  // 10% to sell side
 			BuyVolumeCap:    liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.7")), // 70% of target
-			SellVolumeCap:   liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.1")), // 10% of target
+			SellVolumeCap:   k.calculateSellVolumeCap(ctx, priceRatio, mcSupply), // 1-6% based on conditions
 		},
 		{
 			// MC/LC pair - Secondary market
@@ -267,4 +267,45 @@ func (k Keeper) GetPairName(ctx context.Context, pairID uint64) string {
 	default:
 		return fmt.Sprintf("pair-%d", pairID)
 	}
+}
+
+// calculateSellVolumeCap calculates the sell-side volume cap (1-6% of MC market cap)
+// The cap increases as price drops to provide more exit liquidity during downturns
+func (k Keeper) calculateSellVolumeCap(ctx context.Context, priceRatio math.LegacyDec, mcSupply math.Int) math.LegacyDec {
+	// Get MC market cap in TUSD
+	mcPrice := k.GetCurrentMarketPrice(ctx, 1)
+	mcSupplyDec := math.LegacyNewDecFromInt(mcSupply).Quo(math.LegacyNewDec(1000000))
+	mcMarketCap := mcSupplyDec.Mul(mcPrice)
+	
+	// Base: 1% of MC market cap for sell orders
+	minSellPercent := math.LegacyMustNewDecFromStr("0.01") // 1%
+	maxSellPercent := math.LegacyMustNewDecFromStr("0.06") // 6%
+	
+	// As price drops (priceRatio decreases), allow more sell volume
+	// At 100% price: 1% sell volume
+	// At 80% price: 3% sell volume  
+	// At 60% price: 6% sell volume
+	
+	if priceRatio.GTE(math.LegacyOneDec()) {
+		// Price at or above initial: minimum sell volume (1%)
+		return mcMarketCap.Mul(minSellPercent)
+	}
+	
+	if priceRatio.LTE(math.LegacyMustNewDecFromStr("0.6")) {
+		// Price at 60% or below: maximum sell volume (6%)
+		return mcMarketCap.Mul(maxSellPercent)
+	}
+	
+	// Linear interpolation between 1% and 6%
+	// sellPercent = 1% + (1 - priceRatio) * 12.5%
+	// This gives us 1% at 100% price, 3% at 80% price, 6% at 60% price
+	priceDrop := math.LegacyOneDec().Sub(priceRatio)
+	additionalPercent := priceDrop.Mul(math.LegacyMustNewDecFromStr("0.125"))
+	sellPercent := minSellPercent.Add(additionalPercent)
+	
+	if sellPercent.GT(maxSellPercent) {
+		sellPercent = maxSellPercent
+	}
+	
+	return mcMarketCap.Mul(sellPercent)
 }
