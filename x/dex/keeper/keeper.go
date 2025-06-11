@@ -36,6 +36,7 @@ type Keeper struct {
 	VolumeTrackers   collections.Map[uint64, types.VolumeTracker]
 	PriceReferences  collections.Map[uint64, types.PriceReference]
 	LCTotalSupply    collections.Item[math.Int]
+	DynamicRewardState collections.Item[types.DynamicRewardState]
 	
 	// Indexes
 	UserOrders       collections.Map[collections.Pair[string, uint64], uint64] // (user, orderID) -> orderID
@@ -77,9 +78,10 @@ func NewKeeper(
 		LiquidityTiers:  collections.NewMap(sb, types.LiquidityTiersKey, "liquidity_tiers", collections.Uint32Key, codec.CollValue[types.LiquidityTier](cdc)),
 		VolumeTrackers:  collections.NewMap(sb, types.VolumeTrackersKey, "volume_trackers", collections.Uint64Key, codec.CollValue[types.VolumeTracker](cdc)),
 		PriceReferences: collections.NewMap(sb, types.PriceReferencesKey, "price_references", collections.Uint64Key, codec.CollValue[types.PriceReference](cdc)),
-		LCTotalSupply:   collections.NewItem(sb, types.LCTotalSupplyKey, "lc_total_supply", sdk.IntValue),
-		UserOrders:      collections.NewMap(sb, types.UserOrdersKey, "user_orders", collections.PairKeyCodec(collections.StringKey, collections.Uint64Key), collections.Uint64Value),
-		PairOrders:      collections.NewMap(sb, types.PairOrdersKey, "pair_orders", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.Uint64Value),
+		LCTotalSupply:      collections.NewItem(sb, types.LCTotalSupplyKey, "lc_total_supply", sdk.IntValue),
+		DynamicRewardState: collections.NewItem(sb, types.DynamicRewardStateKey, "dynamic_reward_state", codec.CollValue[types.DynamicRewardState](cdc)),
+		UserOrders:         collections.NewMap(sb, types.UserOrdersKey, "user_orders", collections.PairKeyCodec(collections.StringKey, collections.Uint64Key), collections.Uint64Value),
+		PairOrders:         collections.NewMap(sb, types.PairOrdersKey, "pair_orders", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.Uint64Value),
 	}
 
 	schema, err := sb.Build()

@@ -587,7 +587,7 @@ initialize_modules() {
     log_info "Checking DEX module status..."
     local dex_params=$($BINARY query dex params 2>/dev/null | grep base_reward_rate | awk '{print $2}' | tr -d '"')
     
-    if [ "$dex_params" = "222" ]; then
+    if [ "$dex_params" = "222" ] || [ "$dex_params" = "70000" ]; then
         log_info "DEX module already initialized"
         
         # Still verify trading pairs exist

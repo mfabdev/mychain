@@ -83,6 +83,11 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 	
+	// Initialize dynamic reward state
+	if err := k.InitializeDynamicRewardState(ctx); err != nil {
+		return err
+	}
+	
 	return nil
 }
 

@@ -26,7 +26,8 @@ var (
 	LiquidityTiersKey  = collections.NewPrefix(6)  // "liquidity_tiers"
 	VolumeTrackersKey  = collections.NewPrefix(7)  // "volume_trackers"
 	PriceReferencesKey = collections.NewPrefix(8)  // "price_references"
-	LCTotalSupplyKey   = collections.NewPrefix(9)  // "lc_total_supply"
-	UserOrdersKey      = collections.NewPrefix(10) // "user_orders"
-	PairOrdersKey      = collections.NewPrefix(11) // "pair_orders"
+	LCTotalSupplyKey      = collections.NewPrefix(9)  // "lc_total_supply"
+	UserOrdersKey         = collections.NewPrefix(10) // "user_orders"
+	PairOrdersKey         = collections.NewPrefix(11) // "pair_orders"
+	DynamicRewardStateKey = collections.NewPrefix(12) // "dynamic_reward_state"
 )

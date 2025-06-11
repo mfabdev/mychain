@@ -115,3 +115,34 @@ message UserRewardInfo {
   ];
   repeated OrderRewardInfo order_rewards = 4 [(gogoproto.nullable) = false];
 }
+
+// DynamicRewardState tracks the current state of the dynamic reward system
+message DynamicRewardState {
+  // Current annual reward rate (between 7% and 100%)
+  string current_annual_rate = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  // Last update block height
+  int64 last_update_block = 2;
+  // Last update time in unix seconds
+  int64 last_update_time = 3;
+  // Volume snapshots for historical tracking
+  repeated VolumeSnapshot volume_history = 4 [(gogoproto.nullable) = false];
+}
+
+// VolumeSnapshot tracks trading volume at a specific point in time
+message VolumeSnapshot {
+  int64 block_height = 1;
+  int64 timestamp = 2;
+  // Trading volume in the last hour
+  string hourly_volume = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  // Current liquidity depth (total value in order books)
+  string liquidity_depth = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}

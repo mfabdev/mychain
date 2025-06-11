@@ -131,12 +131,11 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	// Use simplified liquidity rewards distribution
-	// This mints and distributes rewards directly to liquidity providers
-	// Similar to how staking rewards work
-	if err := am.keeper.DistributeLiquidityRewards(ctx); err != nil {
+	// Use dynamic liquidity rewards distribution
+	// This system adjusts reward rates between 7-100% based on liquidity targets
+	if err := am.keeper.DistributeDynamicLiquidityRewards(ctx); err != nil {
 		// Log error but don't halt the chain
-		am.keeper.Logger(ctx).Error("failed to distribute liquidity rewards", "error", err)
+		am.keeper.Logger(ctx).Error("failed to distribute dynamic liquidity rewards", "error", err)
 	}
 	
 	// TODO: Fix price update panic

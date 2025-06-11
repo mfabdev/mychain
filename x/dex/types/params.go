@@ -10,7 +10,7 @@ const (
 	DefaultMinOrderAmount           = "1000000"     // 1 USDT minimum
 	DefaultLCInitialSupply          = "100000"      // 100,000 LC
 	DefaultLCExchangeRate           = "0.0001"      // 0.0001 MC per 1 LC
-	DefaultBaseRewardRate           = uint64(222)   // For 7% annual returns in LC tokens
+	DefaultBaseRewardRate           = uint64(70000)  // For 7% annual returns in LC tokens (70000/1000000 = 0.07 = 7%)
 	DefaultLCDenom                  = "liquiditycoin"
 )
 
