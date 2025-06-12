@@ -14,8 +14,9 @@ import (
 // PairConfig holds volume cap configuration for each trading pair
 type PairConfig struct {
 	PairID        uint64
-	BuyVolumeCap  math.LegacyDec
-	SellVolumeCap math.LegacyDec
+	BuyVolumeMin  math.LegacyDec // Minimum buy volume (2% of liquidity target)
+	BuyVolumeCap  math.LegacyDec // Maximum buy volume (12% of liquidity target)
+	SellVolumeCap math.LegacyDec // Sell volume cap (1-6% of MC market cap)
 }
 
 // DistributeCleanRewards distributes rewards based on volume caps and interest rates
@@ -138,8 +139,8 @@ func (k Keeper) processCleanPairRewards(
 		return sellOrders[i].Order.Price.Amount.GT(sellOrders[j].Order.Price.Amount)
 	})
 	
-	// Select eligible orders up to volume caps
-	eligibleBuyOrders, buyLiquidityValue := selectOrdersUpToCap(buyOrders, config.BuyVolumeCap)
+	// Select eligible orders within volume caps (with minimum for buy side)
+	eligibleBuyOrders, buyLiquidityValue := selectOrdersWithinRange(buyOrders, config.BuyVolumeMin, config.BuyVolumeCap)
 	eligibleSellOrders, sellLiquidityValue := selectOrdersUpToCap(sellOrders, config.SellVolumeCap)
 	
 	// Calculate hourly rate
@@ -233,14 +234,16 @@ func (k Keeper) GetCleanPairConfigs(ctx context.Context, priceRatio math.LegacyD
 		{
 			// MC/TUSD pair
 			PairID:        1,
-			BuyVolumeCap:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% of liquidity target
+			BuyVolumeMin:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.02")), // 2% minimum
+			BuyVolumeCap:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% maximum
 			SellVolumeCap: k.calculateSellVolumeCap(ctx, priceRatio, mcSupply),         // 1-6% of MC market cap
 		},
 		{
-			// MC/LC pair
+			// MC/LC pair - IDENTICAL rules to MC/TUSD
 			PairID:        2,
-			BuyVolumeCap:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.15")), // 15% of liquidity target
-			SellVolumeCap: liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.05")), // 5% of liquidity target
+			BuyVolumeMin:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.02")), // 2% minimum
+			BuyVolumeCap:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% maximum
+			SellVolumeCap: k.calculateSellVolumeCap(ctx, priceRatio, mcSupply),         // 1-6% of MC market cap
 		},
 	}
 }

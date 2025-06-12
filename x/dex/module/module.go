@@ -133,12 +133,19 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 func (am AppModule) BeginBlock(ctx context.Context) error {
 	// Use clean liquidity rewards distribution
 	// Each side earns the interest rate (7-100% APR) on their eligible volume
-	// MC/TUSD: Buy cap 12% / Sell cap 1-6% - Creates natural buying pressure
-	// MC/LC: Buy cap 15% / Sell cap 5% - Moderate upward pressure on LC
+	// Both pairs have IDENTICAL rules:
+	// - Buy orders: 2-12% of liquidity target (must reach 2% minimum)
+	// - Sell orders: 1-6% of MC market cap
 	// Price priority ensures best prices get rewards first
 	if err := am.keeper.DistributeCleanRewards(ctx); err != nil {
 		// Log error but don't halt the chain
 		am.keeper.Logger(ctx).Error("failed to distribute clean rewards", "error", err)
+	}
+	
+	// Update LC price (can only go up, requires 72 hours without lower price)
+	if err := am.keeper.UpdateLCPrice(ctx); err != nil {
+		// Log error but don't halt the chain
+		am.keeper.Logger(ctx).Error("failed to update LC price", "error", err)
 	}
 	
 	// TODO: Fix price update panic
