@@ -13,11 +13,9 @@ import (
 
 // PairRewardConfig holds configuration for each trading pair
 type PairRewardConfig struct {
-	PairID          uint64
-	BuyRewardRatio  math.LegacyDec // Percentage of rewards for buy side
-	SellRewardRatio math.LegacyDec // Percentage of rewards for sell side
-	BuyVolumeCap    math.LegacyDec // Volume cap for buy orders
-	SellVolumeCap   math.LegacyDec // Volume cap for sell orders
+	PairID        uint64
+	BuyVolumeCap  math.LegacyDec // Volume cap for buy orders
+	SellVolumeCap math.LegacyDec // Volume cap for sell orders
 }
 
 // DistributeMultiPairPriorityRewards handles rewards for multiple trading pairs with price priority
@@ -152,19 +150,24 @@ func (k Keeper) processPairRewards(
 		return math.ZeroInt(), nil
 	}
 	
-	// Calculate rewards for this pair
+	// Calculate rewards for each side independently
 	hoursPerYear := math.LegacyNewDec(DynamicBlocksPerYear).Quo(math.LegacyNewDec(DynamicBlocksPerHour))
 	hourlyRate := baseRate.Quo(hoursPerYear)
-	totalRewards := totalEligibleLiquidity.Mul(hourlyRate)
-	totalRewardsInt := totalRewards.Mul(math.LegacyNewDec(1000000)).TruncateInt()
+	
+	// Buy side rewards: rate * buy liquidity
+	buyRewards := buyLiquidityValue.Mul(hourlyRate)
+	buyRewardsInt := buyRewards.Mul(math.LegacyNewDec(1000000)).TruncateInt()
+	
+	// Sell side rewards: rate * sell liquidity
+	sellRewards := sellLiquidityValue.Mul(hourlyRate)
+	sellRewardsInt := sellRewards.Mul(math.LegacyNewDec(1000000)).TruncateInt()
+	
+	// Total rewards to mint
+	totalRewardsInt := buyRewardsInt.Add(sellRewardsInt)
 	
 	if totalRewardsInt.IsZero() {
 		return math.ZeroInt(), nil
 	}
-	
-	// Allocate rewards based on configured ratios
-	buyRewardsInt := math.LegacyNewDecFromInt(totalRewardsInt).Mul(config.BuyRewardRatio).TruncateInt()
-	sellRewardsInt := math.LegacyNewDecFromInt(totalRewardsInt).Mul(config.SellRewardRatio).TruncateInt()
 	
 	// Mint rewards
 	coins := sdk.NewCoins(sdk.NewCoin("ulc", totalRewardsInt))
@@ -239,16 +242,16 @@ func (k Keeper) GetPairRewardConfigs(ctx context.Context, priceRatio math.Legacy
 		{
 			// MC/TUSD pair - Primary directional market
 			PairID:          1,
-			BuyRewardRatio:  math.LegacyMustNewDecFromStr("0.9"),  // 90% to buy side
-			SellRewardRatio: math.LegacyMustNewDecFromStr("0.1"),  // 10% to sell side
+			BuyRewardRatio:  math.LegacyMustNewDecFromStr("1.0"),  // Full rate for buy side
+			SellRewardRatio: math.LegacyMustNewDecFromStr("1.0"),  // Full rate for sell side
 			BuyVolumeCap:    liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% of liquidity target
 			SellVolumeCap:   k.calculateSellVolumeCap(ctx, priceRatio, mcSupply), // 1-6% based on conditions
 		},
 		{
 			// MC/LC pair - Secondary market
 			PairID:          2,
-			BuyRewardRatio:  math.LegacyMustNewDecFromStr("0.8"),  // 80% to buy side
-			SellRewardRatio: math.LegacyMustNewDecFromStr("0.2"),  // 20% to sell side
+			BuyRewardRatio:  math.LegacyMustNewDecFromStr("1.0"),  // Full rate for buy side
+			SellRewardRatio: math.LegacyMustNewDecFromStr("1.0"),  // Full rate for sell side
 			BuyVolumeCap:    liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.15")), // 15% of target
 			SellVolumeCap:   liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.05")), // 5% of target
 		},

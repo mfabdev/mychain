@@ -131,14 +131,14 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	// Use multi-pair price-priority liquidity rewards distribution
-	// This system rewards the best-priced orders first, up to dynamic volume caps
-	// MC/TUSD: Buy 90% / Sell 10% - Strong upward pressure on MC
-	// MC/LC: Buy 80% / Sell 20% - Moderate upward pressure on LC
-	// Both pairs reward highest prices first, pushing markets higher
-	if err := am.keeper.DistributeMultiPairPriorityRewards(ctx); err != nil {
+	// Use clean liquidity rewards distribution
+	// Each side earns the interest rate (7-100% APR) on their eligible volume
+	// MC/TUSD: Buy cap 12% / Sell cap 1-6% - Creates natural buying pressure
+	// MC/LC: Buy cap 15% / Sell cap 5% - Moderate upward pressure on LC
+	// Price priority ensures best prices get rewards first
+	if err := am.keeper.DistributeCleanRewards(ctx); err != nil {
 		// Log error but don't halt the chain
-		am.keeper.Logger(ctx).Error("failed to distribute multi-pair priority rewards", "error", err)
+		am.keeper.Logger(ctx).Error("failed to distribute clean rewards", "error", err)
 	}
 	
 	// TODO: Fix price update panic
