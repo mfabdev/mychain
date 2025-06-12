@@ -1,20 +1,28 @@
 # DEX Final Trading Rules
 
-## Reward Rules (IDENTICAL for both MC/TUSD and MC/LC)
+## Reward Rules
 
-### Buy Orders
+### Buy Orders (IDENTICAL for both pairs)
 - **Volume Range**: 2% to 12% of liquidity target
 - **Minimum Requirement**: Must reach at least 2% to qualify for ANY rewards
 - **Interest Rate**: 7-100% APR on eligible volume
 - **Price Priority**: Highest bids qualify first
 
-### Sell Orders
-- **Volume Cap**: 1% to 6% of MC market cap
+### Sell Orders (Different market cap reference)
+
+**MC/TUSD Pair:**
+- **Volume Cap**: 1% to 6% of **MC market cap**
   - 1% when MC at full price
   - 3% when MC at 80% of initial price
   - 6% when MC at 60% of initial price
-- **Interest Rate**: 7-100% APR on eligible volume
-- **Price Priority**: Highest asks qualify first
+
+**MC/LC Pair:**
+- **Volume Cap**: 1% to 6% of **LC market cap**
+  - 1% when LC at full price
+  - 3% when LC at 80% of initial price
+  - 6% when LC at 60% of initial price
+
+Both use same interest rate (7-100% APR) and price priority (highest asks first)
 
 ## How Buy-Side Minimum Works
 

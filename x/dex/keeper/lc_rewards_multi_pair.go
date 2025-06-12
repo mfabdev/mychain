@@ -312,3 +312,47 @@ func (k Keeper) calculateSellVolumeCap(ctx context.Context, priceRatio math.Lega
 	
 	return mcMarketCap.Mul(sellPercent)
 }
+
+// calculateLCSellVolumeCap calculates the sell-side volume cap for LC (1-6% of LC market cap)
+func (k Keeper) calculateLCSellVolumeCap(ctx context.Context, priceRatio math.LegacyDec) math.LegacyDec {
+	// Get LC total supply (should be 100,000 LC = 100,000,000,000 ulc)
+	lcSupply, err := k.LCTotalSupply.Get(ctx)
+	if err != nil || lcSupply.IsZero() {
+		// Default to 100,000 LC if not set
+		lcSupply = math.NewInt(100000000000)
+	}
+	
+	// Get LC price in MC terms (starts at 0.0001 MC per LC)
+	lcPrice := k.GetLCReferencePrice(ctx)
+	
+	// Get MC price in TUSD
+	mcPrice := k.GetCurrentMarketPrice(ctx, 1)
+	
+	// Calculate LC market cap in TUSD
+	// LC market cap = LC supply × LC price in MC × MC price in TUSD
+	lcSupplyDec := math.LegacyNewDecFromInt(lcSupply).Quo(math.LegacyNewDec(1000000))
+	lcMarketCap := lcSupplyDec.Mul(lcPrice).Mul(mcPrice)
+	
+	// Same logic as MC: 1-6% based on price ratio
+	minSellPercent := math.LegacyMustNewDecFromStr("0.01") // 1%
+	maxSellPercent := math.LegacyMustNewDecFromStr("0.06") // 6%
+	
+	if priceRatio.GTE(math.LegacyOneDec()) {
+		return lcMarketCap.Mul(minSellPercent)
+	}
+	
+	if priceRatio.LTE(math.LegacyMustNewDecFromStr("0.6")) {
+		return lcMarketCap.Mul(maxSellPercent)
+	}
+	
+	// Linear interpolation
+	priceDrop := math.LegacyOneDec().Sub(priceRatio)
+	additionalPercent := priceDrop.Mul(math.LegacyMustNewDecFromStr("0.125"))
+	sellPercent := minSellPercent.Add(additionalPercent)
+	
+	if sellPercent.GT(maxSellPercent) {
+		sellPercent = maxSellPercent
+	}
+	
+	return lcMarketCap.Mul(sellPercent)
+}

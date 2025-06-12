@@ -239,11 +239,11 @@ func (k Keeper) GetCleanPairConfigs(ctx context.Context, priceRatio math.LegacyD
 			SellVolumeCap: k.calculateSellVolumeCap(ctx, priceRatio, mcSupply),         // 1-6% of MC market cap
 		},
 		{
-			// MC/LC pair - IDENTICAL rules to MC/TUSD
+			// MC/LC pair - IDENTICAL rules to MC/TUSD (but using LC market cap)
 			PairID:        2,
 			BuyVolumeMin:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.02")), // 2% minimum
 			BuyVolumeCap:  liquidityTargetDec.Mul(math.LegacyMustNewDecFromStr("0.12")), // 12% maximum
-			SellVolumeCap: k.calculateSellVolumeCap(ctx, priceRatio, mcSupply),         // 1-6% of MC market cap
+			SellVolumeCap: k.calculateLCSellVolumeCap(ctx, priceRatio),                  // 1-6% of LC market cap
 		},
 	}
 }
