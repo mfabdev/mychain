@@ -25,8 +25,8 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 	}
 	
 	// Validate amount
-	if msg.Amount.Amount.LT(params.MinOrderAmount) {
-		return nil, errorsmod.Wrapf(types.ErrInvalidAmount, "amount %s is less than minimum %s", msg.Amount.Amount, params.MinOrderAmount)
+	if msg.Amount.Amount.LT(params.GetMinOrderAmountAsInt()) {
+		return nil, errorsmod.Wrapf(types.ErrInvalidAmount, "amount %s is less than minimum %s", msg.Amount.Amount, params.GetMinOrderAmountAsInt())
 	}
 	
 	// Validate price

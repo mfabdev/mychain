@@ -14,6 +14,17 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 	
+	// Debug log params before setting
+	k.Logger(ctx).Info("Setting DEX params in InitGenesis",
+		"base_transfer_fee", genState.Params.BaseTransferFeePercentage,
+		"min_order_amount", genState.Params.MinOrderAmount,
+		"lc_initial_supply", genState.Params.LcInitialSupply,
+		"lc_exchange_rate", genState.Params.LcExchangeRate,
+		"base_reward_rate", genState.Params.BaseRewardRate,
+		"lc_denom", genState.Params.LcDenom,
+		"fees_enabled", genState.Params.FeesEnabled,
+		"all_fields_count", "22")
+	
 	if err := k.Params.Set(ctx, genState.Params); err != nil {
 		return err
 	}
@@ -83,10 +94,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 	
-	// Initialize dynamic reward state
-	if err := k.InitializeDynamicRewardState(ctx); err != nil {
-		return err
-	}
+	// Dynamic reward state is initialized automatically when needed
 	
 	return nil
 }

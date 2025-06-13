@@ -146,3 +146,81 @@ message VolumeSnapshot {
     (gogoproto.nullable) = false
   ];
 }
+
+// FeeEstimate provides fee calculation details for an order
+message FeeEstimate {
+  string order_value = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string maker_fee = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string taker_fee = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string sell_fee = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string liquidity_multiplier = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string available_liquidity = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string market_impact = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// OrderBookDepth provides liquidity depth information
+message OrderBookDepth {
+  uint64 pair_id = 1;
+  repeated PriceLevel bids = 2;
+  repeated PriceLevel asks = 3;
+}
+
+// PriceLevel represents liquidity at a specific price
+message PriceLevel {
+  string price = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string amount = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// MarketDepthAnalysis provides liquidity analysis at different order sizes
+message MarketDepthAnalysis {
+  uint64 pair_id = 1;
+  bool is_buy_order = 2;
+  repeated LiquidityLevel price_levels = 3 [(gogoproto.nullable) = false];
+}
+
+// LiquidityLevel represents liquidity impact at different order sizes
+message LiquidityLevel {
+  string order_size = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string available_liquidity = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string liquidity_multiplier = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string effective_fee_rate = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}

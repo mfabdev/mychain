@@ -142,7 +142,7 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 				eligibleBuyValue = eligibleBuyValue.Add(orderValue)
 				
 				// Calculate rewards for this order
-				orderRewards := calculateOrderRewards(orderValue, params.BaseRewardRate)
+				orderRewards := calculateOrderRewards(orderValue, params.GetBaseRewardRateAsInt())
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()
@@ -168,7 +168,7 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 				eligibleSellValue = eligibleSellValue.Add(orderValue)
 				
 				// Calculate rewards for this order
-				orderRewards := calculateOrderRewards(orderValue, params.BaseRewardRate)
+				orderRewards := calculateOrderRewards(orderValue, params.GetBaseRewardRateAsInt())
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()

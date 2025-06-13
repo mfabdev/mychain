@@ -32,6 +32,6 @@ func (q queryServer) LCInfo(ctx context.Context, req *types.QueryLCInfoRequest) 
 	return &types.QueryLCInfoResponse{
 		TotalSupply:    lcSupply,
 		ExchangeRate:   exchangeRate,
-		BaseRewardRate: params.BaseRewardRate,
+		BaseRewardRate: params.GetBaseRewardRateAsInt(),
 	}, nil
 }

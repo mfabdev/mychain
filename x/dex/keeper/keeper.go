@@ -43,8 +43,10 @@ type Keeper struct {
 	PairOrders       collections.Map[collections.Pair[uint64, uint64], uint64] // (pairID, orderID) -> orderID
 	
 	// Expected keepers
+	authKeeper types.AuthKeeper
 	bankKeeper types.BankKeeper
 	transactionKeeper types.TransactionKeeper
+	distrKeeper types.DistributionKeeper
 }
 
 func NewKeeper(
@@ -52,8 +54,10 @@ func NewKeeper(
 	cdc codec.Codec,
 	addressCodec address.Codec,
 	authority []byte,
+	authKeeper types.AuthKeeper,
 	bankKeeper types.BankKeeper,
 	transactionKeeper types.TransactionKeeper,
+	distrKeeper types.DistributionKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -66,8 +70,10 @@ func NewKeeper(
 		cdc:          cdc,
 		addressCodec: addressCodec,
 		authority:    authority,
+		authKeeper:   authKeeper,
 		bankKeeper:   bankKeeper,
 		transactionKeeper: transactionKeeper,
+		distrKeeper:  distrKeeper,
 
 		Params:          collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		NextOrderID:     collections.NewSequence(sb, types.NextOrderIDKey, "next_order_id"),

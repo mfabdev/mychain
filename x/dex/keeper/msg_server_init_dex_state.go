@@ -18,6 +18,17 @@ func (k msgServer) InitDexState(goCtx context.Context, msg *types.MsgInitDexStat
 	// In production, this should be restricted to governance
 	// TODO: Implement proper governance integration
 
+	// First check if parameters need updating
+	params, paramsErr := k.Params.Get(ctx)
+	needsParamUpdate := false
+	if paramsErr != nil {
+		// No params exist, need to set them
+		needsParamUpdate = true
+	} else if params.GetBaseRewardRateAsInt().IsZero() || params.LcDenom == "" || params.LcDenom == "liquiditycoin" {
+		// Parameters are incorrect, need to update
+		needsParamUpdate = true
+	}
+
 	// Check if DEX is already initialized by checking if any trading pairs exist
 	var initialized bool
 	err := k.TradingPairs.Walk(ctx, nil, func(id uint64, pair types.TradingPair) (bool, error) {
@@ -27,16 +38,6 @@ func (k msgServer) InitDexState(goCtx context.Context, msg *types.MsgInitDexStat
 	
 	if err != nil {
 		return nil, err
-	}
-	
-	// Check if parameters need updating
-	params, paramsErr := k.Params.Get(ctx)
-	needsParamUpdate := false
-	if paramsErr == nil {
-		// Check if reward rate is zero (bug from earlier initialization)
-		if params.BaseRewardRate.IsZero() {
-			needsParamUpdate = true
-		}
 	}
 	
 	// If DEX is already initialized with trading pairs and params are correct
@@ -153,19 +154,19 @@ func (k msgServer) InitDexState(goCtx context.Context, msg *types.MsgInitDexStat
 		return nil, err
 	}
 
-	// Always update parameters when initializing to ensure correct values
-	// Initialize DEX parameters with default values
-	defaultParams := types.Params{
-		BaseTransferFeePercentage: math.LegacyMustNewDecFromStr("0.005"),
-		MinOrderAmount:            math.NewInt(1000000),
-		LcInitialSupply:           math.NewInt(100000),
-		LcExchangeRate:            math.LegacyMustNewDecFromStr("0.0001"),
-		BaseRewardRate:            math.NewInt(222), // 7% annual returns
-		LcDenom:                   "ulc",
-	}
-	
-	if err := k.Params.Set(ctx, defaultParams); err != nil {
-		return nil, err
+	// Only update parameters if they're not properly set
+	if needsParamUpdate && !initialized {
+		// Use the full default parameters which includes all fee settings
+		defaultParams := types.DefaultParams()
+		
+		// Override specific values if needed
+		defaultParams.BaseRewardRate = math.NewIntFromUint64(222) // 7% annual returns
+		defaultParams.FeesEnabled = true // Enable fees by default
+		defaultParams.LcDenom = "ulc" // Ensure correct denomination
+		
+		if err := k.Params.Set(ctx, defaultParams); err != nil {
+			return nil, err
+		}
 	}
 
 	// Emit event

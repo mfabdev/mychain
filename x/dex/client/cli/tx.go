@@ -236,15 +236,8 @@ Example:
 			lcInitialSupply, _ := cmd.Flags().GetString("lc-initial-supply")
 			lcExchangeRate, _ := cmd.Flags().GetString("lc-exchange-rate")
 
-			// Create params
-			params := types.Params{
-				BaseRewardRate:            math.NewInt(222), // Default to 222 for 7% annual
-				BaseTransferFeePercentage: math.LegacyMustNewDecFromStr("0.005"),
-				MinOrderAmount:            math.NewInt(1000000),
-				LcInitialSupply:           math.NewInt(100000),
-				LcExchangeRate:            math.LegacyMustNewDecFromStr("0.0001"),
-				LcDenom:                   "ulc",
-			}
+			// Start with default params to get all fee settings
+			params := types.DefaultParams()
 
 			// Override with provided flags
 			if baseRewardRate != "" {
@@ -256,7 +249,11 @@ Example:
 			}
 
 			if baseFeePercentage != "" {
-				params.BaseTransferFeePercentage = math.LegacyMustNewDecFromStr(baseFeePercentage)
+				fee, err := math.LegacyNewDecFromStr(baseFeePercentage)
+				if err != nil {
+					return fmt.Errorf("invalid base fee percentage: %w", err)
+				}
+				params.BaseTransferFeePercentage = fee
 			}
 
 			if minOrderAmount != "" {
@@ -276,7 +273,69 @@ Example:
 			}
 
 			if lcExchangeRate != "" {
-				params.LcExchangeRate = math.LegacyMustNewDecFromStr(lcExchangeRate)
+				rate, err := math.LegacyNewDecFromStr(lcExchangeRate)
+				if err != nil {
+					return fmt.Errorf("invalid LC exchange rate: %w", err)
+				}
+				params.LcExchangeRate = rate
+			}
+
+			// Handle fee parameters
+			feesEnabled, _ := cmd.Flags().GetBool("fees-enabled")
+			params.FeesEnabled = feesEnabled
+
+			baseMakerFee, _ := cmd.Flags().GetString("base-maker-fee")
+			if baseMakerFee != "" {
+				fee, err := math.LegacyNewDecFromStr(baseMakerFee)
+				if err != nil {
+					return fmt.Errorf("invalid base maker fee: %w", err)
+				}
+				params.BaseMakerFeePercentage = fee
+			}
+
+			baseTakerFee, _ := cmd.Flags().GetString("base-taker-fee")
+			if baseTakerFee != "" {
+				fee, err := math.LegacyNewDecFromStr(baseTakerFee)
+				if err != nil {
+					return fmt.Errorf("invalid base taker fee: %w", err)
+				}
+				params.BaseTakerFeePercentage = fee
+			}
+
+			baseCancelFee, _ := cmd.Flags().GetString("base-cancel-fee")
+			if baseCancelFee != "" {
+				fee, err := math.LegacyNewDecFromStr(baseCancelFee)
+				if err != nil {
+					return fmt.Errorf("invalid base cancel fee: %w", err)
+				}
+				params.BaseCancelFeePercentage = fee
+			}
+
+			baseSellFee, _ := cmd.Flags().GetString("base-sell-fee")
+			if baseSellFee != "" {
+				fee, err := math.LegacyNewDecFromStr(baseSellFee)
+				if err != nil {
+					return fmt.Errorf("invalid base sell fee: %w", err)
+				}
+				params.BaseSellFeePercentage = fee
+			}
+
+			feeIncrement, _ := cmd.Flags().GetString("fee-increment")
+			if feeIncrement != "" {
+				inc, err := math.LegacyNewDecFromStr(feeIncrement)
+				if err != nil {
+					return fmt.Errorf("invalid fee increment: %w", err)
+				}
+				params.FeeIncrementPercentage = inc
+			}
+
+			priceThreshold, _ := cmd.Flags().GetString("price-threshold")
+			if priceThreshold != "" {
+				threshold, err := math.LegacyNewDecFromStr(priceThreshold)
+				if err != nil {
+					return fmt.Errorf("invalid price threshold: %w", err)
+				}
+				params.PriceThresholdPercentage = threshold
 			}
 
 			msg := &types.MsgUpdateDexParams{
@@ -293,6 +352,13 @@ Example:
 	cmd.Flags().String("min-order-amount", "", "Minimum order amount in smallest units")
 	cmd.Flags().String("lc-initial-supply", "", "LC initial supply")
 	cmd.Flags().String("lc-exchange-rate", "", "LC exchange rate")
+	cmd.Flags().Bool("fees-enabled", true, "Enable or disable fees")
+	cmd.Flags().String("base-maker-fee", "", "Base maker fee percentage (e.g., 0.0001 for 0.01%)")
+	cmd.Flags().String("base-taker-fee", "", "Base taker fee percentage (e.g., 0.0005 for 0.05%)")
+	cmd.Flags().String("base-cancel-fee", "", "Base cancel fee percentage (e.g., 0.0001 for 0.01%)")
+	cmd.Flags().String("base-sell-fee", "", "Base sell fee percentage (e.g., 0.0001 for 0.01%)")
+	cmd.Flags().String("fee-increment", "", "Fee increment per 10bp drop (e.g., 0.0001 for 0.01%)")
+	cmd.Flags().String("price-threshold", "", "Price threshold for dynamic fees (e.g., 0.98 for 98%)")
 
 	flags.AddTxFlagsToCmd(cmd)
 

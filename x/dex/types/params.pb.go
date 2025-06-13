@@ -39,6 +39,38 @@ type Params struct {
 	BaseRewardRate cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=base_reward_rate,json=baseRewardRate,proto3,customtype=cosmossdk.io/math.Int" json:"base_reward_rate"`
 	// lc_denom is the denomination for LiquidityCoin
 	LcDenom string `protobuf:"bytes,6,opt,name=lc_denom,json=lcDenom,proto3" json:"lc_denom,omitempty"`
+	// base_maker_fee_percentage is the flat maker fee (e.g., 0.0001 for 0.01%)
+	BaseMakerFeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=base_maker_fee_percentage,json=baseMakerFeePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"base_maker_fee_percentage"`
+	// base_taker_fee_percentage is the base taker fee (e.g., 0.0005 for 0.05%)
+	BaseTakerFeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,8,opt,name=base_taker_fee_percentage,json=baseTakerFeePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"base_taker_fee_percentage"`
+	// base_cancel_fee_percentage is the flat cancel fee (e.g., 0.0001 for 0.01%)
+	BaseCancelFeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,9,opt,name=base_cancel_fee_percentage,json=baseCancelFeePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"base_cancel_fee_percentage"`
+	// base_sell_fee_percentage is the base sell fee (e.g., 0.0001 for 0.01%)
+	BaseSellFeePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,10,opt,name=base_sell_fee_percentage,json=baseSellFeePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"base_sell_fee_percentage"`
+	// fee_increment_percentage is the fee increase per 10bp drop below 98% (e.g., 0.0001 for 0.01%)
+	FeeIncrementPercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,11,opt,name=fee_increment_percentage,json=feeIncrementPercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"fee_increment_percentage"`
+	// price_threshold_percentage is the price threshold for dynamic fees (e.g., 0.98 for 98%)
+	PriceThresholdPercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,12,opt,name=price_threshold_percentage,json=priceThresholdPercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"price_threshold_percentage"`
+	// min_transfer_fee is the minimum transfer fee in ulc
+	MinTransferFee cosmossdk_io_math.Int `protobuf:"bytes,13,opt,name=min_transfer_fee,json=minTransferFee,proto3,customtype=cosmossdk.io/math.Int" json:"min_transfer_fee"`
+	// min_maker_fee is the minimum maker fee in ulc
+	MinMakerFee cosmossdk_io_math.Int `protobuf:"bytes,14,opt,name=min_maker_fee,json=minMakerFee,proto3,customtype=cosmossdk.io/math.Int" json:"min_maker_fee"`
+	// min_taker_fee is the minimum taker fee in ulc
+	MinTakerFee cosmossdk_io_math.Int `protobuf:"bytes,15,opt,name=min_taker_fee,json=minTakerFee,proto3,customtype=cosmossdk.io/math.Int" json:"min_taker_fee"`
+	// min_cancel_fee is the minimum cancel fee in ulc
+	MinCancelFee cosmossdk_io_math.Int `protobuf:"bytes,16,opt,name=min_cancel_fee,json=minCancelFee,proto3,customtype=cosmossdk.io/math.Int" json:"min_cancel_fee"`
+	// min_sell_fee is the minimum sell fee in ulc
+	MinSellFee cosmossdk_io_math.Int `protobuf:"bytes,17,opt,name=min_sell_fee,json=minSellFee,proto3,customtype=cosmossdk.io/math.Int" json:"min_sell_fee"`
+	// fees_enabled determines if fees are active
+	FeesEnabled bool `protobuf:"varint,18,opt,name=fees_enabled,json=feesEnabled,proto3" json:"fees_enabled,omitempty"`
+	// liquidity_threshold is the threshold for liquidity-based dynamic fees
+	LiquidityThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,19,opt,name=liquidity_threshold,json=liquidityThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"liquidity_threshold"`
+	// price_multiplier_alpha is the multiplier for price-based dynamic fees
+	PriceMultiplierAlpha cosmossdk_io_math.LegacyDec `protobuf:"bytes,20,opt,name=price_multiplier_alpha,json=priceMultiplierAlpha,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"price_multiplier_alpha"`
+	// max_liquidity_multiplier is the maximum multiplier for liquidity-based fees
+	MaxLiquidityMultiplier cosmossdk_io_math.LegacyDec `protobuf:"bytes,21,opt,name=max_liquidity_multiplier,json=maxLiquidityMultiplier,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"max_liquidity_multiplier"`
+	// burn_rate_percentage is the percentage of fees to burn
+	BurnRatePercentage cosmossdk_io_math.LegacyDec `protobuf:"bytes,22,opt,name=burn_rate_percentage,json=burnRatePercentage,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"burn_rate_percentage"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -81,6 +113,13 @@ func (m *Params) GetLcDenom() string {
 	return ""
 }
 
+func (m *Params) GetFeesEnabled() bool {
+	if m != nil {
+		return m.FeesEnabled
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*Params)(nil), "mychain.dex.v1.Params")
 }
@@ -88,32 +127,51 @@ func init() {
 func init() { proto.RegisterFile("mychain/dex/v1/params.proto", fileDescriptor_dc882712c716f3a1) }
 
 var fileDescriptor_dc882712c716f3a1 = []byte{
-	// 393 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xbf, 0xae, 0xd3, 0x30,
-	0x14, 0x87, 0x13, 0x2e, 0x14, 0xc8, 0x50, 0xda, 0x50, 0xa4, 0xb4, 0xa5, 0x29, 0x82, 0x05, 0x21,
-	0x91, 0xa8, 0x62, 0x63, 0xa3, 0x2a, 0xa0, 0x4a, 0x20, 0xaa, 0xc0, 0xc4, 0x62, 0xb9, 0xce, 0x69,
-	0x6a, 0xe1, 0x3f, 0x91, 0xed, 0x96, 0xe4, 0x15, 0x98, 0x78, 0x04, 0x1e, 0x81, 0xc7, 0xe8, 0xd8,
-	0x81, 0x01, 0x31, 0x54, 0xa8, 0x1d, 0xe0, 0x31, 0x50, 0x9c, 0x80, 0x84, 0xee, 0xd2, 0xc5, 0x3a,
-	0xb6, 0xcf, 0xf7, 0x49, 0xc7, 0xfe, 0x79, 0x43, 0x5e, 0x92, 0x35, 0xa6, 0x22, 0x4e, 0xa1, 0x88,
-	0xb7, 0x93, 0x38, 0xc7, 0x0a, 0x73, 0x1d, 0xe5, 0x4a, 0x1a, 0xe9, 0xb7, 0x9b, 0xcb, 0x28, 0x85,
-	0x22, 0xda, 0x4e, 0x06, 0x5d, 0xcc, 0xa9, 0x90, 0xb1, 0x5d, 0xeb, 0x96, 0x41, 0x2f, 0x93, 0x99,
-	0xb4, 0x65, 0x5c, 0x55, 0xf5, 0xe9, 0xfd, 0x6f, 0x17, 0x5e, 0x6b, 0x61, 0x4d, 0x7e, 0xea, 0xdd,
-	0x5d, 0x62, 0x0d, 0xc8, 0x28, 0x2c, 0xf4, 0x0a, 0x14, 0x5a, 0x01, 0xa0, 0x1c, 0x14, 0x01, 0x61,
-	0x70, 0x06, 0x81, 0x7b, 0xcf, 0x7d, 0x78, 0x73, 0xfa, 0x60, 0x77, 0x18, 0x3b, 0x3f, 0x0e, 0xe3,
-	0x21, 0x91, 0x9a, 0x4b, 0xad, 0xd3, 0x0f, 0x11, 0x95, 0x31, 0xc7, 0x66, 0x1d, 0xbd, 0x82, 0x0c,
-	0x93, 0x72, 0x06, 0x24, 0xe9, 0x57, 0xa2, 0x77, 0x8d, 0xe7, 0x05, 0xc0, 0xe2, 0x9f, 0xc5, 0x7f,
-	0xe9, 0x75, 0x38, 0x15, 0x48, 0xaa, 0x14, 0x14, 0xc2, 0x5c, 0x6e, 0x84, 0x09, 0xae, 0x58, 0xf3,
-	0xa8, 0x31, 0xdf, 0xb9, 0x6c, 0x9e, 0x0b, 0x93, 0xb4, 0x39, 0x15, 0x6f, 0x2a, 0xea, 0x99, 0x85,
-	0xfc, 0xb9, 0xd7, 0x65, 0x04, 0x51, 0x41, 0x0d, 0xc5, 0x0c, 0xe9, 0x4d, 0x9e, 0xb3, 0x32, 0xb8,
-	0x38, 0xc7, 0x74, 0x8b, 0x91, 0x79, 0x8d, 0xbd, 0xb5, 0x94, 0xff, 0xda, 0xeb, 0x30, 0x82, 0xa0,
-	0x20, 0x6b, 0x2c, 0x32, 0x40, 0x0a, 0x1b, 0x08, 0xae, 0x9e, 0x3f, 0x6d, 0x9b, 0x91, 0xe7, 0x0d,
-	0x9b, 0x60, 0x63, 0x47, 0xb4, 0x0f, 0xa9, 0xe0, 0x23, 0x56, 0x69, 0xad, 0xbb, 0x76, 0xd6, 0x88,
-	0x15, 0x96, 0x58, 0xca, 0x8a, 0xfa, 0xde, 0x0d, 0x46, 0x50, 0x0a, 0x42, 0xf2, 0xa0, 0x55, 0x09,
-	0x92, 0xeb, 0x8c, 0xcc, 0xaa, 0xed, 0xd3, 0xd1, 0xef, 0x2f, 0x63, 0xf7, 0xd3, 0xaf, 0xaf, 0x8f,
-	0x7a, 0x7f, 0x63, 0x51, 0xd8, 0x60, 0xd4, 0x7f, 0x39, 0x7d, 0xbc, 0x3b, 0x86, 0xee, 0xfe, 0x18,
-	0xba, 0x3f, 0x8f, 0xa1, 0xfb, 0xf9, 0x14, 0x3a, 0xfb, 0x53, 0xe8, 0x7c, 0x3f, 0x85, 0xce, 0xfb,
-	0xdb, 0xff, 0xf7, 0x9b, 0x32, 0x07, 0xbd, 0x6c, 0xd9, 0x30, 0x3c, 0xf9, 0x13, 0x00, 0x00, 0xff,
-	0xff, 0xae, 0xc3, 0x51, 0xad, 0x64, 0x02, 0x00, 0x00,
+	// 704 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0xd5, 0x4d, 0x6f, 0xd3, 0x3e,
+	0x1c, 0x07, 0xf0, 0xf6, 0xff, 0xb0, 0x07, 0x6f, 0xeb, 0x36, 0xaf, 0x1b, 0x5e, 0xc7, 0xba, 0x01,
+	0x97, 0x09, 0x89, 0x56, 0x13, 0x37, 0x2e, 0x68, 0x4f, 0xa0, 0x4a, 0x9b, 0x98, 0xba, 0x72, 0x00,
+	0x01, 0xc1, 0x75, 0x7e, 0x6d, 0xad, 0xd9, 0x4e, 0x48, 0xdc, 0xd1, 0xbe, 0x05, 0x4e, 0xbc, 0x04,
+	0x5e, 0x02, 0x2f, 0x63, 0xc7, 0x1d, 0x11, 0x87, 0x09, 0x6d, 0x07, 0x78, 0x03, 0xdc, 0x91, 0xdd,
+	0x26, 0xed, 0x56, 0x0e, 0xee, 0xa5, 0x4a, 0xd2, 0xfc, 0x3e, 0xbf, 0xc4, 0xfe, 0x3a, 0x46, 0x6b,
+	0xb2, 0xcb, 0x5a, 0x94, 0xab, 0xb2, 0x0f, 0x9d, 0xf2, 0xd9, 0x76, 0x39, 0xa4, 0x11, 0x95, 0x71,
+	0x29, 0x8c, 0x02, 0x1d, 0xe0, 0x5c, 0xff, 0xcf, 0x92, 0x0f, 0x9d, 0xd2, 0xd9, 0x76, 0x61, 0x91,
+	0x4a, 0xae, 0x82, 0xb2, 0xfd, 0xed, 0xdd, 0x52, 0xc8, 0x37, 0x83, 0x66, 0x60, 0x0f, 0xcb, 0xe6,
+	0xa8, 0x77, 0xf5, 0xfe, 0xef, 0x39, 0x34, 0x71, 0x6c, 0x25, 0xec, 0xa3, 0xbb, 0x75, 0x1a, 0x83,
+	0xa7, 0x23, 0xaa, 0xe2, 0x06, 0x44, 0x5e, 0x03, 0xc0, 0x0b, 0x21, 0x62, 0xa0, 0x34, 0x6d, 0x02,
+	0xc9, 0x6e, 0x66, 0xb7, 0xa6, 0x77, 0x1f, 0x9c, 0x5f, 0x6e, 0x64, 0xbe, 0x5f, 0x6e, 0xac, 0xb1,
+	0x20, 0x96, 0x41, 0x1c, 0xfb, 0xa7, 0x25, 0x1e, 0x94, 0x25, 0xd5, 0xad, 0xd2, 0x21, 0x34, 0x29,
+	0xeb, 0xee, 0x03, 0xab, 0xae, 0x1a, 0xa8, 0xd6, 0x77, 0x9e, 0x01, 0x1c, 0xa7, 0x0a, 0x7e, 0x8e,
+	0x16, 0x24, 0x57, 0x5e, 0x10, 0xf9, 0x10, 0x79, 0x54, 0x06, 0x6d, 0xa5, 0xc9, 0x3f, 0x56, 0x5e,
+	0xef, 0xcb, 0xcb, 0xa3, 0x72, 0x45, 0xe9, 0x6a, 0x4e, 0x72, 0xf5, 0xc2, 0x54, 0xed, 0xd8, 0x22,
+	0x5c, 0x41, 0x8b, 0x82, 0x79, 0x5c, 0x71, 0xcd, 0xa9, 0xf0, 0xe2, 0x76, 0x18, 0x8a, 0x2e, 0xf9,
+	0xd7, 0x45, 0x9a, 0x17, 0xac, 0xd2, 0x2b, 0x3b, 0xb1, 0x55, 0xf8, 0x08, 0x2d, 0x08, 0xe6, 0x41,
+	0x87, 0xb5, 0xa8, 0x6a, 0x82, 0x17, 0x51, 0x0d, 0xe4, 0x3f, 0xf7, 0xb7, 0xcd, 0x09, 0x76, 0xd0,
+	0xaf, 0xad, 0x52, 0x6d, 0x5f, 0xd1, 0x0e, 0x64, 0x04, 0x1f, 0x69, 0xe4, 0xf7, 0xb8, 0xff, 0x9d,
+	0x5e, 0xd1, 0x94, 0x55, 0x6d, 0x95, 0x85, 0x56, 0xd1, 0x94, 0x60, 0x9e, 0x0f, 0x2a, 0x90, 0x64,
+	0xc2, 0x00, 0xd5, 0x49, 0xc1, 0xf6, 0xcd, 0x29, 0x7e, 0x87, 0xec, 0x18, 0x7b, 0x92, 0x9e, 0x8e,
+	0xce, 0xd4, 0xa4, 0xfb, 0xb3, 0xaf, 0x18, 0xe5, 0xc8, 0x20, 0x37, 0xa7, 0x29, 0xf1, 0xf5, 0xdf,
+	0xfc, 0xa9, 0x31, 0xfd, 0xda, 0xa8, 0xff, 0x1e, 0x15, 0xac, 0xcf, 0xa8, 0x62, 0x20, 0x6e, 0x37,
+	0x98, 0x76, 0x6f, 0x70, 0xc7, 0x30, 0x7b, 0x56, 0xb9, 0xd9, 0xe1, 0x0d, 0x22, 0xb6, 0x43, 0x0c,
+	0x62, 0xc4, 0x47, 0xee, 0xfe, 0xb2, 0x41, 0x4e, 0x40, 0xdc, 0xd2, 0xdf, 0x22, 0x62, 0x4c, 0xae,
+	0x58, 0x04, 0x12, 0x94, 0x1e, 0xd6, 0x67, 0xc6, 0x18, 0x9e, 0x06, 0x40, 0x25, 0x31, 0x86, 0x78,
+	0x8a, 0x0a, 0x61, 0xc4, 0x19, 0x78, 0xba, 0x15, 0x41, 0xdc, 0x0a, 0x84, 0x3f, 0xdc, 0x60, 0xd6,
+	0xbd, 0x01, 0xb1, 0x4c, 0x2d, 0x51, 0x46, 0x17, 0xe2, 0xf0, 0x6a, 0x27, 0x73, 0xae, 0x0b, 0x71,
+	0x68, 0x6d, 0xe3, 0x1d, 0x34, 0x67, 0xa0, 0x34, 0x89, 0x24, 0xe7, 0xa2, 0xcc, 0x48, 0xae, 0x92,
+	0xdc, 0x25, 0x44, 0x1a, 0x36, 0x32, 0xef, 0x4a, 0x24, 0xd1, 0xc2, 0x7b, 0xc8, 0x3c, 0xd7, 0x50,
+	0x9e, 0xc8, 0x82, 0x8b, 0x31, 0x2b, 0xb9, 0x4a, 0xd3, 0x83, 0x9f, 0x22, 0x73, 0x9e, 0x46, 0x86,
+	0x2c, 0xba, 0x10, 0x48, 0x72, 0xd5, 0x0f, 0x08, 0xbe, 0x87, 0x66, 0x1b, 0x00, 0xb1, 0x07, 0x8a,
+	0xd6, 0x05, 0xf8, 0x04, 0x6f, 0x66, 0xb7, 0xa6, 0xaa, 0x33, 0xe6, 0xda, 0x41, 0xef, 0x12, 0xae,
+	0xa1, 0x25, 0xc1, 0x3f, 0xb4, 0xb9, 0xcf, 0x75, 0x77, 0x30, 0xbd, 0x64, 0xc9, 0x7d, 0x4e, 0x71,
+	0x5a, 0x9f, 0xce, 0x2b, 0x7e, 0x85, 0x56, 0x7a, 0x81, 0x91, 0x6d, 0xa1, 0x79, 0x28, 0xb8, 0xf9,
+	0xba, 0x8a, 0xb0, 0x45, 0x49, 0xde, 0x1d, 0xce, 0x5b, 0xe2, 0x28, 0x15, 0x76, 0x0c, 0x60, 0xa2,
+	0x2e, 0x69, 0xc7, 0x1b, 0x3c, 0xf4, 0xa0, 0x05, 0x59, 0x1e, 0x23, 0xea, 0x92, 0x76, 0x0e, 0x13,
+	0x63, 0xd0, 0x03, 0xbf, 0x44, 0xf9, 0x7a, 0x3b, 0x52, 0xf6, 0x33, 0x39, 0x1c, 0xf2, 0x95, 0x31,
+	0x06, 0xc4, 0x00, 0xe6, 0x8b, 0x39, 0x88, 0xf7, 0x93, 0xf5, 0x5f, 0x5f, 0x36, 0xb2, 0x9f, 0x7e,
+	0x7e, 0x7d, 0x98, 0x4f, 0xf6, 0xcd, 0x8e, 0xdd, 0x39, 0x7b, 0x9b, 0xdd, 0xee, 0xa3, 0xf3, 0xab,
+	0x62, 0xf6, 0xe2, 0xaa, 0x98, 0xfd, 0x71, 0x55, 0xcc, 0x7e, 0xbe, 0x2e, 0x66, 0x2e, 0xae, 0x8b,
+	0x99, 0x6f, 0xd7, 0xc5, 0xcc, 0xeb, 0xa5, 0x9b, 0xf7, 0xeb, 0x6e, 0x08, 0x71, 0x7d, 0xc2, 0xee,
+	0x96, 0x8f, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0xac, 0x5d, 0xdd, 0x0c, 0x85, 0x07, 0x00, 0x00,
 }
 
 func (this *Params) Equal(that interface{}) bool {
@@ -153,6 +211,54 @@ func (this *Params) Equal(that interface{}) bool {
 	if this.LcDenom != that1.LcDenom {
 		return false
 	}
+	if !this.BaseMakerFeePercentage.Equal(that1.BaseMakerFeePercentage) {
+		return false
+	}
+	if !this.BaseTakerFeePercentage.Equal(that1.BaseTakerFeePercentage) {
+		return false
+	}
+	if !this.BaseCancelFeePercentage.Equal(that1.BaseCancelFeePercentage) {
+		return false
+	}
+	if !this.BaseSellFeePercentage.Equal(that1.BaseSellFeePercentage) {
+		return false
+	}
+	if !this.FeeIncrementPercentage.Equal(that1.FeeIncrementPercentage) {
+		return false
+	}
+	if !this.PriceThresholdPercentage.Equal(that1.PriceThresholdPercentage) {
+		return false
+	}
+	if !this.MinTransferFee.Equal(that1.MinTransferFee) {
+		return false
+	}
+	if !this.MinMakerFee.Equal(that1.MinMakerFee) {
+		return false
+	}
+	if !this.MinTakerFee.Equal(that1.MinTakerFee) {
+		return false
+	}
+	if !this.MinCancelFee.Equal(that1.MinCancelFee) {
+		return false
+	}
+	if !this.MinSellFee.Equal(that1.MinSellFee) {
+		return false
+	}
+	if this.FeesEnabled != that1.FeesEnabled {
+		return false
+	}
+	if !this.LiquidityThreshold.Equal(that1.LiquidityThreshold) {
+		return false
+	}
+	if !this.PriceMultiplierAlpha.Equal(that1.PriceMultiplierAlpha) {
+		return false
+	}
+	if !this.MaxLiquidityMultiplier.Equal(that1.MaxLiquidityMultiplier) {
+		return false
+	}
+	if !this.BurnRatePercentage.Equal(that1.BurnRatePercentage) {
+		return false
+	}
 	return true
 }
 func (m *Params) Marshal() (dAtA []byte, err error) {
@@ -175,6 +281,180 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	{
+		size := m.BurnRatePercentage.Size()
+		i -= size
+		if _, err := m.BurnRatePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	{
+		size := m.MaxLiquidityMultiplier.Size()
+		i -= size
+		if _, err := m.MaxLiquidityMultiplier.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xaa
+	{
+		size := m.PriceMultiplierAlpha.Size()
+		i -= size
+		if _, err := m.PriceMultiplierAlpha.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	{
+		size := m.LiquidityThreshold.Size()
+		i -= size
+		if _, err := m.LiquidityThreshold.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x9a
+	if m.FeesEnabled {
+		i--
+		if m.FeesEnabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x90
+	}
+	{
+		size := m.MinSellFee.Size()
+		i -= size
+		if _, err := m.MinSellFee.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
+	{
+		size := m.MinCancelFee.Size()
+		i -= size
+		if _, err := m.MinCancelFee.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
+	{
+		size := m.MinTakerFee.Size()
+		i -= size
+		if _, err := m.MinTakerFee.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x7a
+	{
+		size := m.MinMakerFee.Size()
+		i -= size
+		if _, err := m.MinMakerFee.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x72
+	{
+		size := m.MinTransferFee.Size()
+		i -= size
+		if _, err := m.MinTransferFee.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x6a
+	{
+		size := m.PriceThresholdPercentage.Size()
+		i -= size
+		if _, err := m.PriceThresholdPercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x62
+	{
+		size := m.FeeIncrementPercentage.Size()
+		i -= size
+		if _, err := m.FeeIncrementPercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x5a
+	{
+		size := m.BaseSellFeePercentage.Size()
+		i -= size
+		if _, err := m.BaseSellFeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x52
+	{
+		size := m.BaseCancelFeePercentage.Size()
+		i -= size
+		if _, err := m.BaseCancelFeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	{
+		size := m.BaseTakerFeePercentage.Size()
+		i -= size
+		if _, err := m.BaseTakerFeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x42
+	{
+		size := m.BaseMakerFeePercentage.Size()
+		i -= size
+		if _, err := m.BaseMakerFeePercentage.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintParams(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x3a
 	if len(m.LcDenom) > 0 {
 		i -= len(m.LcDenom)
 		copy(dAtA[i:], m.LcDenom)
@@ -266,6 +546,39 @@ func (m *Params) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovParams(uint64(l))
 	}
+	l = m.BaseMakerFeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.BaseTakerFeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.BaseCancelFeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.BaseSellFeePercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.FeeIncrementPercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.PriceThresholdPercentage.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MinTransferFee.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MinMakerFee.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MinTakerFee.Size()
+	n += 1 + l + sovParams(uint64(l))
+	l = m.MinCancelFee.Size()
+	n += 2 + l + sovParams(uint64(l))
+	l = m.MinSellFee.Size()
+	n += 2 + l + sovParams(uint64(l))
+	if m.FeesEnabled {
+		n += 3
+	}
+	l = m.LiquidityThreshold.Size()
+	n += 2 + l + sovParams(uint64(l))
+	l = m.PriceMultiplierAlpha.Size()
+	n += 2 + l + sovParams(uint64(l))
+	l = m.MaxLiquidityMultiplier.Size()
+	n += 2 + l + sovParams(uint64(l))
+	l = m.BurnRatePercentage.Size()
+	n += 2 + l + sovParams(uint64(l))
 	return n
 }
 
@@ -505,6 +818,536 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.LcDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseMakerFeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseMakerFeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseTakerFeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseTakerFeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseCancelFeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseCancelFeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BaseSellFeePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BaseSellFeePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeeIncrementPercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FeeIncrementPercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceThresholdPercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.PriceThresholdPercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinTransferFee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinTransferFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinMakerFee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinMakerFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinTakerFee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinTakerFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinCancelFee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinCancelFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinSellFee", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MinSellFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FeesEnabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FeesEnabled = bool(v != 0)
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LiquidityThreshold", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.LiquidityThreshold.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PriceMultiplierAlpha", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.PriceMultiplierAlpha.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLiquidityMultiplier", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MaxLiquidityMultiplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BurnRatePercentage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowParams
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthParams
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthParams
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BurnRatePercentage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

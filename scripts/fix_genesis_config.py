@@ -43,10 +43,36 @@ def update_genesis(genesis_file, admin_addr):
         "total_supply": "1000000000000"
     }
     
-    # Configure DEX module
+    # Configure DEX module with ALL required parameters
     app_state['dex'] = {
         "params": {
-            "lc_denom": "ulc"
+            # Basic parameters
+            "base_transfer_fee_percentage": "5000000000000000",  # 0.005 (0.5%)
+            "min_order_amount": "1000000",  # 1 TUSD minimum
+            "lc_initial_supply": "100000",  # 100,000 LC
+            "lc_exchange_rate": "100000000000000",  # 0.0001 MC per LC
+            "base_reward_rate": "222",  # 7% annual returns
+            "lc_denom": "ulc",
+            
+            # Fee-related parameters
+            "base_maker_fee_percentage": "1000000000000000",    # 0.001 (0.1%)
+            "base_taker_fee_percentage": "5000000000000000",    # 0.005 (0.5%)
+            "base_cancel_fee_percentage": "1000000000000000",   # 0.001 (0.1%)
+            "base_sell_fee_percentage": "1000000000000000",     # 0.001 (0.1%)
+            "fee_increment_percentage": "1000000000000000",     # 0.001 (0.1%)
+            "price_threshold_percentage": "980000000000000000", # 0.98 (98%)
+            "min_transfer_fee": "100",     # 0.0001 LC
+            "min_maker_fee": "100",        # 0.0001 LC
+            "min_taker_fee": "5000",       # 0.005 LC
+            "min_cancel_fee": "100",       # 0.0001 LC
+            "min_sell_fee": "100",         # 0.0001 LC
+            "fees_enabled": True,          # Enable fees
+            
+            # Dynamic fee parameters
+            "liquidity_threshold": "980000000000000000",      # 0.98 (98%)
+            "price_multiplier_alpha": "200000000000000000",   # 0.2 (20%)
+            "max_liquidity_multiplier": "5000000000000000000", # 5.0 (5x)
+            "burn_rate_percentage": "1000000000000000000"     # 1.0 (100%)
         }
     }
     

@@ -11,6 +11,7 @@ import (
 type AuthKeeper interface {
 	AddressCodec() address.Codec
 	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI // only used for simulation
+	GetModuleAddress(moduleName string) sdk.AccAddress
 	// Methods imported from account should be defined here
 }
 
@@ -23,6 +24,7 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 	SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	GetSupply(ctx context.Context, denom string) sdk.Coin
 }
 
@@ -35,4 +37,9 @@ type ParamSubspace interface {
 // TransactionKeeper defines the expected interface for transaction recording
 type TransactionKeeper interface {
 	RecordTransaction(ctx context.Context, address string, txType string, description string, amount sdk.Coins, from string, to string, metadata string) error
+}
+
+// DistributionKeeper defines the expected interface for the Distribution module.
+type DistributionKeeper interface {
+	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
 }

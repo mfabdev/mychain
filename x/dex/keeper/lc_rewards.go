@@ -80,7 +80,7 @@ func (k Keeper) CalculateOrderLCRewards(ctx context.Context, order types.Order, 
 	// Reward Formula: Quote Value × Annual Rate × (Time / Year)
 	// Base Rate: 216000 = 21.6% annual rate
 	// Convert to decimal: 216000 / 1,000,000 = 0.216
-	annualRateDec := math.LegacyNewDecFromInt(params.BaseRewardRate).Quo(math.LegacyNewDec(1000000))
+	annualRateDec := math.LegacyNewDecFromInt(params.GetBaseRewardRateAsInt()).Quo(math.LegacyNewDec(1000000))
 	
 	// Calculate time fraction of year (seconds / seconds_per_year)
 	secondsDec := math.LegacyNewDec(int64(timeActive.Seconds()))

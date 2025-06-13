@@ -15,3 +15,6 @@ func NewQueryServerImpl(k Keeper) types.QueryServer {
 type queryServer struct {
 	k Keeper
 }
+
+// Ensure all query methods are implemented
+var _ types.QueryServer = (*queryServer)(nil)

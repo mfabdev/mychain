@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"cosmossdk.io/core/appmodule"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -22,6 +25,7 @@ import (
 var (
 	_ module.AppModuleBasic = (*AppModule)(nil)
 	_ module.AppModule      = (*AppModule)(nil)
+	_ module.HasABCIGenesis = (*AppModule)(nil) // Add this interface like staking module
 
 	_ appmodule.AppModule       = (*AppModule)(nil)
 	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
@@ -31,7 +35,7 @@ var (
 // AppModule implements the AppModule interface that defines the inter-dependent methods that modules need to implement
 type AppModule struct {
 	cdc        codec.Codec
-	keeper     keeper.Keeper
+	keeper     *keeper.Keeper
 	authKeeper types.AuthKeeper
 	bankKeeper types.BankKeeper
 }
@@ -44,7 +48,7 @@ func NewAppModule(
 ) AppModule {
 	return AppModule{
 		cdc:        cdc,
-		keeper:     keeper,
+		keeper:     &keeper,
 		authKeeper: authKeeper,
 		bankKeeper: bankKeeper,
 	}
@@ -73,6 +77,11 @@ func (AppModule) GetTxCmd() *cobra.Command {
 	return cli.GetTxCmd()
 }
 
+// GetQueryCmd returns the root query command for the module
+func (AppModule) GetQueryCmd() *cobra.Command {
+	return cli.GetQueryCmd()
+}
+
 // RegisterInterfaces registers a module's interface types and their concrete implementations as proto.Message.
 func (AppModule) RegisterInterfaces(registrar codectypes.InterfaceRegistry) {
 	types.RegisterInterfaces(registrar)
@@ -80,48 +89,52 @@ func (AppModule) RegisterInterfaces(registrar codectypes.InterfaceRegistry) {
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(registrar grpc.ServiceRegistrar) error {
-	types.RegisterMsgServer(registrar, keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(registrar, keeper.NewQueryServerImpl(am.keeper))
+	types.RegisterMsgServer(registrar, keeper.NewMsgServerImpl(*am.keeper))
+	types.RegisterQueryServer(registrar, keeper.NewQueryServerImpl(*am.keeper))
 
 	return nil
 }
 
 // DefaultGenesis returns a default GenesisState for the module, marshalled to json.RawMessage.
 // The default GenesisState need to be defined by the module developer and is primarily used for testing.
-func (am AppModule) DefaultGenesis() json.RawMessage {
-	return am.cdc.MustMarshalJSON(types.DefaultGenesis())
+func (am AppModule) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
+	return cdc.MustMarshalJSON(types.DefaultGenesis())
 }
 
-// ValidateGenesis used to validate the GenesisState, given in its json.RawMessage form.
-func (am AppModule) ValidateGenesis(bz json.RawMessage) error {
+// ValidateGenesis performs genesis state validation for the dex module.
+func (am AppModule) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState types.GenesisState
-	if err := am.cdc.UnmarshalJSON(bz, &genState); err != nil {
-		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
+	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
+		return err
 	}
-
 	return genState.Validate()
 }
 
-// InitGenesis performs the module's genesis initialization. It returns no validator updates.
-func (am AppModule) InitGenesis(ctx context.Context, gs json.RawMessage) error {
-	var genState types.GenesisState
-	// Initialize global index to index in genesis state
-	if err := am.cdc.UnmarshalJSON(gs, &genState); err != nil {
-		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
+// InitGenesis performs genesis initialization for the dex module.
+// It returns no validator updates.
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState types.GenesisState
+	cdc.MustUnmarshalJSON(data, &genesisState)
+	
+	am.keeper.Logger(ctx).Info("DEX InitGenesis called", 
+		"base_reward_rate", genesisState.Params.BaseRewardRate,
+		"fees_enabled", genesisState.Params.FeesEnabled)
+	
+	if err := am.keeper.InitGenesis(ctx, genesisState); err != nil {
+		panic(err)
 	}
-
-	return am.keeper.InitGenesis(ctx, genState)
+	return []abci.ValidatorUpdate{}
 }
 
-// ExportGenesis returns the module's exported genesis state as raw JSON bytes.
-func (am AppModule) ExportGenesis(ctx context.Context) (json.RawMessage, error) {
+// ExportGenesis returns the exported genesis state as raw bytes for the dex module.
+func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState, err := am.keeper.ExportGenesis(ctx)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-
-	return am.cdc.MarshalJSON(genState)
+	return cdc.MustMarshalJSON(genState)
 }
+
 
 // ConsensusVersion is a sequence number for state-breaking change of the module.
 // It should be incremented on each consensus-breaking change introduced by the module.
@@ -131,15 +144,124 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
 func (am AppModule) BeginBlock(ctx context.Context) error {
-	// Use clean liquidity rewards distribution
-	// Each side earns the interest rate (7-100% APR) on their eligible volume
-	// Both pairs have IDENTICAL rules:
-	// - Buy orders: 2-12% of liquidity target (must reach 2% minimum)
-	// - Sell orders: 1-6% of MC market cap
-	// Price priority ensures best prices get rewards first
-	if err := am.keeper.DistributeCleanRewards(ctx); err != nil {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	
+	// Debug: Log that BeginBlock was called
+	if sdkCtx.BlockHeight() <= 2 {
+		// Use the same logging approach as maincoin
+		os.Stderr.WriteString(fmt.Sprintf("DEX: BeginBlock called at height %d\n", sdkCtx.BlockHeight()))
+	}
+	
+	// Initialize on first block if not already initialized
+	// This is a workaround because InitGenesis is not being called by the framework for custom modules
+	if sdkCtx.BlockHeight() == 1 {
+		// Check if module is initialized by trying to get params
+		if _, err := am.keeper.Params.Get(ctx); err != nil {
+			am.keeper.Logger(ctx).Info("DEX: Module not initialized, initializing in BeginBlock at height 1")
+			
+			// Load genesis from file like maincoin does
+			genesisFile := "/home/dk/.mychain/config/genesis.json"
+			genesisData, err := os.ReadFile(genesisFile)
+			if err != nil {
+				am.keeper.Logger(ctx).Error("DEX: Failed to read genesis file", "error", err)
+				// Fall back to default genesis
+				genState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *genState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			var genesisDoc map[string]interface{}
+			if err := json.Unmarshal(genesisData, &genesisDoc); err != nil {
+				am.keeper.Logger(ctx).Error("DEX: Failed to unmarshal genesis doc", "error", err)
+				// Fall back to default genesis
+				genState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *genState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			appState, ok := genesisDoc["app_state"].(map[string]interface{})
+			if !ok {
+				am.keeper.Logger(ctx).Error("DEX: No app_state in genesis")
+				// Fall back to default genesis
+				genState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *genState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			dexGenesis, ok := appState["dex"]
+			if !ok {
+				am.keeper.Logger(ctx).Error("DEX: No dex genesis state")
+				// Fall back to default genesis
+				genState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *genState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			// Marshal dex genesis to JSON then unmarshal to our type
+			dexGenesisBytes, err := json.Marshal(dexGenesis)
+			if err != nil {
+				am.keeper.Logger(ctx).Error("DEX: Failed to marshal dex genesis", "error", err)
+				// Fall back to default genesis
+				genState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *genState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			var genState types.GenesisState
+			if err := am.cdc.UnmarshalJSON(dexGenesisBytes, &genState); err != nil {
+				am.keeper.Logger(ctx).Error("DEX: Failed to unmarshal dex genesis state", "error", err)
+				// Fall back to default genesis
+				defaultGenState := types.DefaultGenesis()
+				if err := am.keeper.InitGenesis(ctx, *defaultGenState); err != nil {
+					am.keeper.Logger(ctx).Error("DEX: Failed to initialize with default genesis", "error", err)
+					return nil
+				}
+				am.keeper.Logger(ctx).Info("DEX: Module initialized with default genesis")
+				return nil
+			}
+			
+			am.keeper.Logger(ctx).Info("DEX: Initializing from genesis", 
+				"base_reward_rate", genState.Params.BaseRewardRate, 
+				"fees_enabled", genState.Params.FeesEnabled)
+			
+			if err := am.keeper.InitGenesis(ctx, genState); err != nil {
+				am.keeper.Logger(ctx).Error("DEX: Failed to initialize from genesis", "error", err)
+				return nil
+			}
+			
+			am.keeper.Logger(ctx).Info("DEX: Module initialized successfully")
+		}
+	}
+	
+	// Now proceed with normal BeginBlock operations
+	// The module should be initialized at this point
+	
+	// Distribute liquidity rewards with dynamic rate adjustment
+	// Uses tier-based volume caps to prevent manipulation
+	// Dynamic rate: 7-100% APR based on total liquidity depth
+	if err := am.keeper.DistributeLiquidityRewardsWithDynamicRate(ctx); err != nil {
 		// Log error but don't halt the chain
-		am.keeper.Logger(ctx).Error("failed to distribute clean rewards", "error", err)
+		am.keeper.Logger(ctx).Error("failed to distribute liquidity rewards", "error", err)
 	}
 	
 	// Update LC price (can only go up, requires 72 hours without lower price)
@@ -161,6 +283,12 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(_ context.Context) error {
+func (am AppModule) EndBlock(ctx context.Context) error {
+	// Burn all collected fees at the end of each block
+	if err := am.keeper.BurnCollectedFees(ctx); err != nil {
+		// Log error but don't halt the chain
+		am.keeper.Logger(ctx).Error("failed to burn collected fees", "error", err)
+	}
+	
 	return nil
 }

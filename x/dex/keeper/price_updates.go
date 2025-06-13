@@ -20,6 +20,12 @@ func (k Keeper) UpdateReferencePrices(ctx context.Context) error {
 		// Calculate current market price based on recent trades or order book
 		marketPrice := k.CalculateMarketPrice(ctx, pairID)
 		
+		// Skip if market price is not properly initialized
+		if marketPrice.IsNil() {
+			k.Logger(ctx).Error("Market price is nil for pair", "pairID", pairID)
+			return false, nil
+		}
+		
 		// Get or create price reference
 		priceRef, err := k.PriceReferences.Get(ctx, pairID)
 		if err != nil {
@@ -109,7 +115,7 @@ func (k Keeper) CalculateMarketPrice(ctx context.Context, pairID uint64) math.Le
 	// Default to initial price based on pair
 	pair, err := k.TradingPairs.Get(ctx, pairID)
 	if err != nil {
-		return math.LegacyZeroDec()
+		return math.LegacyNewDec(0)
 	}
 	
 	// Default prices based on pair type
@@ -124,7 +130,7 @@ func (k Keeper) CalculateMarketPrice(ctx context.Context, pairID uint64) math.Le
 
 // GetBestBidPrice returns the highest buy order price for a pair
 func (k Keeper) GetBestBidPrice(ctx context.Context, pairID uint64) math.LegacyDec {
-	var bestPrice math.LegacyDec
+	bestPrice := math.LegacyNewDec(0)
 	
 	k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
 		if order.PairId == pairID && order.IsBuy && order.Amount.Amount.GT(order.FilledAmount.Amount) {
@@ -141,7 +147,7 @@ func (k Keeper) GetBestBidPrice(ctx context.Context, pairID uint64) math.LegacyD
 
 // GetBestAskPrice returns the lowest sell order price for a pair
 func (k Keeper) GetBestAskPrice(ctx context.Context, pairID uint64) math.LegacyDec {
-	var bestPrice math.LegacyDec
+	bestPrice := math.LegacyNewDec(0)
 	
 	k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
 		if order.PairId == pairID && !order.IsBuy && order.Amount.Amount.GT(order.FilledAmount.Amount) {
@@ -161,5 +167,5 @@ func (k Keeper) GetBestAskPrice(ctx context.Context, pairID uint64) math.LegacyD
 func (k Keeper) GetLastTradePrice(ctx context.Context, pairID uint64) math.LegacyDec {
 	// TODO: Implement trade history tracking
 	// For now, return zero to use default prices
-	return math.LegacyZeroDec()
+	return math.LegacyNewDec(0)
 }

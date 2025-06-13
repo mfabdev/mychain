@@ -6,7 +6,6 @@ import (
 	"mychain/x/dex/types"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -78,8 +77,8 @@ func (q queryServer) LiquidityBalance(ctx context.Context, req *types.QueryLiqui
 	buyMultiplier := math.LegacyMustNewDecFromStr("0.9")   // 90% allocation
 	sellMultiplier := math.LegacyMustNewDecFromStr("0.1")  // 10% allocation
 
-	// Get current reward rate
-	currentRate, _ := q.k.GetCurrentRewardRate(ctx)
+	// Get current reward rate (placeholder for now)
+	currentRate := math.LegacyMustNewDecFromStr("0.07") // 7% APR
 
 	return &types.QueryLiquidityBalanceResponse{
 		BuyLiquidity:   buyLiquidity.TruncateInt(),

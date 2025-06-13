@@ -36,6 +36,7 @@ type ModuleInputs struct {
 	AuthKeeper types.AuthKeeper
 	BankKeeper types.BankKeeper
 	TransactionKeeper types.TransactionKeeper `optional:"true"`
+	DistrKeeper types.DistributionKeeper
 }
 
 type ModuleOutputs struct {
@@ -56,8 +57,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Cdc,
 		in.AddressCodec,
 		authority,
+		in.AuthKeeper,
 		in.BankKeeper,
 		in.TransactionKeeper,
+		in.DistrKeeper,
 	)
 	m := NewAppModule(in.Cdc, k, in.AuthKeeper, in.BankKeeper)
 

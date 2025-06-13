@@ -53,6 +53,16 @@ service Query {
   rpc LiquidityBalance(QueryLiquidityBalanceRequest) returns (QueryLiquidityBalanceResponse) {
     option (google.api.http).get = "/mychain/dex/v1/liquidity_balance";
   }
+  
+  // EstimateFees calculates estimated fees for an order
+  rpc EstimateFees(QueryEstimateFeesRequest) returns (QueryEstimateFeesResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/estimate_fees/{pair_id}";
+  }
+  
+  // FeeStatistics queries fee collection statistics
+  rpc FeeStatistics(QueryFeeStatisticsRequest) returns (QueryFeeStatisticsResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/fee_statistics";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -199,6 +209,71 @@ message QueryLiquidityBalanceResponse {
     (gogoproto.nullable) = false
   ];
   string current_apr = 11 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// QueryEstimateFeesRequest defines the QueryEstimateFeesRequest message.
+message QueryEstimateFeesRequest {
+  uint64 pair_id = 1;
+  bool is_buy_order = 2;
+  string order_amount = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string order_price = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// QueryEstimateFeesResponse defines the QueryEstimateFeesResponse message.
+message QueryEstimateFeesResponse {
+  FeeEstimate estimate = 1 [(gogoproto.nullable) = false];
+  string maker_fee_rate = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string taker_fee_rate = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  string effective_fee_rate = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// QueryFeeStatisticsRequest defines the QueryFeeStatisticsRequest message.
+message QueryFeeStatisticsRequest {}
+
+// QueryFeeStatisticsResponse defines the QueryFeeStatisticsResponse message.
+message QueryFeeStatisticsResponse {
+  string total_fees_collected = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string total_fees_burned = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  repeated FeeTypeStatistics fee_by_type = 3 [(gogoproto.nullable) = false];
+  string current_price_ratio = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  bool dynamic_fees_active = 5;
+}
+
+// FeeTypeStatistics tracks stats for each fee type
+message FeeTypeStatistics {
+  string fee_type = 1;
+  string total_collected = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  string current_rate = 3 [
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];

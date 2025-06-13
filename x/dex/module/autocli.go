@@ -30,6 +30,28 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Query user-rewards",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}},
 				},
+				{
+					RpcMethod:      "EstimateFees",
+					Use:            "estimate-fees [pair-id] [is-buy-order] [order-amount] [order-price]",
+					Short:          "Estimate fees for an order",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "pair_id"},
+						{ProtoField: "is_buy_order"},
+						{ProtoField: "order_amount"},
+						{ProtoField: "order_price"},
+					},
+				},
+				{
+					RpcMethod: "FeeStatistics",
+					Use:       "fee-statistics",
+					Short:     "Query fee collection statistics",
+				},
+				{
+					RpcMethod:      "LiquidityBalance",
+					Use:            "liquidity-balance",
+					Short:          "Query liquidity balance and multipliers",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
+				},
 
 				// this line is used by ignite scaffolding # autocli/query
 			},

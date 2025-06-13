@@ -1,45 +1,46 @@
-# GitHub Push Instructions - January 11, 2025
+# GitHub Push Ready - January 11, 2025
+
+## Commit Summary
+Successfully implemented and fixed the DEX reward system to use correct market cap references for each trading pair.
 
 ## Changes Made
-Added automatic web dashboard startup functionality to the unified launch script.
+1. **Fixed MC/LC sell-side volume cap calculation**
+   - MC/TUSD pair: Uses MC market cap (1-6% based on price ratio)
+   - MC/LC pair: Now correctly uses LC market cap (1-6% based on price ratio)
 
-## Files Modified
-1. `scripts/unified-launch.sh` - Added `start_web_dashboard` function
-2. `CLAUDE.md` - Documented the new auto-start feature
+2. **Maintained identical buy-side rules for both pairs**
+   - 2% minimum volume requirement
+   - 12% maximum of liquidity target
+   - Price priority (highest bids get rewards first)
 
-## Commit Details
-- **Commit Hash**: f795d3cd
-- **Commit Message**: feat: Add automatic web dashboard startup to unified-launch.sh
+3. **Updated documentation**
+   - DEX_FINAL_TRADING_RULES.md now clearly specifies which market cap is used for each pair
+   - Added clarifying comments in the code
 
-## Features Added
-- Web dashboard automatically starts on port 3000 after blockchain initialization
-- No manual intervention required - dashboard is ready immediately
-- Proper cleanup of existing dashboard processes
-- Support for `--skip-dashboard` flag to disable auto-start
+## Technical Details
+- Added `calculateLCSellVolumeCap` function that:
+  - Gets LC total supply
+  - Calculates LC price in MC terms (using reference price that only goes up)
+  - Converts to TUSD equivalent: LC supply × LC price in MC × MC price in TUSD
+  - Applies same 1-6% logic based on price ratio
 
-## Push Instructions
+## Commit Hash
+282ae3bc - fix: Use LC market cap for MC/LC sell-side volume cap
 
+## To Push
+Run one of these commands to push to GitHub:
 ```bash
-# Check current status
-git status
+# Option A: With Personal Access Token
+git push https://YOUR_TOKEN@github.com/mfabdev/mychain.git main
 
-# View the commit
-git log --oneline -1
-
-# Push to GitHub
+# Option B: With SSH (if configured)
 git push origin main
+
+# Option C: With GitHub CLI
+gh repo sync
 ```
 
-## Alternative Remote Push
-If you have the startlqc remote configured:
-```bash
-git push startlqc main
-```
-
-## Verification After Push
-1. Check GitHub to confirm the commit appears
-2. The web dashboard will now auto-start for all users running `./scripts/unified-launch.sh`
-3. Dashboard accessible at http://localhost:3000
-
-## Summary
-This update significantly improves the user experience by eliminating the need to manually start the web dashboard. Users can now launch the entire blockchain ecosystem with a single command and immediately access the dashboard.
+## Verification
+The implementation now correctly addresses the user's requirement:
+- "for the pair MC/LC we should use LC volume"
+- Both trading pairs have identical rules except for the market cap reference used for sell-side caps

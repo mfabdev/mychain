@@ -38,9 +38,9 @@ TUSD_AMOUNT="100000000000"   # 100,000 TUSD
 
 # DEX Configuration
 DEX_BASE_REWARD_RATE="222"   # For 7% annual LC rewards (NOT 0.222)
-DEX_TRANSFER_FEE="5000000000000000"  # 0.5%
+DEX_TRANSFER_FEE="0.005000000000000000"  # 0.5%
 DEX_MIN_ORDER="1000000"      # 1 TUSD minimum
-DEX_LC_EXCHANGE_RATE="100000000000000"  # 0.0001 MC per LC
+DEX_LC_EXCHANGE_RATE="0.000100000000000000"  # 0.0001 MC per LC
 
 # Development mode settings
 DEV_MODE=false
@@ -314,44 +314,68 @@ try:
     
     # Update governance parameters
     genesis['app_state']['gov']['params']['min_deposit'] = [
-        {'denom': '$LC_DENOM', 'amount': '10000000'}
+        {'denom': '${LC_DENOM}', 'amount': '10000000'}
     ]
     genesis['app_state']['gov']['params']['expedited_min_deposit'] = [
-        {'denom': '$LC_DENOM', 'amount': '50000000'}
+        {'denom': '${LC_DENOM}', 'amount': '50000000'}
     ]
     
     # Update crisis fee (if module exists)
     if 'crisis' in genesis['app_state']:
         genesis['app_state']['crisis']['constant_fee'] = {
-            'denom': '$LC_DENOM',
+            'denom': '${LC_DENOM}',
             'amount': '1000'
         }
     
     # Initialize DEX module with correct parameters
     genesis['app_state']['dex'] = {
         'params': {
+            # Basic parameters
             'base_transfer_fee_percentage': '$DEX_TRANSFER_FEE',
             'min_order_amount': '$DEX_MIN_ORDER',
             'lc_initial_supply': '100000',
             'lc_exchange_rate': '$DEX_LC_EXCHANGE_RATE',
             'base_reward_rate': '$DEX_BASE_REWARD_RATE',
-            'lc_denom': '$LC_DENOM'
+            'lc_denom': '$LC_DENOM',
+            
+            # Fee-related parameters
+            'base_maker_fee_percentage': '0.001000000000000000',    # 0.001 (0.1%)
+            'base_taker_fee_percentage': '0.005000000000000000',    # 0.005 (0.5%)
+            'base_cancel_fee_percentage': '0.001000000000000000',   # 0.001 (0.1%)
+            'base_sell_fee_percentage': '0.001000000000000000',     # 0.001 (0.1%)
+            'fee_increment_percentage': '0.001000000000000000',     # 0.001 (0.1%)
+            'price_threshold_percentage': '0.980000000000000000',   # 0.98 (98%)
+            'min_transfer_fee': '100',     # 0.0001 LC
+            'min_maker_fee': '100',        # 0.0001 LC
+            'min_taker_fee': '5000',       # 0.005 LC
+            'min_cancel_fee': '100',       # 0.0001 LC
+            'min_sell_fee': '100',         # 0.0001 LC
+            'fees_enabled': True,          # Enable fees
+            
+            # Dynamic fee parameters
+            'liquidity_threshold': '0.980000000000000000',      # 0.98 (98%)
+            'price_multiplier_alpha': '0.200000000000000000',   # 0.2 (20%)
+            'max_liquidity_multiplier': '5.000000000000000000', # 5.0 (5x)
+            'burn_rate_percentage': '1.000000000000000000'     # 1.0 (100%)
         },
         'next_order_id': '1',
-        'trading_pairs': [],
+        'trading_pairs': [
+            {'id': 1, 'base_denom': '$MC_DENOM', 'quote_denom': '$TUSD_DENOM', 'active': True},
+            {'id': 2, 'base_denom': '$MC_DENOM', 'quote_denom': '$LC_DENOM', 'active': True}
+        ],
         'orders': [],
         'user_rewards': [],
         'liquidity_tiers': [
             # MC/TUSD tiers
-            {'id': 1, 'name': 'MC/TUSD Tier 1', 'price_deviation': '0.000000000000000000', 'volume_cap_mc': '10000000000', 'volume_cap_tusd': '1000000000', 'fee_percentage': '0.001000000000000000'},
-            {'id': 2, 'name': 'MC/TUSD Tier 2', 'price_deviation': '0.010000000000000000', 'volume_cap_mc': '5000000000', 'volume_cap_tusd': '500000000', 'fee_percentage': '0.002000000000000000'},
-            {'id': 3, 'name': 'MC/TUSD Tier 3', 'price_deviation': '0.025000000000000000', 'volume_cap_mc': '2000000000', 'volume_cap_tusd': '200000000', 'fee_percentage': '0.003000000000000000'},
-            {'id': 4, 'name': 'MC/TUSD Tier 4', 'price_deviation': '0.050000000000000000', 'volume_cap_mc': '1000000000', 'volume_cap_tusd': '100000000', 'fee_percentage': '0.005000000000000000'},
+            {'id': 1, 'price_deviation': '0.000000000000000000', 'bid_volume_cap': '0.020000000000000000', 'ask_volume_cap': '0.010000000000000000', 'window_duration_seconds': 172800},
+            {'id': 2, 'price_deviation': '-0.030000000000000000', 'bid_volume_cap': '0.050000000000000000', 'ask_volume_cap': '0.030000000000000000', 'window_duration_seconds': 259200},
+            {'id': 3, 'price_deviation': '-0.080000000000000000', 'bid_volume_cap': '0.080000000000000000', 'ask_volume_cap': '0.040000000000000000', 'window_duration_seconds': 345600},
+            {'id': 4, 'price_deviation': '-0.120000000000000000', 'bid_volume_cap': '0.120000000000000000', 'ask_volume_cap': '0.050000000000000000', 'window_duration_seconds': 432000},
             # MC/LC tiers
-            {'id': 5, 'name': 'MC/LC Tier 1', 'price_deviation': '0.000000000000000000', 'volume_cap_mc': '10000000000', 'volume_cap_lc': '100000000000000', 'fee_percentage': '0.001000000000000000'},
-            {'id': 6, 'name': 'MC/LC Tier 2', 'price_deviation': '0.010000000000000000', 'volume_cap_mc': '5000000000', 'volume_cap_lc': '50000000000000', 'fee_percentage': '0.002000000000000000'},
-            {'id': 7, 'name': 'MC/LC Tier 3', 'price_deviation': '0.025000000000000000', 'volume_cap_mc': '2000000000', 'volume_cap_lc': '20000000000000', 'fee_percentage': '0.003000000000000000'},
-            {'id': 8, 'name': 'MC/LC Tier 4', 'price_deviation': '0.050000000000000000', 'volume_cap_mc': '1000000000', 'volume_cap_lc': '10000000000000', 'fee_percentage': '0.005000000000000000'}
+            {'id': 5, 'price_deviation': '0.000000000000000000', 'bid_volume_cap': '0.020000000000000000', 'ask_volume_cap': '0.010000000000000000', 'window_duration_seconds': 172800},
+            {'id': 6, 'price_deviation': '-0.080000000000000000', 'bid_volume_cap': '0.050000000000000000', 'ask_volume_cap': '0.030000000000000000', 'window_duration_seconds': 259200},
+            {'id': 7, 'price_deviation': '-0.120000000000000000', 'bid_volume_cap': '0.080000000000000000', 'ask_volume_cap': '0.040000000000000000', 'window_duration_seconds': 345600},
+            {'id': 8, 'price_deviation': '-0.160000000000000000', 'bid_volume_cap': '0.120000000000000000', 'ask_volume_cap': '0.050000000000000000', 'window_duration_seconds': 432000}
         ],
         'order_rewards': [],
         'price_references': [],
@@ -384,7 +408,7 @@ try:
     # Initialize TestUSD module
     genesis['app_state']['testusd'] = {
         'params': {},
-        'total_supply': str(int('$TUSD_AMOUNT') * 2),  # Double for both accounts
+        'total_supply': str(int('${TUSD_AMOUNT}') * 2),  # Double for both accounts
         'total_bridged': '0'
     }
     
@@ -399,9 +423,9 @@ try:
         if isinstance(obj, dict):
             for key, value in obj.items():
                 if key in ['denom', 'mint_denom', 'bond_denom'] and value == 'stake':
-                    obj[key] = '$LC_DENOM'
+                    obj[key] = '${LC_DENOM}'
                 elif key == 'denom' and value == 'utestusd':
-                    obj[key] = '$TUSD_DENOM'
+                    obj[key] = '${TUSD_DENOM}'
                 elif isinstance(value, (dict, list)):
                     fix_denominations(value)
         elif isinstance(obj, list):
@@ -583,33 +607,18 @@ initialize_modules() {
     # Source addresses
     source $HOME_DIR/addresses.env
     
-    # Check if DEX is already initialized
-    log_info "Checking DEX module status..."
-    local dex_params=$($BINARY query dex params 2>/dev/null | grep base_reward_rate | awk '{print $2}' | tr -d '"')
+    # Skip DEX parameter initialization since genesis has all parameters correctly set
+    # The init-dex-state was overriding genesis params, causing the protobuf issue
+    log_info "DEX parameters configured via genesis (all 22 params)"
     
-    if [ "$dex_params" = "222" ] || [ "$dex_params" = "70000" ]; then
-        log_info "DEX module already initialized"
-        
-        # Still verify trading pairs exist
-        if curl -s http://localhost:1317/mychain/dex/v1/order_book/1 2>&1 | grep -q "buy_orders"; then
-            log_info "Trading pairs already exist"
-            return 0
-        else
-            log_info "Trading pairs need to be created"
-        fi
+    # Only check if trading pairs need to be created
+    log_info "Checking trading pairs..."
+    if curl -s http://localhost:1317/mychain/dex/v1/order_book/1 2>&1 | grep -q "buy_orders"; then
+        log_info "Trading pairs already exist"
+        return 0
     else
-        # Initialize DEX state
-        log_info "Initializing DEX module..."
-        $BINARY tx dex init-dex-state --from admin --chain-id $CHAIN_ID --keyring-backend $KEYRING_BACKEND --home $HOME_DIR --yes --broadcast-mode sync --fees 50000ulc --gas 300000
-        
-        if [ $? -eq 0 ]; then
-            log_info "DEX module initialized successfully"
-        else
-            log_error "Failed to initialize DEX module"
-            return 1
-        fi
-        
-        sleep 5
+        log_info "Trading pairs need to be created"
+        # Note: We're NOT calling init-dex-state here to avoid parameter override
     fi
     
     # Check if trading pair 1 exists

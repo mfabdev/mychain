@@ -43,4 +43,101 @@ message Params {
   
   // lc_denom is the denomination for LiquidityCoin
   string lc_denom = 6;
+  
+  // Fee parameters
+  
+  // base_maker_fee_percentage is the flat maker fee (e.g., 0.0001 for 0.01%)
+  string base_maker_fee_percentage = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // base_taker_fee_percentage is the base taker fee (e.g., 0.0005 for 0.05%)
+  string base_taker_fee_percentage = 8 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // base_cancel_fee_percentage is the flat cancel fee (e.g., 0.0001 for 0.01%)
+  string base_cancel_fee_percentage = 9 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // base_sell_fee_percentage is the base sell fee (e.g., 0.0001 for 0.01%)
+  string base_sell_fee_percentage = 10 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // fee_increment_percentage is the fee increase per 10bp drop below 98% (e.g., 0.0001 for 0.01%)
+  string fee_increment_percentage = 11 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // price_threshold_percentage is the price threshold for dynamic fees (e.g., 0.98 for 98%)
+  string price_threshold_percentage = 12 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_transfer_fee is the minimum transfer fee in ulc
+  string min_transfer_fee = 13 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_maker_fee is the minimum maker fee in ulc
+  string min_maker_fee = 14 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_taker_fee is the minimum taker fee in ulc
+  string min_taker_fee = 15 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_cancel_fee is the minimum cancel fee in ulc
+  string min_cancel_fee = 16 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // min_sell_fee is the minimum sell fee in ulc
+  string min_sell_fee = 17 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  
+  // fees_enabled determines if fees are active
+  bool fees_enabled = 18;
+  
+  // Dynamic fee parameters
+  
+  // liquidity_threshold is the threshold for liquidity-based dynamic fees
+  string liquidity_threshold = 19 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // price_multiplier_alpha is the multiplier for price-based dynamic fees
+  string price_multiplier_alpha = 20 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // max_liquidity_multiplier is the maximum multiplier for liquidity-based fees
+  string max_liquidity_multiplier = 21 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  
+  // burn_rate_percentage is the percentage of fees to burn
+  string burn_rate_percentage = 22 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
 }

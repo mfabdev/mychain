@@ -42,7 +42,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgCreateOrder,
-		dexsimulation.SimulateMsgCreateOrder(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		dexsimulation.SimulateMsgCreateOrder(am.authKeeper, am.bankKeeper, *am.keeper, simState.TxConfig),
 	))
 	const (
 		opWeightMsgCancelOrder          = "op_weight_msg_dex"
@@ -57,7 +57,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgCancelOrder,
-		dexsimulation.SimulateMsgCancelOrder(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		dexsimulation.SimulateMsgCancelOrder(am.authKeeper, am.bankKeeper, *am.keeper, simState.TxConfig),
 	))
 	const (
 		opWeightMsgClaimRewards          = "op_weight_msg_dex"
@@ -72,7 +72,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgClaimRewards,
-		dexsimulation.SimulateMsgClaimRewards(am.authKeeper, am.bankKeeper, am.keeper, simState.TxConfig),
+		dexsimulation.SimulateMsgClaimRewards(am.authKeeper, am.bankKeeper, *am.keeper, simState.TxConfig),
 	))
 
 	return operations
