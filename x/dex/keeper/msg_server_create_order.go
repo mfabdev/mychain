@@ -123,8 +123,19 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 	}
 	
 	// Initialize LC reward tracking for limit orders
+	spreadMultiplier := math.LegacyOneDec()
+	spreadImpact := ""
 	if err := k.InitializeOrderRewards(ctx, order); err != nil {
 		k.Logger(ctx).Error("failed to initialize order rewards", "error", err, "orderID", orderID)
+	} else {
+		// Get the spread multiplier that was calculated
+		if orderReward, err := k.OrderRewards.Get(ctx, orderID); err == nil {
+			if !orderReward.SpreadMultiplier.IsNil() && orderReward.SpreadMultiplier.GT(math.LegacyZeroDec()) {
+				spreadMultiplier = orderReward.SpreadMultiplier
+			}
+		}
+		// Calculate spread impact description
+		_, spreadImpact = k.EstimateSpreadIncentive(ctx, msg.PairId, msg.Price.Amount, msg.IsBuy)
 	}
 	
 	// Try to match the order
@@ -143,6 +154,8 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 			sdk.NewAttribute("is_buy", fmt.Sprintf("%t", msg.IsBuy)),
 			sdk.NewAttribute("price", msg.Price.String()),
 			sdk.NewAttribute("amount", msg.Amount.String()),
+			sdk.NewAttribute("spread_multiplier", spreadMultiplier.String()),
+			sdk.NewAttribute("spread_impact", spreadImpact),
 		),
 	)
 	

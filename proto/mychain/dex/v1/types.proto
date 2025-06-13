@@ -57,6 +57,10 @@ message OrderRewardInfo {
     (gogoproto.nullable) = false
   ];
   int64 last_claimed_time = 7;
+  string spread_multiplier = 8 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
 }
 
 // VolumeTracker tracks volume for tier calculations

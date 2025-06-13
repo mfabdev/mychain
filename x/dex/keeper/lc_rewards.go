@@ -87,8 +87,15 @@ func (k Keeper) CalculateOrderLCRewards(ctx context.Context, order types.Order, 
 	secondsPerYear := math.LegacyNewDec(365 * 24 * 60 * 60) // 31,536,000 seconds
 	timeFraction := secondsDec.Quo(secondsPerYear)
 	
-	// Calculate rewards: Quote Value × Annual Rate × Time Fraction
-	rewardsDec := quoteValueDec.Mul(annualRateDec).Mul(timeFraction)
+	// Calculate base rewards: Quote Value × Annual Rate × Time Fraction
+	baseRewardsDec := quoteValueDec.Mul(annualRateDec).Mul(timeFraction)
+	
+	// Apply spread multiplier
+	spreadMultiplier := math.LegacyOneDec()
+	if !orderRewardInfo.SpreadMultiplier.IsNil() && orderRewardInfo.SpreadMultiplier.GT(math.LegacyZeroDec()) {
+		spreadMultiplier = orderRewardInfo.SpreadMultiplier
+	}
+	rewardsDec := baseRewardsDec.Mul(spreadMultiplier)
 	
 	k.Logger(ctx).Info("Reward calculation step 2",
 		"orderId", order.Id,
@@ -432,6 +439,15 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 		return nil
 	}
 	
+	// Calculate spread incentive multiplier
+	spreadMultiplier := k.CalculateSpreadIncentive(ctx, order)
+	
+	k.Logger(ctx).Info("Spread incentive calculated",
+		"orderId", order.Id,
+		"spreadMultiplier", spreadMultiplier,
+		"isBuy", order.IsBuy,
+	)
+	
 	// Create OrderRewardInfo
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	orderRewardInfo := types.OrderRewardInfo{
@@ -442,6 +458,7 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 		AccumulatedTime:  0,
 		TotalRewards:     math.ZeroInt(),
 		LastClaimedTime:  sdkCtx.BlockTime().Unix(),
+		SpreadMultiplier: spreadMultiplier, // Store the multiplier
 	}
 	
 	// Save OrderRewardInfo

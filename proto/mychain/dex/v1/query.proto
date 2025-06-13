@@ -63,6 +63,11 @@ service Query {
   rpc FeeStatistics(QueryFeeStatisticsRequest) returns (QueryFeeStatisticsResponse) {
     option (google.api.http).get = "/mychain/dex/v1/fee_statistics";
   }
+  
+  // EstimateOrderRewards estimates rewards for a potential order
+  rpc EstimateOrderRewards(QueryEstimateOrderRewardsRequest) returns (QueryEstimateOrderRewardsResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/estimate_order_rewards";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -277,4 +282,26 @@ message FeeTypeStatistics {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
+}
+
+// QueryEstimateOrderRewardsRequest is request for EstimateOrderRewards
+message QueryEstimateOrderRewardsRequest {
+  uint64 pair_id = 1;
+  string price = 2;
+  string amount = 3;
+  bool is_buy = 4;
+}
+
+// QueryEstimateOrderRewardsResponse is response for EstimateOrderRewards
+message QueryEstimateOrderRewardsResponse {
+  string current_spread = 1;
+  string new_spread = 2;
+  string spread_improvement = 3;
+  string base_apy = 4;
+  string spread_multiplier = 5;
+  string effective_apy = 6;
+  string estimated_daily_rewards = 7;
+  string reward_tier = 8;
+  string current_best_bid = 9;
+  string current_best_ask = 10;
 }

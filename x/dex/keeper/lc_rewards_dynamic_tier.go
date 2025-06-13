@@ -36,9 +36,14 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 		"annualPercentage", math.LegacyNewDecFromInt(dynamicRate).Quo(math.LegacyNewDec(3175)).Mul(math.LegacyNewDec(100)),
 	)
 	
-	// Get all users with active liquidity
-	liquidityProviders := make(map[string]math.LegacyDec)
-	totalLiquidity := math.LegacyZeroDec()
+	// Get all users with active liquidity and their weighted values
+	type OrderInfo struct {
+		Order      types.Order
+		Value      math.LegacyDec
+		Multiplier math.LegacyDec
+	}
+	userOrders := make(map[string][]OrderInfo)
+	totalWeightedLiquidity := math.LegacyZeroDec()
 	
 	// Walk through all active orders
 	err = k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
@@ -65,14 +70,26 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 		priceDec := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
 		orderValue := remainingDec.Mul(priceDec)
 		
-		// Add to user's total liquidity
-		if existing, ok := liquidityProviders[order.Maker]; ok {
-			liquidityProviders[order.Maker] = existing.Add(orderValue)
-		} else {
-			liquidityProviders[order.Maker] = orderValue
+		// Get spread multiplier
+		multiplier := math.LegacyOneDec()
+		if !orderReward.SpreadMultiplier.IsNil() && orderReward.SpreadMultiplier.GT(math.LegacyZeroDec()) {
+			multiplier = orderReward.SpreadMultiplier
 		}
 		
-		totalLiquidity = totalLiquidity.Add(orderValue)
+		// Calculate weighted value
+		weightedValue := orderValue.Mul(multiplier)
+		
+		// Store order info
+		if _, exists := userOrders[order.Maker]; !exists {
+			userOrders[order.Maker] = []OrderInfo{}
+		}
+		userOrders[order.Maker] = append(userOrders[order.Maker], OrderInfo{
+			Order:      order,
+			Value:      orderValue,
+			Multiplier: multiplier,
+		})
+		
+		totalWeightedLiquidity = totalWeightedLiquidity.Add(weightedValue)
 		return false, nil
 	})
 	if err != nil {
@@ -80,25 +97,31 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 	}
 	
 	// If no liquidity, nothing to distribute
-	if totalLiquidity.IsZero() || len(liquidityProviders) == 0 {
+	if totalWeightedLiquidity.IsZero() || len(userOrders) == 0 {
 		k.Logger(ctx).Info("No eligible liquidity for rewards")
 		return nil
 	}
 	
 	// Calculate total rewards to distribute this hour
-	// Total rewards = Total liquidity value * Dynamic APR / blocks per year
-	totalRewards := totalLiquidity.MulInt(dynamicRate).QuoInt64(BlocksPerYear).TruncateInt()
+	// Total rewards = Total weighted liquidity value * Dynamic APR / blocks per year
+	totalRewards := totalWeightedLiquidity.MulInt(dynamicRate).QuoInt64(BlocksPerYear).TruncateInt()
 	
 	k.Logger(ctx).Info("Total rewards to distribute", 
 		"totalRewards", totalRewards,
-		"numProviders", len(liquidityProviders),
-		"totalLiquidity", totalLiquidity,
+		"numProviders", len(userOrders),
+		"totalWeightedLiquidity", totalWeightedLiquidity,
 	)
 	
-	// Distribute rewards proportionally to each provider
-	for user, userLiquidity := range liquidityProviders {
+	// Distribute rewards proportionally to each provider based on weighted liquidity
+	for user, orders := range userOrders {
+		// Calculate user's total weighted liquidity
+		userWeightedLiquidity := math.LegacyZeroDec()
+		for _, orderInfo := range orders {
+			userWeightedLiquidity = userWeightedLiquidity.Add(orderInfo.Value.Mul(orderInfo.Multiplier))
+		}
+		
 		// Calculate user's share of rewards
-		userShare := userLiquidity.Quo(totalLiquidity)
+		userShare := userWeightedLiquidity.Quo(totalWeightedLiquidity)
 		userReward := math.LegacyNewDecFromInt(totalRewards).Mul(userShare).TruncateInt()
 		
 		if userReward.IsPositive() {
@@ -140,7 +163,8 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 			k.Logger(ctx).Info("Distributed LC rewards to user",
 				"user", user,
 				"rewards", userReward,
-				"liquidity", userLiquidity,
+				"weightedLiquidity", userWeightedLiquidity,
+				"numOrders", len(orders),
 			)
 			
 			// Record transaction for tracking
