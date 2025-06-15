@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { useKeplr } from '../hooks/useKeplr';
+import { DEXRewardsInfo } from '../components/DEXRewardsInfo';
 
 interface OrderBookEntry {
   price: string;
@@ -387,6 +388,9 @@ export const DEXPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Dynamic Rewards and Spread Incentives Information */}
+        <DEXRewardsInfo />
 
         {/* Liquidity Terms and Information */}
         <div className="bg-gray-800 rounded-lg p-6">
