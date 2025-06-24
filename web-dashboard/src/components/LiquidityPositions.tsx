@@ -2,6 +2,87 @@ import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { formatUnixTimestamp } from '../utils/formatters';
 
+// Component to visualize reward eligibility
+const RewardEligibilityChart: React.FC<{
+  positions: LiquidityPosition[];
+  currentAPR: number;
+}> = ({ positions, currentAPR }) => {
+  const eligible = positions.filter(p => p.eligibilityStatus === 'eligible');
+  const partial = positions.filter(p => p.eligibilityStatus === 'partial');
+  const ineligible = positions.filter(p => p.eligibilityStatus === 'ineligible');
+  
+  const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
+  const eligibleValue = eligible.reduce((sum, p) => sum + p.value, 0);
+  const partialValue = partial.reduce((sum, p) => sum + p.value, 0);
+  const ineligibleValue = ineligible.reduce((sum, p) => sum + p.value, 0);
+  
+  const eligiblePercent = totalValue > 0 ? (eligibleValue / totalValue) * 100 : 0;
+  const partialPercent = totalValue > 0 ? (partialValue / totalValue) * 100 : 0;
+  const ineligiblePercent = totalValue > 0 ? (ineligibleValue / totalValue) * 100 : 0;
+  
+  const totalHourlyRewards = positions.reduce((sum, p) => sum + p.hourlyReward, 0);
+  const projectedDaily = totalHourlyRewards * 24;
+  const projectedYearly = totalHourlyRewards * 8760;
+  const effectiveAPR = totalValue > 0 ? (projectedYearly / totalValue) * 100 : 0;
+  
+  return (
+    <div className="mt-3">
+      {/* Progress bar */}
+      <div className="h-8 bg-gray-700 rounded-lg overflow-hidden flex">
+        {eligiblePercent > 0 && (
+          <div 
+            className="bg-green-500 flex items-center justify-center text-xs font-bold"
+            style={{ width: `${eligiblePercent}%` }}
+          >
+            {eligiblePercent >= 10 && `${eligiblePercent.toFixed(0)}%`}
+          </div>
+        )}
+        {partialPercent > 0 && (
+          <div 
+            className="bg-yellow-500 flex items-center justify-center text-xs font-bold"
+            style={{ width: `${partialPercent}%` }}
+          >
+            {partialPercent >= 10 && `${partialPercent.toFixed(0)}%`}
+          </div>
+        )}
+        {ineligiblePercent > 0 && (
+          <div 
+            className="bg-red-500 flex items-center justify-center text-xs font-bold"
+            style={{ width: `${ineligiblePercent}%` }}
+          >
+            {ineligiblePercent >= 10 && `${ineligiblePercent.toFixed(0)}%`}
+          </div>
+        )}
+      </div>
+      
+      {/* Stats */}
+      <div className="mt-2 grid grid-cols-3 gap-4 text-xs">
+        <div>
+          <span className="text-gray-400">Effective APR:</span>
+          <span className="font-bold ml-1 text-green-400">
+            {effectiveAPR.toFixed(1)}%
+          </span>
+          <span className="text-gray-500 ml-1">
+            (of {currentAPR}%)
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-400">Daily Rewards:</span>
+          <span className="font-bold ml-1">
+            {projectedDaily.toFixed(2)} LC
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-400">Yearly Rewards:</span>
+          <span className="font-bold ml-1">
+            {projectedYearly.toFixed(0)} LC
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface LiquidityPosition {
   orderId: string;
   pairId: string;
@@ -14,7 +95,9 @@ interface LiquidityPosition {
   lastRewardAt?: string;
   totalRewardsEarned: number;
   isEligible: boolean;
+  eligibilityStatus: 'eligible' | 'partial' | 'ineligible';
   eligibilityReason?: string;
+  eligibilityPercent: number;
   tier: number;
   hourlyReward: number;
   spreadMultiplier: number;
@@ -123,15 +206,18 @@ export const LiquidityPositions: React.FC<Props> = ({
         const minimumValue = 0.000001 * 8760 * 100 / currentAPR;
         
         // Determine eligibility
-        let isEligible = true;
+        let eligibilityStatus: 'eligible' | 'partial' | 'ineligible' = 'eligible';
         let eligibilityReason = '';
+        let eligibilityPercent = 100;
         
         if (value < minimumValue) {
-          isEligible = false;
+          eligibilityStatus = 'ineligible';
           eligibilityReason = `Order too small (min: $${minimumValue.toFixed(2)})`;
+          eligibilityPercent = 0;
         } else if (remaining === 0) {
-          isEligible = false;
+          eligibilityStatus = 'ineligible';
           eligibilityReason = 'Order fully filled';
+          eligibilityPercent = 0;
         }
         
         
@@ -230,19 +316,31 @@ export const LiquidityPositions: React.FC<Props> = ({
         }
         
         // Calculate hourly reward with multiplier
-        const baseHourlyReward = isEligible ? (value * currentAPR / 100 / 8760) : 0;
-        const hourlyReward = baseHourlyReward * spreadMultiplier;
+        const baseHourlyReward = eligibilityStatus !== 'ineligible' ? (value * currentAPR / 100 / 8760) : 0;
+        let hourlyReward = baseHourlyReward * spreadMultiplier;
         
         // Check if order is actually receiving rewards from backend
         // If we expect rewards but orderRewardInfo shows no accumulated rewards after time has passed,
         // it might be due to volume caps
-        if (isEligible && hourlyReward > 0 && orderRewardInfo) {
+        if (eligibilityStatus !== 'ineligible' && hourlyReward > 0 && orderRewardInfo) {
           const orderAge = Date.now() / 1000 - orderRewardInfo.start_time;
-          const expectedMinRewards = orderAge > 3600 ? 1 : 0; // After 1 hour, should have some rewards
           
           if (orderAge > 3600 && (!orderRewardInfo.total_rewards || orderRewardInfo.total_rewards === "0")) {
-            isEligible = false;
+            eligibilityStatus = 'ineligible';
             eligibilityReason = 'Exceeds tier volume cap';
+            eligibilityPercent = 0;
+            hourlyReward = 0;
+          } else if (orderAge > 1800 && orderRewardInfo.total_rewards) {
+            // Check if rewards are lower than expected (partial cap)
+            const expectedRewards = (orderAge / 3600) * baseHourlyReward * spreadMultiplier * 1000000;
+            const actualRewards = parseFloat(orderRewardInfo.total_rewards || "0");
+            
+            if (actualRewards > 0 && actualRewards < expectedRewards * 0.8) {
+              eligibilityStatus = 'partial';
+              eligibilityPercent = Math.round((actualRewards / expectedRewards) * 100);
+              eligibilityReason = `Partially capped (${eligibilityPercent}% of expected)`;
+              hourlyReward = hourlyReward * (eligibilityPercent / 100);
+            }
           }
         }
         
@@ -320,8 +418,10 @@ export const LiquidityPositions: React.FC<Props> = ({
           lastRewardAt: rewardTxs.length > 0 ? 
             rewardTxs[0].timestamp : undefined,
           totalRewardsEarned,
-          isEligible,
+          isEligible: eligibilityStatus === 'eligible',
+          eligibilityStatus,
           eligibilityReason,
+          eligibilityPercent,
           tier,
           hourlyReward,
           spreadMultiplier,
@@ -425,27 +525,38 @@ export const LiquidityPositions: React.FC<Props> = ({
 
       {/* Eligibility Summary */}
       {selectedTab === 'active' && positions.length > 0 && (
-        <div className="mb-4 p-3 bg-gray-800/50 rounded-lg flex gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">✓</span>
-            <span className="text-gray-400">Eligible:</span>
-            <span className="font-bold text-green-400">
-              {positions.filter(p => p.isEligible).length}
-            </span>
+        <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
+          <div className="flex gap-4 text-sm mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span className="text-gray-400">Eligible:</span>
+              <span className="font-bold text-green-400">
+                {positions.filter(p => p.eligibilityStatus === 'eligible').length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-400">⚠</span>
+              <span className="text-gray-400">Partial:</span>
+              <span className="font-bold text-yellow-400">
+                {positions.filter(p => p.eligibilityStatus === 'partial').length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-red-400">✗</span>
+              <span className="text-gray-400">Ineligible:</span>
+              <span className="font-bold text-red-400">
+                {positions.filter(p => p.eligibilityStatus === 'ineligible').length}
+              </span>
+            </div>
+            <div className="flex-1 text-right text-gray-400">
+              <span>Total Value Earning: </span>
+              <span className="font-bold text-white">
+                ${positions.filter(p => p.eligibilityStatus !== 'ineligible').reduce((sum, p) => sum + p.value, 0).toFixed(2)}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-red-400">✗</span>
-            <span className="text-gray-400">Ineligible:</span>
-            <span className="font-bold text-red-400">
-              {positions.filter(p => !p.isEligible).length}
-            </span>
-          </div>
-          <div className="flex-1 text-right text-gray-400">
-            <span>Total Value Earning: </span>
-            <span className="font-bold text-white">
-              ${positions.filter(p => p.isEligible).reduce((sum, p) => sum + p.value, 0).toFixed(2)}
-            </span>
-          </div>
+          {/* Visual representation */}
+          <RewardEligibilityChart positions={positions} currentAPR={currentAPR} />
         </div>
       )}
 
@@ -457,8 +568,10 @@ export const LiquidityPositions: React.FC<Props> = ({
               <div 
                 key={position.orderId} 
                 className={`border rounded-lg p-4 transition-all ${
-                  position.isEligible 
+                  position.eligibilityStatus === 'eligible'
                     ? 'bg-gray-700/30 border-gray-600 hover:border-gray-500' 
+                    : position.eligibilityStatus === 'partial'
+                    ? 'bg-yellow-900/20 border-yellow-500/40 hover:border-yellow-500/60'
                     : 'bg-red-900/10 border-red-500/50 opacity-75'
                 }`}
               >
@@ -491,10 +604,15 @@ export const LiquidityPositions: React.FC<Props> = ({
                           <span className="text-gray-500">({position.potentialBonusType})</span>
                         </span>
                       )}
-                      {position.isEligible ? (
+                      {position.eligibilityStatus === 'eligible' ? (
                         <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded flex items-center gap-1">
                           <span>✓</span>
                           <span>EARNING REWARDS</span>
+                        </span>
+                      ) : position.eligibilityStatus === 'partial' ? (
+                        <span className="text-xs bg-yellow-600/30 text-yellow-400 px-2 py-1 rounded flex items-center gap-1">
+                          <span>⚠</span>
+                          <span>PARTIALLY CAPPED ({position.eligibilityPercent}%)</span>
                         </span>
                       ) : (
                         <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded flex items-center gap-1">
