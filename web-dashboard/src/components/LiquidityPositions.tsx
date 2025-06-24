@@ -134,6 +134,7 @@ export const LiquidityPositions: React.FC<Props> = ({
           eligibilityReason = 'Order fully filled';
         }
         
+        
         // Get order reward info from backend
         const orderRewardInfo = orderRewardsMap.get(order.id);
         
@@ -231,6 +232,19 @@ export const LiquidityPositions: React.FC<Props> = ({
         // Calculate hourly reward with multiplier
         const baseHourlyReward = isEligible ? (value * currentAPR / 100 / 8760) : 0;
         const hourlyReward = baseHourlyReward * spreadMultiplier;
+        
+        // Check if order is actually receiving rewards from backend
+        // If we expect rewards but orderRewardInfo shows no accumulated rewards after time has passed,
+        // it might be due to volume caps
+        if (isEligible && hourlyReward > 0 && orderRewardInfo) {
+          const orderAge = Date.now() / 1000 - orderRewardInfo.start_time;
+          const expectedMinRewards = orderAge > 3600 ? 1 : 0; // After 1 hour, should have some rewards
+          
+          if (orderAge > 3600 && (!orderRewardInfo.total_rewards || orderRewardInfo.total_rewards === "0")) {
+            isEligible = false;
+            eligibilityReason = 'Exceeds tier volume cap';
+          }
+        }
         
         // Calculate total hourly rewards for all user's orders
         let totalUserHourlyRewards = 0;
@@ -409,6 +423,32 @@ export const LiquidityPositions: React.FC<Props> = ({
         </button>
       </div>
 
+      {/* Eligibility Summary */}
+      {selectedTab === 'active' && positions.length > 0 && (
+        <div className="mb-4 p-3 bg-gray-800/50 rounded-lg flex gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-green-400">✓</span>
+            <span className="text-gray-400">Eligible:</span>
+            <span className="font-bold text-green-400">
+              {positions.filter(p => p.isEligible).length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-red-400">✗</span>
+            <span className="text-gray-400">Ineligible:</span>
+            <span className="font-bold text-red-400">
+              {positions.filter(p => !p.isEligible).length}
+            </span>
+          </div>
+          <div className="flex-1 text-right text-gray-400">
+            <span>Total Value Earning: </span>
+            <span className="font-bold text-white">
+              ${positions.filter(p => p.isEligible).reduce((sum, p) => sum + p.value, 0).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Active Positions */}
       {selectedTab === 'active' && (
         <div className="space-y-4">
@@ -416,10 +456,10 @@ export const LiquidityPositions: React.FC<Props> = ({
             positions.map((position) => (
               <div 
                 key={position.orderId} 
-                className={`border rounded-lg p-4 ${
+                className={`border rounded-lg p-4 transition-all ${
                   position.isEligible 
-                    ? 'bg-gray-700/30 border-gray-600' 
-                    : 'bg-red-900/20 border-red-500/30'
+                    ? 'bg-gray-700/30 border-gray-600 hover:border-gray-500' 
+                    : 'bg-red-900/10 border-red-500/50 opacity-75'
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -451,12 +491,26 @@ export const LiquidityPositions: React.FC<Props> = ({
                           <span className="text-gray-500">({position.potentialBonusType})</span>
                         </span>
                       )}
-                      {!position.isEligible && (
-                        <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded">
-                          NOT EARNING
+                      {position.isEligible ? (
+                        <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded flex items-center gap-1">
+                          <span>✓</span>
+                          <span>EARNING REWARDS</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded flex items-center gap-1">
+                          <span>✗</span>
+                          <span>NOT EARNING</span>
                         </span>
                       )}
                     </div>
+
+                    {/* Eligibility Reason */}
+                    {!position.isEligible && position.eligibilityReason && (
+                      <div className="text-xs text-red-400 mb-2">
+                        <span className="font-medium">Reason: </span>
+                        {position.eligibilityReason}
+                      </div>
+                    )}
 
                     {/* Order Details */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm mb-3">
