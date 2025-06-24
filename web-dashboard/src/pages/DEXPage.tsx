@@ -177,7 +177,8 @@ export const DEXPage: React.FC = () => {
         try {
           const priceRes = await fetchAPI('/mychain/maincoin/v1/current_price');
           if (priceRes.current_price) {
-            const priceInUSD = parseFloat(priceRes.current_price) / 1000000;
+            // Price is already in whole units (e.g., 0.0001001)
+            const priceInUSD = parseFloat(priceRes.current_price);
             setMcMarketPrice(priceInUSD);
           }
         } catch (err) {

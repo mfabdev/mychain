@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DEX Partial Eligibility Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .info-box {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        .eligible {
+            color: green;
+            font-weight: bold;
+        }
+        .partial {
+            color: orange;
+            font-weight: bold;
+        }
+        .ineligible {
+            color: red;
+            font-weight: bold;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-eligible {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-ineligible {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4caf50, #8bc34a);
+            transition: width 0.3s ease;
+        }
+        .volume-caps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .cap-box {
+            padding: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DEX Partial Eligibility Test</h1>
+        
+        <div class="info-box">
+            <h3>System Information</h3>
+            <div id="system-info">Loading...</div>
+        </div>
+
+        <div class="volume-caps">
+            <div class="cap-box">
+                <h4>Buy Side (Bid) Volume Cap</h4>
+                <div id="bid-cap-info">Loading...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="bid-progress" style="width: 0%"></div>
+                </div>
+                <div id="bid-cap-details"></div>
+            </div>
+            <div class="cap-box">
+                <h4>Sell Side (Ask) Volume Cap</h4>
+                <div id="ask-cap-info">Loading...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ask-progress" style="width: 0%"></div>
+                </div>
+                <div id="ask-cap-details"></div>
+            </div>
+        </div>
+
+        <h2>Active Orders</h2>
+        <table id="orders-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Amount</th>
+                    <th>Value</th>
+                    <th>Tier</th>
+                    <th>Eligibility Status</th>
+                    <th>Volume Cap %</th>
+                    <th>Est. Hourly Rewards</th>
+                </tr>
+            </thead>
+            <tbody id="orders-body">
+                <tr><td colspan="9">Loading orders...</td></tr>
+            </tbody>
+        </table>
+
+        <button onclick="fetchData()">Refresh Data</button>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                // Fetch system info
+                const systemResponse = await fetch('http://localhost:1317/mychain/dex/v1/dynamic-reward-state');
+                const systemData = await systemResponse.json();
+                
+                // Fetch orders through the terminal server
+                const ordersResponse = await fetch('http://localhost:3003/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: 'mychaind query bank balances cosmos1phaxpevm5wecex2jyaqty2a4v02qj7qmhq3xz0 -o json' })
+                });
+                
+                // For now, let's create mock data to test the UI
+                const orders = [
+                    { id: 1, isBuy: true, price: 100, amount: 10000, tier: 1, eligibility: 'eligible', volumeCapFraction: 1.0 },
+                    { id: 2, isBuy: true, price: 98, amount: 20000, tier: 1, eligibility: 'eligible', volumeCapFraction: 1.0 },
+                    { id: 3, isBuy: true, price: 95, amount: 50000, tier: 1, eligibility: 'partial', volumeCapFraction: 0.6 },
+                    { id: 4, isBuy: false, price: 105, amount: 5000, tier: 1, eligibility: 'eligible', volumeCapFraction: 1.0 },
+                    { id: 5, isBuy: false, price: 110, amount: 10000, tier: 1, eligibility: 'partial', volumeCapFraction: 0.8 },
+                    { id: 6, isBuy: false, price: 120, amount: 20000, tier: 1, eligibility: 'ineligible', volumeCapFraction: 0.0 }
+                ];
+
+                // Update system info
+                const currentAPR = systemData.dynamic_reward_state?.current_annual_rate || "0.07";
+                const aprPercent = (parseFloat(currentAPR) * 100).toFixed(1);
+                document.getElementById('system-info').innerHTML = `
+                    <p><strong>Current Dynamic APR:</strong> ${aprPercent}%</p>
+                    <p><strong>Current Tier:</strong> Tier 1 (0% price deviation)</p>
+                    <p><strong>MC Price:</strong> $0.0001</p>
+                    <p><strong>MC Supply Value:</strong> $10,000</p>
+                `;
+
+                // Calculate volume caps (example values)
+                const mcSupplyValue = 10000; // $10,000
+                const bidVolumeCap = mcSupplyValue * 0.02; // 2% for Tier 1
+                const askVolumeCap = mcSupplyValue * 0.01; // 1% for Tier 1
+
+                // Calculate current volumes
+                let currentBidVolume = 0;
+                let currentAskVolume = 0;
+                orders.forEach(order => {
+                    const value = (order.price * order.amount) / 1000000; // Convert to dollars
+                    if (order.isBuy) {
+                        currentBidVolume += value * order.volumeCapFraction;
+                    } else {
+                        currentAskVolume += value * order.volumeCapFraction;
+                    }
+                });
+
+                // Update volume cap displays
+                const bidPercent = Math.min((currentBidVolume / bidVolumeCap) * 100, 100);
+                const askPercent = Math.min((currentAskVolume / askVolumeCap) * 100, 100);
+
+                document.getElementById('bid-cap-info').innerHTML = `$${currentBidVolume.toFixed(2)} / $${bidVolumeCap.toFixed(2)}`;
+                document.getElementById('bid-progress').style.width = bidPercent + '%';
+                document.getElementById('bid-cap-details').innerHTML = `${bidPercent.toFixed(1)}% of cap used`;
+
+                document.getElementById('ask-cap-info').innerHTML = `$${currentAskVolume.toFixed(2)} / $${askVolumeCap.toFixed(2)}`;
+                document.getElementById('ask-progress').style.width = askPercent + '%';
+                document.getElementById('ask-cap-details').innerHTML = `${askPercent.toFixed(1)}% of cap used`;
+
+                // Update orders table
+                const tbody = document.getElementById('orders-body');
+                tbody.innerHTML = orders.map(order => {
+                    const value = (order.price * order.amount) / 1000000;
+                    const hourlyReward = value * parseFloat(currentAPR) / 8760 * order.volumeCapFraction;
+                    
+                    let statusClass = 'status-eligible';
+                    let statusText = 'Eligible';
+                    let capText = '100%';
+                    
+                    if (order.eligibility === 'partial') {
+                        statusClass = 'status-partial';
+                        statusText = 'Partial';
+                        capText = (order.volumeCapFraction * 100).toFixed(0) + '%';
+                    } else if (order.eligibility === 'ineligible') {
+                        statusClass = 'status-ineligible';
+                        statusText = 'Ineligible';
+                        capText = '0%';
+                    }
+
+                    return `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.isBuy ? 'Buy' : 'Sell'}</td>
+                            <td>$${(order.price / 1000000).toFixed(6)}</td>
+                            <td>${order.amount.toLocaleString()} MC</td>
+                            <td>$${value.toFixed(2)}</td>
+                            <td>Tier ${order.tier}</td>
+                            <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+                            <td class="${order.eligibility}">${capText}</td>
+                            <td>${hourlyReward.toFixed(4)} LC</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Fetch data on load
+        fetchData();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(fetchData, 5000);
+    </script>
+</body>
+</html>

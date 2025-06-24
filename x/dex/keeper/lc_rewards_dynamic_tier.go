@@ -176,6 +176,10 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					)
 				}
 				
+				// Track the cap fraction for this order
+				cappedFraction := math.LegacyOneDec()
+				originalOrderValue := orderValue
+				
 				// Check if adding this order would exceed the cap
 				newEligibleValue := eligibleBuyValue.Add(orderValue)
 				if newEligibleValue.GT(bidVolumeCap) {
@@ -183,19 +187,20 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					remainingCap := bidVolumeCap.Sub(eligibleBuyValue)
 					if remainingCap.IsPositive() {
 						// Calculate what fraction of the order fits under the cap
-						cappedFraction := remainingCap.Quo(orderValue)
+						cappedFraction = remainingCap.Quo(orderValue)
 						orderValue = orderValue.Mul(cappedFraction)
 						
-						k.Logger(ctx).Info("Order partially capped",
+						k.Logger(ctx).Info("Buy order partially capped",
 							"orderId", order.Id,
-							"originalValue", orderValue.Quo(cappedFraction),
+							"originalValue", originalOrderValue,
 							"cappedValue", orderValue,
 							"cappedFraction", cappedFraction,
+							"remainingCap", remainingCap,
 							"bidVolumeCap", bidVolumeCap,
 						)
 					} else {
 						// No room left under the cap, skip this order entirely
-						k.Logger(ctx).Info("Order excluded by volume cap",
+						k.Logger(ctx).Info("Buy order excluded by volume cap",
 							"orderId", order.Id,
 							"orderValue", orderValue,
 							"eligibleBuyValue", eligibleBuyValue,
@@ -249,12 +254,20 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
 					
-					// Update the order's tier_id to reflect current system tier
+					// Update the order's tier_id and volume cap fraction
 					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
+						updateNeeded := false
 						if orderRewardInfo.TierId != systemTier.Id {
 							orderRewardInfo.TierId = systemTier.Id
+							updateNeeded = true
+						}
+						if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
+							orderRewardInfo.VolumeCapFraction = cappedFraction
+							updateNeeded = true
+						}
+						if updateNeeded {
 							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
-								k.Logger(ctx).Error("Failed to update order tier",
+								k.Logger(ctx).Error("Failed to update order info",
 									"orderId", order.Id,
 									"error", err,
 								)
@@ -282,6 +295,10 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
 				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
 				
+				// Track the cap fraction for this order
+				cappedFraction := math.LegacyOneDec()
+				originalOrderValue := orderValue
+				
 				// Check if adding this order would exceed the cap
 				newEligibleValue := eligibleSellValue.Add(orderValue)
 				if newEligibleValue.GT(askVolumeCap) {
@@ -289,14 +306,15 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					remainingCap := askVolumeCap.Sub(eligibleSellValue)
 					if remainingCap.IsPositive() {
 						// Calculate what fraction of the order fits under the cap
-						cappedFraction := remainingCap.Quo(orderValue)
+						cappedFraction = remainingCap.Quo(orderValue)
 						orderValue = orderValue.Mul(cappedFraction)
 						
 						k.Logger(ctx).Info("Sell order partially capped",
 							"orderId", order.Id,
-							"originalValue", orderValue.Quo(cappedFraction),
+							"originalValue", originalOrderValue,
 							"cappedValue", orderValue,
 							"cappedFraction", cappedFraction,
+							"remainingCap", remainingCap,
 							"askVolumeCap", askVolumeCap,
 						)
 					} else {
@@ -355,12 +373,20 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
 					
-					// Update the order's tier_id to reflect current system tier
+					// Update the order's tier_id and volume cap fraction
 					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
+						updateNeeded := false
 						if orderRewardInfo.TierId != systemTier.Id {
 							orderRewardInfo.TierId = systemTier.Id
+							updateNeeded = true
+						}
+						if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
+							orderRewardInfo.VolumeCapFraction = cappedFraction
+							updateNeeded = true
+						}
+						if updateNeeded {
 							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
-								k.Logger(ctx).Error("Failed to update order tier",
+								k.Logger(ctx).Error("Failed to update order info",
 									"orderId", order.Id,
 									"error", err,
 								)

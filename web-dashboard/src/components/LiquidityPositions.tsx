@@ -319,27 +319,21 @@ export const LiquidityPositions: React.FC<Props> = ({
         const baseHourlyReward = eligibilityStatus !== 'ineligible' ? (value * currentAPR / 100 / 8760) : 0;
         let hourlyReward = baseHourlyReward * spreadMultiplier;
         
-        // Check if order is actually receiving rewards from backend
-        // If we expect rewards but orderRewardInfo shows no accumulated rewards after time has passed,
-        // it might be due to volume caps
-        if (eligibilityStatus !== 'ineligible' && hourlyReward > 0 && orderRewardInfo) {
-          const orderAge = Date.now() / 1000 - orderRewardInfo.start_time;
+        // Check if order has volume cap fraction from backend
+        if (eligibilityStatus !== 'ineligible' && orderRewardInfo && orderRewardInfo.volume_cap_fraction) {
+          const volumeCapFraction = parseFloat(orderRewardInfo.volume_cap_fraction || "1");
           
-          if (orderAge > 3600 && (!orderRewardInfo.total_rewards || orderRewardInfo.total_rewards === "0")) {
-            eligibilityStatus = 'ineligible';
-            eligibilityReason = 'Exceeds tier volume cap';
-            eligibilityPercent = 0;
-            hourlyReward = 0;
-          } else if (orderAge > 1800 && orderRewardInfo.total_rewards) {
-            // Check if rewards are lower than expected (partial cap)
-            const expectedRewards = (orderAge / 3600) * baseHourlyReward * spreadMultiplier * 1000000;
-            const actualRewards = parseFloat(orderRewardInfo.total_rewards || "0");
-            
-            if (actualRewards > 0 && actualRewards < expectedRewards * 0.8) {
+          if (volumeCapFraction < 1.0) {
+            if (volumeCapFraction === 0) {
+              eligibilityStatus = 'ineligible';
+              eligibilityReason = 'Exceeds tier volume cap';
+              eligibilityPercent = 0;
+              hourlyReward = 0;
+            } else {
               eligibilityStatus = 'partial';
-              eligibilityPercent = Math.round((actualRewards / expectedRewards) * 100);
-              eligibilityReason = `Partially capped (${eligibilityPercent}% of expected)`;
-              hourlyReward = hourlyReward * (eligibilityPercent / 100);
+              eligibilityPercent = Math.round(volumeCapFraction * 100);
+              eligibilityReason = `Volume capped at ${eligibilityPercent}%`;
+              hourlyReward = hourlyReward * volumeCapFraction;
             }
           }
         }

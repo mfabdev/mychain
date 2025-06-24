@@ -95,7 +95,15 @@ func (k Keeper) CalculateOrderLCRewards(ctx context.Context, order types.Order, 
 	if !orderRewardInfo.SpreadMultiplier.IsNil() && orderRewardInfo.SpreadMultiplier.GT(math.LegacyZeroDec()) {
 		spreadMultiplier = orderRewardInfo.SpreadMultiplier
 	}
-	rewardsDec := baseRewardsDec.Mul(spreadMultiplier)
+	
+	// Apply volume cap fraction
+	volumeCapFraction := math.LegacyOneDec()
+	if !orderRewardInfo.VolumeCapFraction.IsNil() && orderRewardInfo.VolumeCapFraction.GT(math.LegacyZeroDec()) {
+		volumeCapFraction = orderRewardInfo.VolumeCapFraction
+	}
+	
+	// Apply both multipliers
+	rewardsDec := baseRewardsDec.Mul(spreadMultiplier).Mul(volumeCapFraction)
 	
 	k.Logger(ctx).Info("Reward calculation step 2",
 		"orderId", order.Id,
@@ -103,6 +111,8 @@ func (k Keeper) CalculateOrderLCRewards(ctx context.Context, order types.Order, 
 		"annualRateDec", annualRateDec,
 		"timeActiveSeconds", timeActive.Seconds(),
 		"timeFraction", timeFraction,
+		"spreadMultiplier", spreadMultiplier,
+		"volumeCapFraction", volumeCapFraction,
 		"rewardsDec", rewardsDec,
 	)
 	
@@ -476,6 +486,7 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 		TotalRewards:     math.ZeroInt(),
 		LastClaimedTime:  sdkCtx.BlockTime().Unix(),
 		SpreadMultiplier: spreadMultiplier, // Store the multiplier
+		VolumeCapFraction: math.LegacyOneDec(), // Initially not capped
 	}
 	
 	// Save OrderRewardInfo

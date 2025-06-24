@@ -61,6 +61,10 @@ message OrderRewardInfo {
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
+  string volume_cap_fraction = 9 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
 }
 
 // VolumeTracker tracks volume for tier calculations
