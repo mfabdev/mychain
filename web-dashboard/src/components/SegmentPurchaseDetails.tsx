@@ -32,10 +32,7 @@ export const SegmentPurchaseDetails: React.FC<SegmentPurchaseDetailsProps> = ({
 
   const formatNumber = (value: string): string => {
     const num = parseFloat(value) / 1_000_000;
-    return num.toLocaleString(undefined, { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6 
-    });
+    return num.toFixed(6);
   };
 
   const formatPrice = (value: string): string => {

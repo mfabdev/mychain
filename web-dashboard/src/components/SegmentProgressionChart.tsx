@@ -138,7 +138,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
                 <div>
                   <span className="text-gray-500">Tokens needed:</span>
                   <span className="ml-1 text-gray-300">
-                    {data.tokensToComplete !== null ? `${data.tokensToComplete.toLocaleString(undefined, { maximumFractionDigits: 0 })} MC` : 'TBD'}
+                    {data.tokensToComplete !== null ? `${data.tokensToComplete.toFixed(6)} MC` : 'TBD'}
                   </span>
                 </div>
                 <div>
@@ -156,7 +156,7 @@ export const SegmentProgressionChart: React.FC<SegmentProgressionChartProps> = (
                     <span className="text-gray-400">
                       Dev allocation on completion: 
                       <span className="text-purple-400 ml-1">
-                        {data.tokensToComplete !== null ? `${(data.tokensToComplete * 0.0001).toFixed(4)} MC (0.01%)` : 'TBD'}
+                        {data.tokensToComplete !== null ? `${(data.tokensToComplete * 0.0001).toFixed(6)} MC (0.01%)` : 'TBD'}
                       </span>
                     </span>
                   </div>

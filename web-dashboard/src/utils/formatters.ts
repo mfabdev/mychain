@@ -1,4 +1,4 @@
-export const formatNumber = (num: number, decimals: number = 2): string => {
+export const formatNumber = (num: number, decimals: number = 6): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(decimals) + 'M';
   } else if (num >= 1000) {
@@ -21,7 +21,7 @@ export const formatUSD = (amount: number): string => {
   }).format(amount);
 };
 
-export const formatPercent = (value: number, decimals: number = 2): string => {
+export const formatPercent = (value: number, decimals: number = 6): string => {
   return `${value.toFixed(decimals)}%`;
 };
 
@@ -52,14 +52,34 @@ export const formatCoin = (coin: { denom: string; amount: string }): string => {
   const amount = parseInt(coin.amount) / 1_000_000;
   const denom = coin.denom.toUpperCase();
   
-  // For very small amounts (less than 0.01), show more decimal places
-  if (amount < 0.01 && amount > 0) {
-    return `${amount.toFixed(6)} ${denom}`;
+  // Always show 6 decimal places for consistency
+  return `${amount.toFixed(6)} ${denom}`;
+};
+
+export const formatUnixTimestamp = (unixTimestamp: number | string): string => {
+  // Handle both seconds and milliseconds timestamps
+  const timestamp = typeof unixTimestamp === 'string' ? parseInt(unixTimestamp) : unixTimestamp;
+  
+  // If timestamp is 0 or invalid, return a placeholder
+  if (!timestamp || timestamp === 0) {
+    return 'N/A';
   }
   
-  // For normal amounts, show 2-6 decimal places as needed
-  return `${amount.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 6
-  })} ${denom}`;
+  // Check if timestamp is in seconds (less than a reasonable millisecond timestamp)
+  // Cosmos SDK typically uses seconds, not milliseconds
+  const date = timestamp < 10000000000 ? new Date(timestamp * 1000) : new Date(timestamp);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 };

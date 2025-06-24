@@ -31,10 +31,10 @@ export const LiquidityCoinPage: React.FC = () => {
         setInflationInfo({
           currentRate: (parseFloat(inflation.inflation) * 100).toFixed(2),
           bondedRatio: bondedRatio.toFixed(2),
-          totalStaked: (bondedTokens / 1_000_000).toLocaleString(),
-          annualProvisions: (parseFloat(annualProvisions.annual_provisions) / 1_000_000).toLocaleString(),
-          totalSupply: (totalLCAmount / 1_000_000).toLocaleString(),
-          liquidSupply: (liquidTokens / 1_000_000).toLocaleString()
+          totalStaked: (bondedTokens / 1_000_000).toFixed(6),
+          annualProvisions: (parseFloat(annualProvisions.annual_provisions) / 1_000_000).toFixed(6),
+          totalSupply: (totalLCAmount / 1_000_000).toFixed(6),
+          liquidSupply: (liquidTokens / 1_000_000).toFixed(6)
         });
       } catch (error) {
         console.error('Failed to fetch inflation data:', error);
@@ -59,18 +59,18 @@ export const LiquidityCoinPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Total Supply</p>
-              <p className="text-2xl font-bold text-blue-400">{inflationInfo?.totalSupply || '100,000'}</p>
+              <p className="text-2xl font-bold text-blue-400">{inflationInfo?.totalSupply || '100000.000000'}</p>
               <p className="text-xs text-gray-500">LC</p>
             </div>
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Staked</p>
-              <p className="text-2xl font-bold text-green-400">{inflationInfo?.totalStaked || '90,000'}</p>
+              <p className="text-2xl font-bold text-green-400">{inflationInfo?.totalStaked || '90000.000000'}</p>
               <p className="text-xs text-gray-500">LC ({inflationInfo?.bondedRatio || '90'}%)</p>
             </div>
             <div className="bg-gray-700/30 rounded-lg p-4 text-center">
               <p className="text-sm text-gray-400">Liquid</p>
-              <p className="text-2xl font-bold text-yellow-400">{inflationInfo?.liquidSupply || '10,000'}</p>
-              <p className="text-xs text-gray-500">LC ({((parseFloat(inflationInfo?.liquidSupply?.replace(/,/g, '') || '10000') / parseFloat(inflationInfo?.totalSupply?.replace(/,/g, '') || '100000')) * 100).toFixed(1)}%)</p>
+              <p className="text-2xl font-bold text-yellow-400">{inflationInfo?.liquidSupply || '10000.000000'}</p>
+              <p className="text-xs text-gray-500">LC ({((parseFloat(inflationInfo?.liquidSupply || '10000.000000') / parseFloat(inflationInfo?.totalSupply || '100000.000000')) * 100).toFixed(2)}%)</p>
             </div>
           </div>
         </div>
@@ -91,12 +91,12 @@ export const LiquidityCoinPage: React.FC = () => {
             </div>
             <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
               <p className="text-sm text-green-400 mb-1">Total Staked</p>
-              <p className="text-xl font-bold text-green-300">{inflationInfo?.totalStaked || '90,000'} LC</p>
+              <p className="text-xl font-bold text-green-300">{inflationInfo?.totalStaked || '90000.000000'} LC</p>
               <p className="text-xs text-gray-500">Earning rewards</p>
             </div>
             <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4">
               <p className="text-sm text-yellow-400 mb-1">Annual Provisions</p>
-              <p className="text-xl font-bold text-yellow-300">{inflationInfo?.annualProvisions || '100,000'} LC</p>
+              <p className="text-xl font-bold text-yellow-300">{inflationInfo?.annualProvisions || '100000.000000'} LC</p>
               <p className="text-xs text-gray-500">Per year</p>
             </div>
           </div>

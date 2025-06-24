@@ -72,12 +72,12 @@ export const BlockInfo: React.FC = () => {
           console.log(`Processing coin: ${coin.denom} = ${coin.amount}`); // Debug log
           
           if (coin.denom === 'ulc') {
-            supplyMap.lc = (parseInt(coin.amount) / 1000000).toFixed(0);
+            supplyMap.lc = (parseInt(coin.amount) / 1000000).toFixed(6);
           } else if (coin.denom === 'umc') {
             // All MainCoin now uses umc denomination
-            supplyMap.mc = (parseInt(coin.amount) / 1000000).toFixed(0);
+            supplyMap.mc = (parseInt(coin.amount) / 1000000).toFixed(6);
           } else if (coin.denom === 'utusd') {
-            supplyMap.tusd = (parseInt(coin.amount) / 1000000).toFixed(0);
+            supplyMap.tusd = (parseInt(coin.amount) / 1000000).toFixed(6);
           }
         });
 

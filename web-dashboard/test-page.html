@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DEX Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: #2a2a2a; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #ef4444; }
+        h1, h2 { color: #60a5fa; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        pre { background: #333; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 DEX Dashboard - Working Demo</h1>
+        <p>This page demonstrates all the features we implemented:</p>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>💎 Dynamic Liquidity Rewards</h2>
+                <p>Current APR: <span class="success" id="apr">Loading...</span></p>
+                <p>Rewards paid in LC tokens for all trading pairs</p>
+                <p>Minimum order: <span id="minOrder">Loading...</span></p>
+            </div>
+            
+            <div class="card">
+                <h2>🎯 Current Spread</h2>
+                <p>Best Bid: <span class="success" id="bid">Loading...</span></p>
+                <p>Best Ask: <span class="error" id="ask">Loading...</span></p>
+                <p>Spread: <span id="spread">Loading...</span></p>
+                <p>Bonus up to 2x for tight spreads!</p>
+            </div>
+            
+            <div class="card">
+                <h2>💰 LC Price</h2>
+                <p>LC = 0.0001 MC</p>
+                <p>MC Price: <span id="mcPrice">Loading...</span></p>
+                <p>1 LC = <span class="success" id="lcValue">Loading...</span> TUSD</p>
+                <p>Can appreciate over time!</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 Your Positions</h2>
+            <div id="positions">Loading positions...</div>
+        </div>
+        
+        <div class="card">
+            <h2>🏆 Reward History</h2>
+            <div id="rewards">Loading rewards...</div>
+        </div>
+        
+        <div class="card">
+            <h2>API Status</h2>
+            <pre id="apiStatus">Checking API...</pre>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                // Fetch dynamic reward state
+                const rewardRes = await fetch('http://localhost:1317/mychain/dex/v1/dynamic_reward_state');
+                const rewardData = await rewardRes.json();
+                const apr = parseFloat(rewardData.state.current_annual_rate);
+                document.getElementById('apr').textContent = apr.toFixed(1) + '%';
+                document.getElementById('minOrder').textContent = '$' + (0.000001 * 8760 * 100 / apr).toFixed(2);
+                
+                // Fetch order book
+                const orderRes = await fetch('http://localhost:1317/mychain/dex/v1/order_book/1');
+                const orderData = await orderRes.json();
+                
+                let bestBid = 0, bestAsk = 0;
+                if (orderData.buy_orders && orderData.buy_orders.length > 0) {
+                    bestBid = parseFloat(orderData.buy_orders[0].price.amount) / 1000000;
+                }
+                if (orderData.sell_orders && orderData.sell_orders.length > 0) {
+                    bestAsk = parseFloat(orderData.sell_orders[0].price.amount) / 1000000;
+                }
+                
+                document.getElementById('bid').textContent = '$' + bestBid.toFixed(6);
+                document.getElementById('ask').textContent = '$' + bestAsk.toFixed(6);
+                const spread = bestBid > 0 && bestAsk > 0 ? ((bestAsk - bestBid) / bestBid * 100).toFixed(2) + '%' : 'N/A';
+                document.getElementById('spread').textContent = spread;
+                
+                // Fetch MC price
+                const priceRes = await fetch('http://localhost:1317/mychain/maincoin/v1/current_price');
+                const priceData = await priceRes.json();
+                const mcPrice = parseFloat(priceData.current_price) / 1000000;
+                document.getElementById('mcPrice').textContent = '$' + mcPrice.toFixed(6);
+                document.getElementById('lcValue').textContent = '$' + (0.0001 * mcPrice).toFixed(8);
+                
+                // Show positions
+                const positions = orderData.buy_orders.concat(orderData.sell_orders)
+                    .filter(o => o.maker === 'cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz');
+                    
+                if (positions.length > 0) {
+                    document.getElementById('positions').innerHTML = positions.map(p => `
+                        <div style="margin: 10px 0; padding: 10px; background: #333; border-radius: 4px;">
+                            <strong>${p.is_buy ? 'BUY' : 'SELL'} Order #${p.id}</strong><br>
+                            Price: $${(parseFloat(p.price.amount) / 1000000).toFixed(6)}<br>
+                            Amount: ${(parseFloat(p.amount.amount) / 1000000).toFixed(6)} MC<br>
+                            Hourly Reward: ~${(parseFloat(p.amount.amount) / 1000000 * parseFloat(p.price.amount) / 1000000 * apr / 100 / 8760).toFixed(6)} LC
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('positions').innerHTML = '<p>No active positions</p>';
+                }
+                
+                // Fetch reward history
+                const txRes = await fetch('http://localhost:1317/mychain/mychain/v1/transaction-history/cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz');
+                const txData = await txRes.json();
+                const rewardTxs = txData.transactions.filter(tx => tx.type === 'dex_reward_distribution');
+                
+                if (rewardTxs.length > 0) {
+                    document.getElementById('rewards').innerHTML = rewardTxs.map(tx => {
+                        const lcAmount = parseFloat(tx.amount[0].amount) / 1000000;
+                        const tusdValue = lcAmount * 0.0001 * mcPrice;
+                        return `
+                            <div style="margin: 10px 0; padding: 10px; background: #333; border-radius: 4px;">
+                                <strong>Reward Payment</strong><br>
+                                Amount: ${lcAmount.toFixed(6)} LC<br>
+                                Value: $${tusdValue.toFixed(6)} TUSD<br>
+                                Time: ${new Date(tx.timestamp).toLocaleString()}
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('rewards').innerHTML = '<p>No rewards yet</p>';
+                }
+                
+                document.getElementById('apiStatus').textContent = 'API Status: ✅ Connected\nAll systems operational';
+                
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = 'API Status: ❌ Error\n' + error.message;
+            }
+        }
+        
+        // Initial load
+        fetchData();
+        
+        // Refresh every 10 seconds
+        setInterval(fetchData, 10000);
+    </script>
+</body>
+</html>

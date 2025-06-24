@@ -32,11 +32,11 @@ export const OverviewPage: React.FC = () => {
             if (token.denom === 'ulc') {
               // Convert from smallest unit to LC (6 decimals)
               const lcAmount = parseInt(token.amount || '0') / 1_000_000;
-              setLcSupply(lcAmount.toLocaleString());
+              setLcSupply(lcAmount.toFixed(6));
             } else if (token.denom === 'utusd') {
               // Convert from utusd (micro) to TestUSD
               const testusdAmount = parseInt(token.amount || '0') / 1_000_000;
-              setTestusdSupply(testusdAmount.toLocaleString());
+              setTestusdSupply(testusdAmount.toFixed(6));
             }
           });
         }
@@ -55,7 +55,7 @@ export const OverviewPage: React.FC = () => {
           setInflationData({
             currentRate: currentInflation.toFixed(2),
             bondedRatio: bondedRatio.toFixed(2),
-            totalStaked: (bondedTokens / 1_000_000).toLocaleString()
+            totalStaked: (bondedTokens / 1_000_000).toFixed(6)
           });
         }
       } catch (error) {

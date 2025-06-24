@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { useKeplr } from '../hooks/useKeplr';
-import { DEXRewardsInfo } from '../components/DEXRewardsInfo';
+import { DynamicRewardsInfo } from '../components/DynamicRewardsInfo';
+import { LiquidityPositions } from '../components/LiquidityPositions';
+import { DEXTransactionHistory } from '../components/DEXTransactionHistory';
+import { LCPriceDisplay } from '../components/LCPriceDisplay';
+import { SpreadIncentivesInfo } from '../components/SpreadIncentivesInfo';
+import { formatUnixTimestamp } from '../utils/formatters';
 
 interface OrderBookEntry {
   price: string;
@@ -47,6 +52,8 @@ export const DEXPage: React.FC = () => {
   const [dexParams, setDexParams] = useState<any>(null);
   const [mcSupply, setMcSupply] = useState<string>('0');
   const [mcMarketPrice, setMcMarketPrice] = useState<number>(0.0001);
+  const [validationWarning, setValidationWarning] = useState<string>('');
+  const [currentAPR, setCurrentAPR] = useState<number>(100); // Default to 100% APR
 
   // Update manual orders when myOrders changes
   useEffect(() => {
@@ -55,9 +62,11 @@ export const DEXPage: React.FC = () => {
         id: order.id,
         is_buy: order.is_buy,
         price: (parseFloat(order.price.amount) / 1000000).toFixed(6),
-        amount: (parseFloat(order.amount.amount) / 1000000).toFixed(2),
+        amount: (parseFloat(order.amount.amount) / 1000000).toFixed(6),
         pair: order.pair_id === '1' ? 'MC/TUSD' : 'MC/LC',
-        filled: ((parseFloat(order.filled_amount.amount) / parseFloat(order.amount.amount)) * 100).toFixed(0)
+        filled: ((parseFloat(order.filled_amount.amount) / parseFloat(order.amount.amount)) * 100).toFixed(0),
+        created_at: order.created_at,
+        remaining: parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount)
       }));
       setManualOrders(formattedOrders);
     }
@@ -176,6 +185,17 @@ export const DEXPage: React.FC = () => {
           // Keep default of 0.0001
         }
         
+        // Fetch current dynamic reward APR
+        try {
+          const rewardRes = await fetchAPI('/mychain/dex/v1/dynamic_reward_state');
+          if (rewardRes?.state?.current_annual_rate) {
+            setCurrentAPR(parseFloat(rewardRes.state.current_annual_rate));
+          }
+        } catch (err) {
+          console.error('Failed to fetch dynamic reward state:', err);
+          // Keep default of 100%
+        }
+        
         // Fetch DEX order book data for selected pair
         const orderBookResponse = await fetchAPI(`/mychain/dex/v1/order_book/${selectedPair}`);
         
@@ -201,7 +221,7 @@ export const DEXPage: React.FC = () => {
           
           return {
             price: priceValue.toFixed(6),
-            amount: amountValue.toFixed(2),
+            amount: amountValue.toFixed(6),
             total: totalValue.toFixed(6)
           };
         };
@@ -240,20 +260,85 @@ export const DEXPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [selectedPair]);
 
-  // Calculate total when price or amount changes
+  // Calculate total and validate when price or amount changes
   useEffect(() => {
     if (price && amount) {
       const totalValue = parseFloat(price) * parseFloat(amount);
       setTotal(totalValue.toFixed(6));
+      
+      // Calculate minimum order value to earn rewards
+      const minimumOrderValue = 0.000001 * 8760 * 100 / currentAPR; // $0.0876 at 100% APR
+      
+      // Check if order is too small to earn rewards
+      if (totalValue < minimumOrderValue) {
+        setValidationWarning(`⚠️ Order too small: Minimum $${minimumOrderValue.toFixed(2)} needed to earn rewards at ${currentAPR.toFixed(1)}% APR`);
+        return; // Skip other validations
+      }
+      
+      // Real-time balance validation
+      if (userBalances) {
+        if (orderType === 'sell') {
+          const mcBalance = parseInt(userBalances.find((b: any) => b.denom === 'umc')?.amount || '0') / 1000000;
+          if (parseFloat(amount) > mcBalance) {
+            setValidationWarning(`⚠️ Insufficient MC: You have ${mcBalance.toFixed(6)} MC`);
+          } else {
+            setValidationWarning('');
+          }
+        } else {
+          const quoteDenom = selectedPair === '1' ? 'utusd' : 'ulc';
+          const quoteName = selectedPair === '1' ? 'TUSD' : 'LC';
+          const quoteBalance = parseInt(userBalances.find((b: any) => b.denom === quoteDenom)?.amount || '0') / 1000000;
+          
+          if (totalValue > quoteBalance) {
+            setValidationWarning(`⚠️ Insufficient ${quoteName}: You have ${quoteBalance.toFixed(6)} ${quoteName}`);
+          } else {
+            setValidationWarning('');
+          }
+        }
+      }
     } else {
       setTotal('');
+      setValidationWarning('');
     }
-  }, [price, amount]);
+  }, [price, amount, orderType, selectedPair, userBalances, currentAPR]);
 
   const handlePlaceOrder = async () => {
     if (!price || !amount) {
-      alert('Please enter price and amount');
+      setOrderStatus('❌ Please enter price and amount');
       return;
+    }
+
+    // Validate minimum order amount (0.01 MC)
+    if (parseFloat(amount) < 0.01) {
+      setOrderStatus('❌ Minimum order amount is 0.01 MC');
+      return;
+    }
+
+    // Check balance based on order type
+    console.log('Balance validation - userBalances:', userBalances);
+    console.log('Order type:', orderType, 'Amount:', amount, 'Price:', price);
+    
+    if (userBalances) {
+      if (orderType === 'sell') {
+        // Check MC balance for sell orders
+        const mcBalance = parseInt(userBalances.find((b: any) => b.denom === 'umc')?.amount || '0') / 1000000;
+        console.log('MC Balance:', mcBalance, 'Trying to sell:', parseFloat(amount));
+        if (parseFloat(amount) > mcBalance) {
+          setOrderStatus(`❌ Insufficient MC balance. You have ${mcBalance.toFixed(6)} MC, but trying to sell ${amount} MC`);
+          return;
+        }
+      } else {
+        // Check quote currency balance for buy orders
+        const quoteDenom = selectedPair === '1' ? 'utusd' : 'ulc';
+        const quoteName = selectedPair === '1' ? 'TUSD' : 'LC';
+        const quoteBalance = parseInt(userBalances.find((b: any) => b.denom === quoteDenom)?.amount || '0') / 1000000;
+        const totalNeeded = parseFloat(price) * parseFloat(amount);
+        
+        if (totalNeeded > quoteBalance) {
+          setOrderStatus(`❌ Insufficient ${quoteName} balance. You have ${quoteBalance.toFixed(6)} ${quoteName}, but need ${totalNeeded.toFixed(6)} ${quoteName}`);
+          return;
+        }
+      }
     }
 
     setIsPlacingOrder(true);
@@ -284,12 +369,30 @@ export const DEXPage: React.FC = () => {
           setPrice('');
           setAmount('');
           setTotal('');
-          // Refresh order book
+          // Refresh order book and balances without page reload
           setTimeout(() => {
-            window.location.reload(); // Force refresh to get latest data
-          }, 2000);
+            fetchOrderBook();
+            fetchBalances();
+            fetchUserOrders();
+          }, 1000);
         } else {
-          setOrderStatus(`❌ Error: ${result.error || 'Failed to place order'}`);
+          // Parse error message for common issues
+          let errorMessage = result.error || 'Failed to place order';
+          
+          // Check for specific error codes
+          if (errorMessage.includes('code 1108') || errorMessage.includes('insufficient funds')) {
+            errorMessage = 'Insufficient funds for this order';
+          } else if (errorMessage.includes('code 1109')) {
+            errorMessage = 'Invalid trading pair';
+          } else if (errorMessage.includes('code 1110')) {
+            errorMessage = 'Order amount too small';
+          } else if (errorMessage.includes('code 1111')) {
+            errorMessage = 'Invalid price';
+          } else if (errorMessage.includes('minimum')) {
+            errorMessage = 'Order amount below minimum requirement';
+          }
+          
+          setOrderStatus(`❌ Error: ${errorMessage}`);
         }
       } else {
         // Generate CLI command for manual execution
@@ -390,7 +493,13 @@ export const DEXPage: React.FC = () => {
         </div>
 
         {/* Dynamic Rewards and Spread Incentives Information */}
-        <DEXRewardsInfo />
+        <DynamicRewardsInfo />
+
+        {/* Spread Incentives and Strategic Bonuses */}
+        <SpreadIncentivesInfo />
+
+        {/* LC Price Information */}
+        <LCPriceDisplay />
 
         {/* Liquidity Terms and Information */}
         <div className="bg-gray-800 rounded-lg p-6">
@@ -401,7 +510,7 @@ export const DEXPage: React.FC = () => {
             <div className="bg-gray-700/50 rounded-lg p-4">
               <h3 className="text-sm text-gray-400 mb-2">Your Available Funds</h3>
               {userBalances && userBalances.map((balance: any) => {
-                const amount = (parseInt(balance.amount) / 1000000).toFixed(2);
+                const amount = (parseInt(balance.amount) / 1000000).toFixed(6);
                 const denom = balance.denom === 'ulc' ? 'LC' : balance.denom === 'umc' ? 'MC' : balance.denom === 'utusd' ? 'TUSD' : balance.denom;
                 return (
                   <div key={balance.denom} className="flex justify-between items-center py-1">
@@ -414,14 +523,15 @@ export const DEXPage: React.FC = () => {
             
             {/* Current Reward Rate */}
             <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
-              <h3 className="text-sm text-purple-400 mb-2">Current Reward Rate</h3>
+              <h3 className="text-sm text-purple-400 mb-2">LC Reward Rate</h3>
               <p className="text-2xl font-bold text-purple-300">
-                {dexParams ? `${(parseFloat(dexParams.base_reward_rate) / 10000).toFixed(1)}%` : '0.0%'}
+                {currentAPR.toFixed(1)}%
               </p>
-              <p className="text-xs text-gray-400 mt-1">Annual Rate</p>
+              <p className="text-xs text-gray-400 mt-1">Annual Rate (Dynamic)</p>
               <p className="text-xs text-gray-500 mt-2">
-                Distribution: Every block<br/>
-                Auto-distributed (no claiming needed)
+                Paid in: LC tokens<br/>
+                For: All trading pairs<br/>
+                Auto-distributed every 100 blocks
               </p>
             </div>
             
@@ -429,7 +539,7 @@ export const DEXPage: React.FC = () => {
             <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
               <h3 className="text-sm text-blue-400 mb-2">MC Total Supply</h3>
               <p className="text-2xl font-bold text-blue-300">
-                {(parseInt(mcSupply) / 1000000).toLocaleString()} MC
+                {(parseInt(mcSupply) / 1000000).toFixed(6)} MC
               </p>
               <p className="text-xs text-gray-400 mt-1">Used for volume cap calculations</p>
             </div>
@@ -499,8 +609,8 @@ export const DEXPage: React.FC = () => {
                           </div>
                           <div className="mb-2">
                             <div className="flex justify-between text-xs mb-1">
-                              <span>Volume: {tierVolume.toFixed(2)} MC</span>
-                              <span>Cap: {tierCap.toFixed(0)} MC</span>
+                              <span>Volume: {tierVolume.toFixed(6)} MC</span>
+                              <span>Cap: {tierCap.toFixed(6)} MC</span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
                               <div 
@@ -514,7 +624,7 @@ export const DEXPage: React.FC = () => {
                           </div>
                           {tierVolume > 0 && (
                             <div className="text-xs text-gray-400">
-                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(2)} MC
+                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(6)} MC
                             </div>
                           )}
                         </div>
@@ -575,8 +685,8 @@ export const DEXPage: React.FC = () => {
                           </div>
                           <div className="mb-2">
                             <div className="flex justify-between text-xs mb-1">
-                              <span>Volume: {tierVolume.toFixed(2)} MC</span>
-                              <span>Cap: {tierCap.toFixed(0)} MC</span>
+                              <span>Volume: {tierVolume.toFixed(6)} MC</span>
+                              <span>Cap: {tierCap.toFixed(6)} MC</span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
                               <div 
@@ -590,7 +700,7 @@ export const DEXPage: React.FC = () => {
                           </div>
                           {tierVolume > 0 && (
                             <div className="text-xs text-gray-400">
-                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(2)} MC
+                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(6)} MC
                             </div>
                           )}
                         </div>
@@ -731,6 +841,40 @@ export const DEXPage: React.FC = () => {
             )}
             
             <div className="space-y-4">
+              {/* Available Balances */}
+              <div className="bg-gray-700/50 rounded-lg p-3 mb-2">
+                <h3 className="text-sm font-semibold text-gray-300 mb-2">Available Balances</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">MC:</span>
+                    <span className="font-mono">
+                      {userBalances ? 
+                        (parseInt(userBalances.find((b: any) => b.denom === 'umc')?.amount || '0') / 1000000).toFixed(6) 
+                        : '0.000000'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">TUSD:</span>
+                    <span className="font-mono">
+                      {userBalances ? 
+                        (parseInt(userBalances.find((b: any) => b.denom === 'utusd')?.amount || '0') / 1000000).toFixed(6) 
+                        : '0.000000'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">LC:</span>
+                    <span className="font-mono">
+                      {userBalances ? 
+                        (parseInt(userBalances.find((b: any) => b.denom === 'ulc')?.amount || '0') / 1000000).toFixed(6) 
+                        : '0.000000'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Order Type */}
               <div className="flex rounded-lg bg-gray-700 p-1">
                 <button 
@@ -784,11 +928,20 @@ export const DEXPage: React.FC = () => {
                 />
               </div>
 
+              {/* Validation Warning */}
+              {validationWarning && (
+                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
+                  <p className="text-yellow-400 text-sm font-medium">
+                    {validationWarning}
+                  </p>
+                </div>
+              )}
+
               {/* Order Button */}
               <button 
-                className={`w-full rounded py-2 font-semibold ${orderType === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} ${isPlacingOrder ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full rounded py-2 font-semibold ${orderType === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} ${isPlacingOrder || validationWarning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handlePlaceOrder}
-                disabled={isPlacingOrder}
+                disabled={isPlacingOrder || !!validationWarning}
               >
                 {isPlacingOrder ? 'Placing Order...' : `Place ${orderType === 'buy' ? 'Buy' : 'Sell'} Order`}
               </button>
@@ -818,10 +971,15 @@ export const DEXPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Fee Info */}
+              {/* Fee Info & Minimum for Rewards */}
               <div className="text-xs text-gray-500 space-y-1">
                 <p>Trading Fee: 0.5%</p>
                 <p>Min Order: 0.01 MC</p>
+                <div className="mt-2 p-2 bg-orange-900/20 border border-orange-500/30 rounded">
+                  <p className="text-orange-400 font-medium">Minimum for LC Rewards:</p>
+                  <p className="text-orange-300">${(0.000001 * 8760 * 100 / currentAPR).toFixed(2)} at {currentAPR.toFixed(1)}% APR</p>
+                  <p className="text-gray-400 text-xs mt-1">Orders below this earn 0 LC</p>
+                </div>
               </div>
             </div>
           </div>
@@ -916,6 +1074,7 @@ export const DEXPage: React.FC = () => {
                         <th className="text-right p-2">Amount</th>
                         <th className="text-right p-2">Filled</th>
                         <th className="text-right p-2">Total</th>
+                        <th className="text-left p-2">Placed</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -933,9 +1092,10 @@ export const DEXPage: React.FC = () => {
                             </td>
                             <td className="p-2">MC/{order.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
                             <td className="p-2 text-right">{priceValue.toFixed(6)}</td>
-                            <td className="p-2 text-right">{amountValue.toFixed(2)} MC</td>
-                            <td className="p-2 text-right">{filledValue.toFixed(2)} MC</td>
+                            <td className="p-2 text-right">{amountValue.toFixed(6)} MC</td>
+                            <td className="p-2 text-right">{filledValue.toFixed(6)} MC</td>
                             <td className="p-2 text-right">{totalValue.toFixed(6)} {order.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
+                            <td className="p-2 text-xs">{formatUnixTimestamp(order.created_at)}</td>
                           </tr>
                         );
                       })}
@@ -1039,7 +1199,7 @@ export const DEXPage: React.FC = () => {
                         <tr key={index} className="border-b border-gray-700">
                           <td className="p-2">#{reward.order_id}</td>
                           <td className="p-2">MC/{reward.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
-                          <td className="p-2 text-right">{(parseFloat(reward.order_amount.amount) / 1000000).toFixed(2)} MC</td>
+                          <td className="p-2 text-right">{(parseFloat(reward.order_amount.amount) / 1000000).toFixed(6)} MC</td>
                           <td className="p-2 text-right text-purple-400">{(parseFloat(reward.reward_amount.amount) / 1000000).toFixed(6)} LC</td>
                           <td className="p-2 text-right">
                             <span className="text-xs bg-purple-600/20 text-purple-400 px-2 py-1 rounded">Unclaimed</span>
@@ -1059,17 +1219,26 @@ export const DEXPage: React.FC = () => {
 
             {/* Rewards Info */}
             <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-400 mb-2">💎 How to Earn Rewards</h4>
+              <h4 className="font-semibold text-blue-400 mb-2">💎 How to Earn LC Rewards</h4>
               <ul className="text-sm text-gray-300 space-y-1">
-                <li>• Place limit orders on any trading pair</li>
+                <li>• Place limit orders on any trading pair (MC/TUSD or MC/LC)</li>
+                <li>• <strong>All rewards are paid in LC tokens</strong> regardless of trading pair</li>
                 <li>• Rewards accumulate based on order size and time</li>
-                <li>• Base rate: 0.222% (annualized ~7%)</li>
-                <li>• Rewards are paid in LC tokens</li>
-                <li>• Claim anytime - no minimum required</li>
+                <li>• Dynamic rate: 7-100% APR (currently {currentAPR.toFixed(1)}%)</li>
+                <li>• LC starts at 0.0001 MC and can appreciate in value</li>
+                <li>• Auto-distributed every 100 blocks (~8.3 minutes)</li>
               </ul>
             </div>
           </div>
         </div>
+
+        {/* Liquidity Positions Tracker */}
+        <LiquidityPositions 
+          userAddress="cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz"
+          currentAPR={currentAPR}
+          mcPrice={mcMarketPrice}
+          onCancelOrder={handleCancelSpecificOrder}
+        />
 
         {/* Your Active Orders */}
         <div className="bg-gray-800 rounded-lg p-6">
@@ -1115,6 +1284,37 @@ export const DEXPage: React.FC = () => {
                             <p className="font-medium">{order.filled}%</p>
                           </div>
                         </div>
+                        <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                          <span>Placed: {formatUnixTimestamp(order.created_at)}</span>
+                          {(() => {
+                            // Calculate potential spread bonus
+                            const marketPrice = mcMarketPrice;
+                            const orderPrice = parseFloat(order.price);
+                            let spreadBonus = '';
+                            
+                            if (order.is_buy) {
+                              // Buy orders that tighten spread
+                              const improvement = ((orderPrice - marketPrice * 0.95) / (marketPrice * 0.05)) * 100;
+                              if (improvement >= 75) spreadBonus = '2.0x spread bonus';
+                              else if (improvement >= 50) spreadBonus = '1.5x spread bonus';
+                              else if (improvement >= 25) spreadBonus = '1.3x spread bonus';
+                              else if (improvement >= 5) spreadBonus = '1.1x spread bonus';
+                            } else {
+                              // Sell orders above average ask
+                              const priceAboveMarket = ((orderPrice - marketPrice) / marketPrice) * 100;
+                              if (priceAboveMarket >= 10) spreadBonus = '1.5x spread bonus';
+                              else if (priceAboveMarket >= 5) spreadBonus = '1.3x spread bonus';
+                              else if (priceAboveMarket >= 2) spreadBonus = '1.2x spread bonus';
+                              else if (priceAboveMarket > 0) spreadBonus = '1.1x spread bonus';
+                            }
+                            
+                            return spreadBonus && (
+                              <span className="text-green-400 font-medium">
+                                🎯 {spreadBonus}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </div>
                       <button
                         onClick={() => handleCancelSpecificOrder(order.id)}
@@ -1144,16 +1344,35 @@ export const DEXPage: React.FC = () => {
                 <code className="bg-gray-700 px-2 py-1 rounded ml-2">mychaind query dex order-book 1</code>
               </p>
             </div>
+            
+            {/* Spread Bonus Info */}
+            {manualOrders.length > 0 && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3 mt-3">
+                <p className="text-xs text-green-400 font-medium mb-1">🎯 Spread Bonus Indicators</p>
+                <p className="text-xs text-gray-300">
+                  Orders that improve market spreads earn bonus rewards. Your actual bonus depends on the 
+                  current order book state when rewards are distributed.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* DEX Transaction History */}
+        <DEXTransactionHistory 
+          userAddress="cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz" 
+          mcPrice={mcMarketPrice} 
+        />
+
         {/* DEX Info */}
-        <div className="bg-gray-700/20 rounded-lg p-4">
-          <div className="text-xs text-gray-500 space-y-1">
-            <p>• DEX allows peer-to-peer trading of all blockchain tokens</p>
-            <p>• 0.1% trading fee collected by the protocol</p>
-            <p>• Orders are matched automatically on-chain</p>
-            <p>• Support for limit orders and market orders</p>
+        <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500/30 rounded-lg p-4">
+          <h3 className="text-sm font-bold text-green-400 mb-2">🚀 DEX Mission: MC Price Appreciation</h3>
+          <div className="text-xs text-gray-300 space-y-1">
+            <p>• <strong>Primary Goal:</strong> Support and drive MC price upward through incentivized liquidity</p>
+            <p>• <strong>Reward Priority:</strong> Orders with higher MC prices (both buy and sell) get rewards first</p>
+            <p>• <strong>Dynamic APR:</strong> 7-100% rewards paid in LC to preserve MC value</p>
+            <p>• <strong>Volume Caps:</strong> Encourage broad participation across all price levels</p>
+            <p>• <strong>Result:</strong> Systematic upward pressure on MC price over time</p>
           </div>
         </div>
       </div>

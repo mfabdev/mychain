@@ -75,7 +75,7 @@ export const MainCoinInfo: React.FC = () => {
 
   const formatAmount = (amount: string, decimals = 6): string => {
     const value = parseFloat(amount) / Math.pow(10, decimals);
-    return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    return value.toFixed(6);
   };
 
   const formatPrice = (price: string): string => {

@@ -97,8 +97,8 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
         setEpochInfo({
           currentEpoch: parseInt(epochResponse.current_epoch),
           currentPrice: epochResponse.current_price || '0.0001001',
-          supplyBeforeDev: (totalSupplyFromAPI - devAllocationFromAPI).toFixed(0),
-          devAllocation: devAllocationFromAPI.toFixed(0),
+          supplyBeforeDev: (totalSupplyFromAPI - devAllocationFromAPI).toFixed(6),
+          devAllocation: devAllocationFromAPI.toFixed(6),
           totalSupply: correctedTotalSupply.toFixed(0),
           totalValue: totalValue.toFixed(7),
           requiredReserve: requiredReserve.toFixed(7),
@@ -376,7 +376,7 @@ Alternative commands to open terminal:
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">Total Supply</p>
-                <p className="text-2xl font-bold text-green-400">{parseFloat(epochInfo.totalSupply).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-400">{parseFloat(epochInfo.totalSupply).toFixed(6)}</p>
                 <p className="text-xs text-gray-500">MainCoin</p>
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
@@ -424,13 +424,13 @@ Alternative commands to open terminal:
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">Supply Before Dev</p>
-                <p className="text-2xl font-bold text-blue-400">{parseFloat(epochInfo.supplyBeforeDev).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-400">{epochInfo.supplyBeforeDev}</p>
                 <p className="text-xs text-gray-500">MainCoin</p>
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-gray-400">Dev Allocation</p>
-                <p className="text-2xl font-bold text-purple-400">{epochInfo.devAllocation}</p>
-                <p className="text-xs text-gray-500">from previous segment</p>
+                <p className="text-sm text-gray-400">Total Dev Allocation</p>
+                <p className="text-2xl font-bold text-purple-400">{epochInfo.devAllocation} MC</p>
+                <p className="text-xs text-gray-500">0.01% per segment ({epochInfo.currentEpoch} segments)</p>
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4 text-center">
                 <p className="text-sm text-gray-400">USDC Collected</p>
@@ -690,7 +690,7 @@ Alternative commands to open terminal:
               <h3 className="font-semibold mb-2 text-green-400">🚀 Segment 1 (Current)</h3>
               <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Price: ${epochInfo ? epochInfo.currentPrice : '0.0001001'}</li>
-                <li>• Supply: {epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,010'} MC</li>
+                <li>• Supply: {epochInfo ? parseFloat(epochInfo.totalSupply).toFixed(6) : '100010.000000'} MC</li>
                 <li>• Dev allocation: {epochInfo ? epochInfo.devAllocation : '10'} MC</li>
                 <li>• USDC collected: ${epochInfo ? epochInfo.usdcCollected : '0.000000'}</li>
                 <li>• 📊 Ready for new sales</li>
@@ -980,7 +980,7 @@ Alternative commands to open terminal:
                     <tr key={seg.number} className="border-b border-gray-700 bg-blue-900/10">
                       <td className="p-2 font-semibold text-blue-400">{seg.number} ✅</td>
                       <td className="p-2 text-right">${seg.price.toFixed(7)}</td>
-                      <td className="p-2 text-right">{Math.round(seg.supplyBefore).toLocaleString()}</td>
+                      <td className="p-2 text-right">{seg.supplyBefore.toFixed(6)}</td>
                       <td className="p-2 text-right">{
                         seg.number === 0 ? '-' : 
                         seg.number === 1 ? '10.000' : 
@@ -991,7 +991,7 @@ Alternative commands to open terminal:
                         seg.tokensPurchased.toFixed(2)
                       }</td>
                       <td className="p-2 text-right">{seg.newMinted.toFixed(2)}</td>
-                      <td className="p-2 text-right">{Math.round(seg.supplyAfter).toLocaleString()}</td>
+                      <td className="p-2 text-right">{seg.supplyAfter.toFixed(6)}</td>
                       <td className="p-2 text-right">${seg.totalValue.toFixed(2)}</td>
                       <td className="p-2 text-right">${seg.requiredReserve.toFixed(2)}</td>
                       <td className="p-2 text-right text-green-400">1:10 ✅</td>
@@ -1003,17 +1003,17 @@ Alternative commands to open terminal:
                 <tr className="border-b border-gray-700 bg-green-900/10">
                   <td className="p-2 font-semibold text-green-400">{epochInfo?.currentEpoch || 'N/A'} 🔄</td>
                   <td className="p-2 text-right">{epochInfo?.currentPrice !== 'N/A' ? `$${epochInfo?.currentPrice}` : 'N/A'}</td>
-                  <td className="p-2 text-right">{epochInfo?.supplyBeforeDev && epochInfo.supplyBeforeDev !== 'N/A' ? parseFloat(epochInfo.supplyBeforeDev).toLocaleString() : 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo?.supplyBeforeDev && epochInfo.supplyBeforeDev !== 'N/A' ? parseFloat(epochInfo.supplyBeforeDev).toFixed(6) : 'N/A'}</td>
                   <td className="p-2 text-right">{
     !epochInfo || epochInfo.currentEpoch === 0
       ? '-' // No dev from previous for segment 0
       : epochInfo.currentEpoch === 1
         ? '10' // Segment 0 had 100k MC minted, so 10 MC dev
-        : '~0.001' // All other segments have tiny dev allocations
+        : '~0.01' // All other segments have tiny dev allocations
   }</td>
                   <td className="p-2 text-right">{epochInfo?.tokensNeeded || 'N/A'}</td>
                   <td className="p-2 text-right">{epochInfo?.currentEpoch === 1 && epochInfo?.tokensNeeded !== 'N/A' ? (10 + parseFloat(epochInfo.tokensNeeded)).toFixed(2) : '-'}</td>
-                  <td className="p-2 text-right">{epochInfo && epochInfo.totalSupply !== 'N/A' ? parseFloat(epochInfo.totalSupply).toLocaleString() : 'N/A'}</td>
+                  <td className="p-2 text-right">{epochInfo && epochInfo.totalSupply !== 'N/A' ? parseFloat(epochInfo.totalSupply).toFixed(6) : 'N/A'}</td>
                   <td className="p-2 text-right">{epochInfo?.totalValue !== 'N/A' ? `$${epochInfo?.totalValue}` : 'N/A'}</td>
                   <td className="p-2 text-right">{epochInfo?.requiredReserve !== 'N/A' ? `$${epochInfo?.requiredReserve}` : 'N/A'}</td>
                   <td className="p-2 text-right text-yellow-400">~1:10</td>
@@ -1099,7 +1099,7 @@ Alternative commands to open terminal:
               </div>
               <div>
                 <p className="text-gray-400">Total Supply</p>
-                <p className="font-bold">{epochInfo ? parseFloat(epochInfo.totalSupply).toLocaleString() : '100,276.72'} MC</p>
+                <p className="font-bold">{epochInfo ? parseFloat(epochInfo.totalSupply).toFixed(6) : '100276.720000'} MC</p>
               </div>
               <div>
                 <p className="text-gray-400">Reserve Balance</p>

@@ -30,11 +30,8 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 	
 	k.Logger(ctx).Info("Distributing liquidity rewards", "height", height)
 	
-	// Get DEX parameters
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return err
-	}
+	// Calculate dynamic reward rate instead of using base rate
+	dynamicRate := k.CalculateDynamicRewardRate(ctx)
 	
 	// Track eligible liquidity by tier for each trading pair
 	type tierLiquidity struct {
@@ -45,7 +42,7 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 	pairTierMap := make(map[uint64]map[uint32]*tierLiquidity) // pairID -> tierID -> liquidity
 	
 	// Walk through all orders to categorize by tier
-	err = k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
+	err := k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
 		// Skip filled orders
 		remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
 		if remaining.IsZero() {
@@ -141,8 +138,8 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 				
 				eligibleBuyValue = eligibleBuyValue.Add(orderValue)
 				
-				// Calculate rewards for this order
-				orderRewards := calculateOrderRewards(orderValue, params.GetBaseRewardRateAsInt())
+				// Calculate rewards for this order using dynamic rate
+				orderRewards := calculateOrderRewards(orderValue, dynamicRate)
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()
@@ -167,8 +164,8 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 				
 				eligibleSellValue = eligibleSellValue.Add(orderValue)
 				
-				// Calculate rewards for this order
-				orderRewards := calculateOrderRewards(orderValue, params.GetBaseRewardRateAsInt())
+				// Calculate rewards for this order using dynamic rate
+				orderRewards := calculateOrderRewards(orderValue, dynamicRate)
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()
@@ -301,9 +298,10 @@ func (k Keeper) DistributeLiquidityRewards(ctx context.Context) error {
 }
 
 // calculateOrderRewards calculates hourly rewards for an order based on its value
-func calculateOrderRewards(orderValue math.LegacyDec, baseRewardRate math.Int) math.Int {
-	// Annual rate: baseRewardRate (e.g., 216000 = 21.6%)
-	annualRateDec := math.LegacyNewDecFromInt(baseRewardRate).Quo(math.LegacyNewDec(1000000))
+func calculateOrderRewards(orderValue math.LegacyDec, dynamicRate math.Int) math.Int {
+	// Dynamic rate: e.g., 3175 = 100% APR, 222 = 7% APR
+	// Convert to percentage: rate / 31.75 = percentage
+	annualRateDec := math.LegacyNewDecFromInt(dynamicRate).Quo(math.LegacyNewDec(3175))
 	hoursPerYear := math.LegacyNewDec(BlocksPerYear).Quo(math.LegacyNewDec(BlocksPerHour))
 	hourlyRate := annualRateDec.Quo(hoursPerYear)
 	

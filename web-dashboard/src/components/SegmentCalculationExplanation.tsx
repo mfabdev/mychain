@@ -36,7 +36,7 @@ export const SegmentCalculationExplanation: React.FC<CalculationProps> = ({
         <div className="border-b pb-2">
           <p className="font-medium text-gray-700">1. Initial State:</p>
           <ul className="ml-4 space-y-1 text-gray-600">
-            <li>• Supply before: {supplyBefore.toLocaleString()} MC</li>
+            <li>• Supply before: {supplyBefore.toFixed(6)} MC</li>
             <li>• Reserve before: ${reserveBefore.toFixed(6)}</li>
             <li>• Price: ${price.toFixed(7)} per MC</li>
           </ul>
@@ -46,7 +46,7 @@ export const SegmentCalculationExplanation: React.FC<CalculationProps> = ({
           <p className="font-medium text-gray-700">2. Dev Allocation Applied:</p>
           <ul className="ml-4 space-y-1 text-gray-600">
             <li>• Dev allocation: {devFromPrev.toFixed(3)} MC (0.01% of previous segment)</li>
-            <li>• Supply after dev: {supplyBefore.toLocaleString()} + {devFromPrev.toFixed(3)} = {supplyAfterDev.toLocaleString()} MC</li>
+            <li>• Supply after dev: {supplyBefore.toFixed(6)} + {devFromPrev.toFixed(3)} = {supplyAfterDev.toFixed(6)} MC</li>
             <li>• Reserve unchanged: ${reserveBefore.toFixed(6)}</li>
           </ul>
         </div>
@@ -55,7 +55,7 @@ export const SegmentCalculationExplanation: React.FC<CalculationProps> = ({
           <p className="font-medium text-gray-700">3. Calculate Reserve Deficit:</p>
           <ul className="ml-4 space-y-1 text-gray-600">
             <li>• Required reserve = Supply × Price × 0.1</li>
-            <li>• Required = {supplyAfterDev.toLocaleString()} × ${price.toFixed(7)} × 0.1 = ${requiredReserveAfterDev.toFixed(6)}</li>
+            <li>• Required = {supplyAfterDev.toFixed(6)} × ${price.toFixed(7)} × 0.1 = ${requiredReserveAfterDev.toFixed(6)}</li>
             <li>• Deficit = ${requiredReserveAfterDev.toFixed(6)} - ${reserveBefore.toFixed(6)} = ${reserveDeficit.toFixed(6)}</li>
           </ul>
         </div>
@@ -77,7 +77,7 @@ export const SegmentCalculationExplanation: React.FC<CalculationProps> = ({
           <ul className="ml-4 space-y-1 text-gray-600">
             <li>• Tokens purchased: {tokensPurchased.toFixed(6)} MC</li>
             <li>• Cost: {tokensPurchased.toFixed(6)} × ${price.toFixed(7)} = ${costOfTokens.toFixed(6)}</li>
-            <li>• Final supply: {supplyAfterDev.toLocaleString()} + {tokensPurchased.toFixed(3)} = {finalSupply.toLocaleString()} MC</li>
+            <li>• Final supply: {supplyAfterDev.toFixed(6)} + {tokensPurchased.toFixed(3)} = {finalSupply.toFixed(6)} MC</li>
             <li>• Final reserve: ${reserveBefore.toFixed(6)} + ${costOfTokens.toFixed(6)} = ${finalReserve.toFixed(6)}</li>
           </ul>
         </div>
@@ -85,7 +85,7 @@ export const SegmentCalculationExplanation: React.FC<CalculationProps> = ({
         <div>
           <p className="font-medium text-gray-700">6. Verification:</p>
           <ul className="ml-4 space-y-1 text-gray-600">
-            <li>• Required reserve: {finalSupply.toLocaleString()} × ${price.toFixed(7)} × 0.1 = ${finalRequiredReserve.toFixed(6)}</li>
+            <li>• Required reserve: {finalSupply.toFixed(6)} × ${price.toFixed(7)} × 0.1 = ${finalRequiredReserve.toFixed(6)}</li>
             <li>• Actual reserve: ${finalReserve.toFixed(6)}</li>
             <li>• Reserve ratio: ${finalReserve.toFixed(6)} / (${(finalSupply * price).toFixed(6)}) = {(reserveRatio * 100).toFixed(3)}%</li>
             <li>• Target ratio: 10%</li>

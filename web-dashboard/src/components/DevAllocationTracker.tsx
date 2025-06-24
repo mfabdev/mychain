@@ -35,7 +35,7 @@ export const DevAllocationTracker: React.FC<DevAllocationTrackerProps> = ({
             <p className="text-sm text-gray-400">Total Allocated</p>
           </div>
           <p className="text-2xl font-bold text-purple-300">
-            {devAllocationNum.toLocaleString()} MC
+            {devAllocationNum.toFixed(6)} MC
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {percentOfSupply.toFixed(2)}% of total supply

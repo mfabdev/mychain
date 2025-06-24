@@ -91,13 +91,10 @@ export const SegmentHistoryViewer: React.FC<SegmentHistoryViewerProps> = ({ curr
   };
 
   const formatNumber = (value: string): string => {
-    if (!value || value === '0') return '0.00';
+    if (!value || value === '0') return '0.000000';
     const num = parseFloat(value) / 1_000_000;
-    if (isNaN(num)) return '0.00';
-    return num.toLocaleString(undefined, { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6 
-    });
+    if (isNaN(num)) return '0.000000';
+    return num.toFixed(6);
   };
 
   const formatPrice = (value: string): string => {

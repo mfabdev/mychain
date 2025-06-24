@@ -84,13 +84,13 @@ export const InitialDistribution: React.FC = () => {
             className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-600 to-purple-500 flex items-center justify-center text-white font-semibold"
             style={{ width: `${(distribution.stakedAmount / distribution.totalSupply) * 100}%` }}
           >
-            <span className="text-sm">Staked: {distribution.stakedAmount.toLocaleString()} LC</span>
+            <span className="text-sm">Staked: {distribution.stakedAmount.toFixed(6)} LC</span>
           </div>
           <div 
             className="absolute right-0 top-0 h-full bg-gradient-to-r from-gray-600 to-gray-500 flex items-center justify-center text-white font-semibold"
             style={{ width: `${(distribution.unstakedAmount / distribution.totalSupply) * 100}%` }}
           >
-            <span className="text-sm">Unstaked: {distribution.unstakedAmount.toLocaleString()} LC</span>
+            <span className="text-sm">Unstaked: {distribution.unstakedAmount.toFixed(6)} LC</span>
           </div>
         </div>
       </div>
@@ -99,17 +99,17 @@ export const InitialDistribution: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-700/50 rounded-lg p-4">
           <p className="text-sm text-gray-400 mb-1">Current Total Supply</p>
-          <p className="text-2xl font-bold text-blue-400">{distribution.totalSupply.toFixed(2)} LC</p>
+          <p className="text-2xl font-bold text-blue-400">{distribution.totalSupply.toFixed(6)} LC</p>
           <p className="text-xs text-gray-500 mt-1">Including all rewards</p>
         </div>
         <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4">
           <p className="text-sm text-purple-400 mb-1">Staked by Validators</p>
-          <p className="text-2xl font-bold text-purple-300">{distribution.stakedAmount.toLocaleString()} LC</p>
+          <p className="text-2xl font-bold text-purple-300">{distribution.stakedAmount.toFixed(6)} LC</p>
           <p className="text-xs text-gray-500 mt-1">Earning 10% APR</p>
         </div>
         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
           <p className="text-sm text-green-400 mb-1">Available to Stake</p>
-          <p className="text-2xl font-bold text-green-300">{distribution.unstakedAmount.toFixed(2)} LC</p>
+          <p className="text-2xl font-bold text-green-300">{distribution.unstakedAmount.toFixed(6)} LC</p>
           <p className="text-xs text-gray-500 mt-1">Could earn 10% APR</p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export const InitialDistribution: React.FC = () => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold text-purple-400">{distribution.stakedAmount.toLocaleString()} LC</p>
+              <p className="text-xl font-bold text-purple-400">{distribution.stakedAmount.toFixed(6)} LC</p>
               <p className="text-sm text-gray-400">{((distribution.stakedAmount / distribution.totalSupply) * 100).toFixed(1)}%</p>
             </div>
           </div>
@@ -141,7 +141,7 @@ export const InitialDistribution: React.FC = () => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold">{distribution.unstakedAmount.toLocaleString()} LC</p>
+              <p className="text-xl font-bold">{distribution.unstakedAmount.toFixed(6)} LC</p>
               <p className="text-sm text-gray-400">{((distribution.unstakedAmount / distribution.totalSupply) * 100).toFixed(1)}%</p>
             </div>
           </div>
@@ -162,7 +162,7 @@ export const InitialDistribution: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold">{val.stakedAmount.toLocaleString()} LC</p>
+                  <p className="font-semibold">{val.stakedAmount.toFixed(6)} LC</p>
                   <p className="text-xs text-gray-400">{val.percentage.toFixed(1)}% of total stake</p>
                 </div>
               </div>
@@ -174,7 +174,7 @@ export const InitialDistribution: React.FC = () => {
       <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
         <p className="text-sm text-blue-400">
           <strong>Note:</strong> The blockchain was intended to have 90,000 LC staked at genesis, but currently 
-          only {distribution.stakedAmount.toLocaleString()} LC is staked. You can use the Staking Manager above to stake 
+          only {distribution.stakedAmount.toFixed(6)} LC is staked. You can use the Staking Manager above to stake 
           your LC tokens with validators to earn 10% APR rewards and help secure the network.
         </p>
       </div>

@@ -135,7 +135,7 @@ func (k msgServer) CreateOrder(ctx context.Context, msg *types.MsgCreateOrder) (
 			}
 		}
 		// Calculate spread impact description
-		_, spreadImpact = k.EstimateSpreadIncentive(ctx, msg.PairId, msg.Price.Amount, msg.IsBuy)
+		spreadImpact, _ = k.EstimateSpreadIncentive(ctx, msg.PairId, msg.Price.Amount, msg.IsBuy)
 	}
 	
 	// Try to match the order

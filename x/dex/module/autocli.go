@@ -52,6 +52,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Query liquidity balance and multipliers",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
+				{
+					RpcMethod:      "DynamicRewardState",
+					Use:            "dynamic-reward-state",
+					Short:          "Query dynamic reward state and current rate",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
+				},
 
 				// this line is used by ignite scaffolding # autocli/query
 			},

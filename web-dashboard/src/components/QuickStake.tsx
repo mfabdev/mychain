@@ -116,7 +116,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
     }
   };
 
-  const balanceInLC = (parseInt(balance) / 1000000).toFixed(2);
+  const balanceInLC = (parseInt(balance) / 1000000).toFixed(6);
 
   return (
     <div className="bg-gradient-to-r from-purple-800 to-purple-600 rounded-lg p-6 mb-8">
@@ -126,7 +126,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       
       <div className="bg-black/20 rounded-lg p-4 mb-4">
         <p className="text-lg mb-2">
-          You have <span className="font-bold text-2xl">{balanceInLC} LC</span> available
+          Your wallet: <span className="font-bold text-2xl">{balanceInLC} LC</span> available
         </p>
         <p className="text-sm opacity-90">
           Stake your LC with the validator to earn rewards based on current inflation (111.11% APR)
@@ -156,11 +156,11 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
               disabled={loading}
             />
             <button
-              onClick={() => setAmount(Math.max(0, parseFloat(balanceInLC) - 100).toFixed(0))}
+              onClick={() => setAmount(Math.max(0, parseFloat(balanceInLC) - 100).toFixed(6))}
               className="px-4 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
               disabled={loading}
             >
-              {Math.max(0, parseFloat(balanceInLC) - 100).toFixed(0)}
+              {Math.max(0, parseFloat(balanceInLC) - 100).toFixed(6)}
             </button>
             <button
               onClick={() => setAmount(balanceInLC)}

@@ -75,8 +75,8 @@ export const StakingRewardsHistory: React.FC = () => {
     );
   }
 
-  const formatNumber = (num: number, decimals: number = 0) => {
-    return (num / 1000000).toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const formatNumber = (num: number, decimals: number = 6) => {
+    return (num / 1000000).toFixed(decimals);
   };
 
   return (
@@ -88,19 +88,19 @@ export const StakingRewardsHistory: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 rounded p-4 border border-purple-500/30">
           <div className="text-purple-400 text-sm mb-1">Currently Staked</div>
-          <div className="text-2xl font-bold">{formatNumber(stakingData.totalStaked)} LC</div>
+          <div className="text-2xl font-bold">{formatNumber(stakingData.totalStaked, 6)} LC</div>
           <div className="text-xs text-gray-500 mt-1">Earning {(stakingData.effectiveAPR * 100).toFixed(1)}% APR</div>
         </div>
         
         <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 rounded p-4 border border-blue-500/30">
-          <div className="text-blue-400 text-sm mb-1">Available to Stake</div>
-          <div className="text-2xl font-bold">{formatNumber(stakingData.availableToStake, 2)} LC</div>
-          <div className="text-xs text-gray-500 mt-1">Ready to earn {(stakingData.effectiveAPR * 100).toFixed(1)}% APR</div>
+          <div className="text-blue-400 text-sm mb-1">Total Unstaked (System-wide)</div>
+          <div className="text-2xl font-bold">{formatNumber(stakingData.availableToStake, 6)} LC</div>
+          <div className="text-xs text-gray-500 mt-1">Available across all accounts</div>
         </div>
         
         <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 rounded p-4 border border-green-500/30">
           <div className="text-green-400 text-sm mb-1">Current Total Supply</div>
-          <div className="text-2xl font-bold">{formatNumber(stakingData.totalSupply, 2)} LC</div>
+          <div className="text-2xl font-bold">{formatNumber(stakingData.totalSupply, 6)} LC</div>
           <div className="text-xs text-gray-500 mt-1">(100k initial + minting rewards)</div>
         </div>
       </div>
@@ -110,11 +110,11 @@ export const StakingRewardsHistory: React.FC = () => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-400">Initial Supply:</span>
-            <span className="ml-2">100,000 LC</span>
+            <span className="ml-2">100000.000000 LC</span>
           </div>
           <div>
             <span className="text-gray-400">Minted Since Genesis:</span>
-            <span className="ml-2 text-green-400">+{formatNumber(stakingData.mintedSinceGenesis, 2)} LC</span>
+            <span className="ml-2 text-green-400">+{formatNumber(stakingData.mintedSinceGenesis, 6)} LC</span>
           </div>
           <div>
             <span className="text-gray-400">Current Inflation:</span>

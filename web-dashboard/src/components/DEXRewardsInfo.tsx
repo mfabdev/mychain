@@ -132,7 +132,7 @@ export const DEXRewardsInfo: React.FC = () => {
     <div className="space-y-6">
       {/* Dynamic Reward Rate Section */}
       <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-purple-300">🚀 Dynamic Reward System</h2>
+        <h2 className="text-2xl font-bold mb-4 text-purple-300">🚀 Dynamic Reward System - Mission: MC Price Appreciation</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           {/* Current Rate */}
@@ -146,7 +146,7 @@ export const DEXRewardsInfo: React.FC = () => {
 
           {/* Total Liquidity */}
           <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-            <h3 className="text-sm text-gray-400 mb-2">Total Liquidity</h3>
+            <h3 className="text-sm text-gray-400 mb-2">MC Price-Supporting Liquidity</h3>
             <p className="text-2xl font-bold text-blue-400">${liquidityValue.toFixed(2)}</p>
             <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
               <div 
@@ -179,20 +179,21 @@ export const DEXRewardsInfo: React.FC = () => {
 
         {/* How Dynamic Rates Work */}
         <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-          <h4 className="font-semibold text-blue-400 mb-2">How Dynamic Rates Work</h4>
+          <h4 className="font-semibold text-blue-400 mb-2">How Dynamic Rates Support MC Price Growth</h4>
           <ul className="text-sm text-gray-300 space-y-1">
-            <li>• Rates adjust automatically based on total liquidity depth</li>
-            <li>• Low liquidity = Higher rewards (up to 100% APY)</li>
-            <li>• High liquidity = Lower rewards (minimum 7% APY)</li>
-            <li>• Target liquidity: $1,000,000 for optimal market depth</li>
-            <li>• Adjustment speed: 0.25% per update cycle</li>
+            <li>• <strong>Primary Goal:</strong> Push MC price up through strategic liquidity rewards</li>
+            <li>• Rates adjust based on how much price-supporting liquidity exists</li>
+            <li>• Low liquidity = Higher rewards (up to 100% APY) to attract support</li>
+            <li>• High liquidity = Lower rewards (minimum 7% APY) when price is stable</li>
+            <li>• Target liquidity: $1M for strong price support foundation</li>
+            <li>• Orders with higher MC prices get priority in reward distribution</li>
           </ul>
         </div>
       </div>
 
       {/* Spread Incentives Section */}
       <div className="bg-gradient-to-r from-green-900/20 to-yellow-900/20 border border-green-500/30 rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-green-300">🎯 Spread Incentive System</h2>
+        <h2 className="text-2xl font-bold mb-4 text-green-300">🎯 Price Support Incentive System</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Buy Side Incentives */}
@@ -241,7 +242,7 @@ export const DEXRewardsInfo: React.FC = () => {
 
           {/* Sell Side Incentives */}
           <div>
-            <h3 className="text-lg font-semibold text-red-400 mb-3">Sell Orders - Push Price Up</h3>
+            <h3 className="text-lg font-semibold text-red-400 mb-3">Sell Orders - Elevate MC Value</h3>
             <div className="space-y-3">
               {/* Example: High Price */}
               <div className="bg-gray-800/50 rounded-lg p-4">
@@ -286,25 +287,28 @@ export const DEXRewardsInfo: React.FC = () => {
 
         {/* Strategy Tips */}
         <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-          <h4 className="font-semibold text-yellow-400 mb-2">💡 Maximizing Your Rewards</h4>
+          <h4 className="font-semibold text-yellow-400 mb-2">💡 Maximizing Rewards While Supporting MC Price</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
             <div>
               <p className="font-medium text-yellow-300 mb-1">For Buyers:</p>
               <ul className="space-y-1">
-                <li>• Place orders close to the current ask price</li>
-                <li>• Tighter spreads = Higher multipliers</li>
-                <li>• Up to 2x rewards for aggressive buying</li>
+                <li>• Place higher bids to support MC floor price</li>
+                <li>• Aggressive buying helps push price up</li>
+                <li>• Up to 2x rewards for price support</li>
               </ul>
             </div>
             <div>
               <p className="font-medium text-yellow-300 mb-1">For Sellers:</p>
               <ul className="space-y-1">
-                <li>• Place orders above the current bid</li>
-                <li>• Higher prices = Better multipliers</li>
-                <li>• Up to 1.5x rewards for premium pricing</li>
+                <li>• Ask higher prices to elevate MC value</li>
+                <li>• Premium pricing supports appreciation</li>
+                <li>• Up to 1.5x rewards for valuing MC highly</li>
               </ul>
             </div>
           </div>
+          <p className="text-xs text-green-400 mt-3 text-center">
+            Remember: The system's goal is MC price appreciation. Your rewards increase when you help push the price up!
+          </p>
         </div>
       </div>
 

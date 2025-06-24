@@ -125,7 +125,7 @@ export const fetchMainCoinParams = async () => {
 
 export const formatAmount = (amount: string, decimals: number = 6): string => {
   const value = parseInt(amount) / Math.pow(10, decimals);
-  return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return value.toFixed(6);
 };
 
 // Generic API fetch function for components

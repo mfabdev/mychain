@@ -105,8 +105,8 @@ export const SDKMintingDisplay: React.FC = () => {
         
         <div className="bg-gray-700/30 rounded p-4">
           <p className="text-sm text-gray-400 mb-1">Total Staked</p>
-          <p className="text-xl font-semibold">{(mintingInfo.total_staked / 1000000).toFixed(0)} LC</p>
-          <p className="text-xs text-gray-500">Of {(mintingInfo.total_supply / 1000000).toFixed(0)} LC</p>
+          <p className="text-xl font-semibold">{(mintingInfo.total_staked / 1000000).toFixed(6)} LC</p>
+          <p className="text-xs text-gray-500">Of {(mintingInfo.total_supply / 1000000).toFixed(6)} LC</p>
         </div>
         
         <div className="bg-gray-700/30 rounded p-4">
