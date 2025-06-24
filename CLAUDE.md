@@ -42,7 +42,7 @@ This file ensures Claude (AI assistant) maintains consistent information across 
 **DO NOT USE deprecated scripts** - they have been archived to `deprecated_scripts/`
 
 ### 5. Key Features Implemented
-- SDK minting with 50% goal bonded, 7-100% inflation
+- SDK minting with 50% goal bonded, 7-100% inflation, 100% rate change, 2M blocks/year (3x faster adjustment)
 - Transaction history tracking for all modules
 - Minting event recording in BeginBlock
 - Web dashboard with inflation display

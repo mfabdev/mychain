@@ -45,8 +45,14 @@ func (k Keeper) CalculateEffectiveAPR(ctx sdk.Context) (math.LegacyDec, error) {
 
 	// Get total staked amount
 	stakingKeeper := k.stakingKeeper
-	bondDenom := stakingKeeper.BondDenom(ctx)
-	totalStaked := stakingKeeper.TotalBondedTokens(ctx)
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return math.LegacyZeroDec(), err
+	}
+	totalStaked, err := stakingKeeper.TotalBondedTokens(ctx)
+	if err != nil {
+		return math.LegacyZeroDec(), err
+	}
 
 	if totalStaked.IsZero() {
 		// If nothing is staked, return 0 (rewards won't be distributed)
@@ -114,15 +120,24 @@ func (k Keeper) DistributeStakingRewards(ctx sdk.Context) error {
 
 	// Get staking info for recording
 	stakingKeeper := k.stakingKeeper
-	totalStaked := stakingKeeper.TotalBondedTokens(ctx)
-	validators := stakingKeeper.GetAllValidators(ctx)
+	totalStaked, err := stakingKeeper.TotalBondedTokens(ctx)
+	if err != nil {
+		return err
+	}
+	validators, err := stakingKeeper.GetAllValidators(ctx)
+	if err != nil {
+		return err
+	}
 	
 	// Count delegators
 	delegatorCount := int64(0)
 	delegatorMap := make(map[string]bool)
 	for _, val := range validators {
 		operAddr, _ := sdk.ValAddressFromBech32(val.GetOperator())
-		delegations := stakingKeeper.GetValidatorDelegations(ctx, operAddr)
+		delegations, err := stakingKeeper.GetValidatorDelegations(ctx, operAddr)
+		if err != nil {
+			continue
+		}
 		for _, del := range delegations {
 			delegatorMap[del.DelegatorAddress] = true
 		}

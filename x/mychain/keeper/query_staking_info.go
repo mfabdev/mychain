@@ -44,8 +44,14 @@ func (k Keeper) StakingInfo(goCtx context.Context, req *types.QueryStakingInfoRe
 	totalSupply := k.bankKeeper.GetSupply(ctx, "alc")
 
 	// Get total staked
-	totalStaked := k.stakingKeeper.TotalBondedTokens(ctx)
-	bondDenom := k.stakingKeeper.BondDenom(ctx)
+	totalStaked, err := k.stakingKeeper.TotalBondedTokens(ctx)
+	if err != nil {
+		return nil, err
+	}
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return nil, err
+	}
 	
 	// Convert if needed
 	stakedDisplay := totalStaked
@@ -61,11 +67,17 @@ func (k Keeper) StakingInfo(goCtx context.Context, req *types.QueryStakingInfoRe
 	hourlyRewards := math.LegacyNewDecFromInt(annualRewards).Quo(hoursPerYear).TruncateInt()
 
 	// Count delegators
-	validators := k.stakingKeeper.GetAllValidators(ctx)
+	validators, err := k.stakingKeeper.GetAllValidators(ctx)
+	if err != nil {
+		return nil, err
+	}
 	delegatorMap := make(map[string]bool)
 	for _, val := range validators {
 		operAddr, _ := sdk.ValAddressFromBech32(val.GetOperator())
-		delegations := k.stakingKeeper.GetValidatorDelegations(ctx, operAddr)
+		delegations, err := k.stakingKeeper.GetValidatorDelegations(ctx, operAddr)
+		if err != nil {
+			continue
+		}
 		for _, del := range delegations {
 			delegatorMap[del.DelegatorAddress] = true
 		}

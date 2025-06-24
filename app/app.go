@@ -210,6 +210,11 @@ func New(
 	app.DexKeeper.SetTransactionKeeper(&app.MychainKeeper)
 	app.TestusdKeeper.SetTransactionKeeper(&app.MychainKeeper)
 	
+	// Set staking keeper for mychain module
+	logger.Info("Setting staking keeper for mychain module", "stakingKeeper", fmt.Sprintf("%p", app.StakingKeeper))
+	app.MychainKeeper.SetStakingKeeper(app.StakingKeeper)
+	logger.Info("Staking keeper set", "isNil", app.StakingKeeper == nil)
+	
 	logger.Info("Transaction keeper wiring completed")
 	logger.Info("Verification", "maincoin", app.MaincoinKeeper.GetTransactionKeeper() != nil)
 	logger.Info("Verification", "dex", app.DexKeeper.GetTransactionKeeper() != nil)

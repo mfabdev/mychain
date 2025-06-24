@@ -26,12 +26,10 @@ type BankKeeper interface {
 
 // StakingKeeper defines the expected interface for the Staking module.
 type StakingKeeper interface {
-	GetDelegation(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) (delegation stakingtypes.Delegation, found bool)
-	GetValidator(ctx context.Context, addr sdk.ValAddress) (validator stakingtypes.ValidatorI, found bool)
-	BondDenom(ctx context.Context) string
-	TotalBondedTokens(ctx context.Context) math.Int
-	GetAllValidators(ctx context.Context) []stakingtypes.Validator
-	GetValidatorDelegations(ctx context.Context, valAddr sdk.ValAddress) []stakingtypes.Delegation
+	BondDenom(ctx context.Context) (string, error)
+	TotalBondedTokens(ctx context.Context) (math.Int, error)
+	GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error)
+	GetValidatorDelegations(ctx context.Context, valAddr sdk.ValAddress) ([]stakingtypes.Delegation, error)
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters.

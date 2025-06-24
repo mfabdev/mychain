@@ -55,10 +55,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Cdc,
 		in.AddressCodec,
 		authority,
-		nil, // StakingKeeper will be set later
+		nil, // StakingKeeper will be set later via SetStakingKeeper
 		in.BankKeeper,
 	)
-	m := NewAppModule(in.Cdc, k, in.AuthKeeper, in.BankKeeper)
+	m := NewAppModule(in.Cdc, &k, in.AuthKeeper, in.BankKeeper)
 
 	return ModuleOutputs{MychainKeeper: k, Module: m}
 }

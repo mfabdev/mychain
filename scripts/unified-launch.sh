@@ -304,11 +304,11 @@ try:
     # Update mint parameters for SDK minting
     genesis['app_state']['mint']['params'] = {
         'mint_denom': '$LC_DENOM',
-        'inflation_rate_change': '0.930000000000000000',
+        'inflation_rate_change': '1.000000000000000000',
         'inflation_max': '1.000000000000000000',
         'inflation_min': '0.070000000000000000',
         'goal_bonded': '0.500000000000000000',
-        'blocks_per_year': '6311520'
+        'blocks_per_year': '2103840'
     }
     genesis['app_state']['mint']['minter']['inflation'] = '1.000000000000000000'  # Start at max
     

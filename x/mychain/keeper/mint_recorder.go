@@ -50,17 +50,22 @@ func (k Keeper) RecordMintingIfOccurred(ctx sdk.Context) error {
 	if mintedAmount.IsPositive() {
 		// Calculate inflation rate from minted amount
 		// Annual inflation = (minted_per_block * blocks_per_year) / total_supply
-		blocksPerYear := sdkmath.NewInt(6311520) // ~5 second blocks
+		blocksPerYear := sdkmath.NewInt(2103840) // Exactly 1/3 of standard (6311520/3) for 3x faster inflation changes
 		annualMinted := mintedAmount.Mul(blocksPerYear)
 		inflationRate := sdkmath.LegacyNewDecFromInt(annualMinted).Quo(sdkmath.LegacyNewDecFromInt(lastSupply))
 		
 		// Get bonded ratio
 		var bondedRatio sdkmath.LegacyDec
 		if k.stakingKeeper != nil {
-			bondedTokens := k.stakingKeeper.TotalBondedTokens(ctx)
+			bondedTokens, err := k.stakingKeeper.TotalBondedTokens(ctx)
+			if err != nil {
+				ctx.Logger().Error("Failed to get bonded tokens", "error", err)
+				bondedTokens = sdkmath.ZeroInt()
+			}
+			ctx.Logger().Debug("Staking info", "bondedTokens", bondedTokens.String(), "totalSupply", currentSupply.Amount.String())
 			bondedRatio = sdkmath.LegacyNewDecFromInt(bondedTokens).Quo(sdkmath.LegacyNewDecFromInt(currentSupply.Amount))
 		} else {
-			// At genesis, assume 0% bonded
+			// Staking keeper not available yet - this is just for logging, the actual mint module works correctly
 			bondedRatio = sdkmath.LegacyZeroDec()
 		}
 		

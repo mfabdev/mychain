@@ -369,12 +369,7 @@ export const DEXPage: React.FC = () => {
           setPrice('');
           setAmount('');
           setTotal('');
-          // Refresh order book and balances without page reload
-          setTimeout(() => {
-            fetchOrderBook();
-            fetchBalances();
-            fetchUserOrders();
-          }, 1000);
+          // Data will refresh on next interval
         } else {
           // Parse error message for common issues
           let errorMessage = result.error || 'Failed to place order';
