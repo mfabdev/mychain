@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	clog "cosmossdk.io/log"
 	"cosmossdk.io/store/rootmulti"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/runtime"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"mychain/x/dex/types"
 	dbm "github.com/cosmos/cosmos-db"
 )
@@ -32,7 +33,7 @@ func main() {
 	defer db.Close()
 
 	// Create a store
-	cms := rootmulti.NewStore(db, log.NewNopLogger(), nil)
+	cms := rootmulti.NewStore(db, clog.NewNopLogger(), nil)
 	
 	// Register DEX store
 	storeKey := storetypes.NewKVStoreKey("dex")
@@ -46,7 +47,7 @@ func main() {
 	dexStore := cms.GetKVStore(storeKey)
 	
 	// Create codec
-	cdc := codec.NewProtoCodec(runtime.NewInterfaceRegistry())
+	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	
 	// Try to read params directly
 	paramsKey := []byte{0x0} // Params key prefix

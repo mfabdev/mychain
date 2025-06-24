@@ -1,5 +1,7 @@
 version: 1
 validation: sovereign
+build:
+  main: cmd/mychaind
 accounts: 
 - name: alice
   coins:

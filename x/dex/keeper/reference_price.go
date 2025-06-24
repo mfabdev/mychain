@@ -4,6 +4,7 @@ import (
 	"context"
 	
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // GetReferencePrice returns the reference price for a trading pair
@@ -28,7 +29,15 @@ func (k Keeper) GetReferencePrice(ctx context.Context, pairID uint64) math.Legac
 
 // GetLatestSegmentPrice returns the latest segment price
 func (k Keeper) GetLatestSegmentPrice(ctx context.Context) math.LegacyDec {
-	// For now, return the initial price
-	// TODO: Integrate with mychain module to get actual segment number
+	// Get the actual MainCoin price from the MainCoin module
+	if k.maincoinKeeper != nil {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		currentPrice := k.maincoinKeeper.GetCurrentPrice(sdkCtx)
+		if !currentPrice.IsZero() {
+			return currentPrice
+		}
+	}
+	
+	// Fallback to initial price if MainCoin keeper not available
 	return math.LegacyMustNewDecFromStr("0.0001")
 }

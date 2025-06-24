@@ -14,8 +14,8 @@ import (
 const (
 	// Distribution frequency: every 100 blocks for testing (normally 720 blocks at 5s/block)
 	BlocksPerHour = 100
-	// Blocks per year in test mode (100 blocks/hour * 24 hours * 365 days)
-	BlocksPerYear = 876000 // Was 6311520 for mainnet, but we're in test mode
+	// Blocks per year adjusted for 3x faster time (1/3 of standard 6311520)
+	BlocksPerYear = 2103840 // Matches mint module for consistent inflation calculations
 )
 
 // DistributeLiquidityRewardsWithDynamicRate distributes LC rewards to all liquidity providers using tier system
@@ -38,6 +38,30 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 		"percentageAPR", math.LegacyNewDecFromInt(dynamicRate).Quo(math.LegacyNewDec(3175)).Mul(math.LegacyNewDec(100)),
 	)
 	
+	// Get current system tier based on market conditions
+	marketPrice := k.GetCurrentMarketPrice(ctx, 1) // MC/TUSD pair
+	referencePrice := k.GetReferencePrice(ctx, 1)
+	
+	systemPriceDeviation := math.LegacyZeroDec()
+	if !referencePrice.IsZero() {
+		systemPriceDeviation = marketPrice.Sub(referencePrice).Quo(referencePrice)
+	}
+	
+	// Get system-wide tier
+	systemTier, err := k.GetTierByDeviation(ctx, 1, systemPriceDeviation)
+	if err != nil {
+		return err
+	}
+	
+	k.Logger(ctx).Info("System tier determined",
+		"marketPrice", marketPrice,
+		"referencePrice", referencePrice,
+		"systemPriceDeviation", systemPriceDeviation,
+		"systemTierId", systemTier.Id,
+		"bidVolumeCap", systemTier.BidVolumeCap,
+		"askVolumeCap", systemTier.AskVolumeCap,
+	)
+	
 	// Track eligible liquidity by tier for each trading pair
 	type tierLiquidity struct {
 		eligibleOrders []types.Order
@@ -47,25 +71,15 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 	pairTierMap := make(map[uint64]map[uint32]*tierLiquidity) // pairID -> tierID -> liquidity
 	
 	// Walk through all orders to categorize by tier
-	err := k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
+	err = k.Orders.Walk(ctx, nil, func(orderID uint64, order types.Order) (bool, error) {
 		// Skip filled orders
 		remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
 		if remaining.IsZero() {
 			return false, nil
 		}
 		
-		// Get market price and calculate deviation
-		marketPrice := k.GetCurrentMarketPrice(ctx, order.PairId)
-		priceDeviation, err := k.CalculatePriceDeviation(order.Price.Amount, marketPrice)
-		if err != nil {
-			return false, nil
-		}
-		
-		// Get appropriate tier for this order
-		tier, err := k.GetTierByDeviation(ctx, order.PairId, priceDeviation)
-		if err != nil {
-			return false, nil
-		}
+		// Use system-wide tier for all orders
+		tier := systemTier
 		
 		// Initialize maps if needed
 		if _, exists := pairTierMap[order.PairId]; !exists {
@@ -162,9 +176,33 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					)
 				}
 				
-				// Check if adding this order exceeds the cap
-				if eligibleBuyValue.Add(orderValue).GT(bidVolumeCap) {
-					break // Volume cap reached
+				// Check if adding this order would exceed the cap
+				newEligibleValue := eligibleBuyValue.Add(orderValue)
+				if newEligibleValue.GT(bidVolumeCap) {
+					// Check if we can partially include this order
+					remainingCap := bidVolumeCap.Sub(eligibleBuyValue)
+					if remainingCap.IsPositive() {
+						// Calculate what fraction of the order fits under the cap
+						cappedFraction := remainingCap.Quo(orderValue)
+						orderValue = orderValue.Mul(cappedFraction)
+						
+						k.Logger(ctx).Info("Order partially capped",
+							"orderId", order.Id,
+							"originalValue", orderValue.Quo(cappedFraction),
+							"cappedValue", orderValue,
+							"cappedFraction", cappedFraction,
+							"bidVolumeCap", bidVolumeCap,
+						)
+					} else {
+						// No room left under the cap, skip this order entirely
+						k.Logger(ctx).Info("Order excluded by volume cap",
+							"orderId", order.Id,
+							"orderValue", orderValue,
+							"eligibleBuyValue", eligibleBuyValue,
+							"bidVolumeCap", bidVolumeCap,
+						)
+						continue
+					}
 				}
 				
 				eligibleBuyValue = eligibleBuyValue.Add(orderValue)
@@ -231,9 +269,33 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
 				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
 				
-				// Check if adding this order exceeds the cap
-				if eligibleSellValue.Add(orderValue).GT(askVolumeCap) {
-					break // Volume cap reached
+				// Check if adding this order would exceed the cap
+				newEligibleValue := eligibleSellValue.Add(orderValue)
+				if newEligibleValue.GT(askVolumeCap) {
+					// Check if we can partially include this order
+					remainingCap := askVolumeCap.Sub(eligibleSellValue)
+					if remainingCap.IsPositive() {
+						// Calculate what fraction of the order fits under the cap
+						cappedFraction := remainingCap.Quo(orderValue)
+						orderValue = orderValue.Mul(cappedFraction)
+						
+						k.Logger(ctx).Info("Sell order partially capped",
+							"orderId", order.Id,
+							"originalValue", orderValue.Quo(cappedFraction),
+							"cappedValue", orderValue,
+							"cappedFraction", cappedFraction,
+							"askVolumeCap", askVolumeCap,
+						)
+					} else {
+						// No room left under the cap, skip this order entirely
+						k.Logger(ctx).Info("Sell order excluded by volume cap",
+							"orderId", order.Id,
+							"orderValue", orderValue,
+							"eligibleSellValue", eligibleSellValue,
+							"askVolumeCap", askVolumeCap,
+						)
+						continue
+					}
 				}
 				
 				eligibleSellValue = eligibleSellValue.Add(orderValue)

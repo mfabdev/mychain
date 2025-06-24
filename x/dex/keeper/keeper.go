@@ -47,6 +47,7 @@ type Keeper struct {
 	bankKeeper types.BankKeeper
 	transactionKeeper types.TransactionKeeper
 	distrKeeper types.DistributionKeeper
+	maincoinKeeper types.MainCoinKeeper
 }
 
 func NewKeeper(
@@ -58,6 +59,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	transactionKeeper types.TransactionKeeper,
 	distrKeeper types.DistributionKeeper,
+	maincoinKeeper types.MainCoinKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -74,6 +76,7 @@ func NewKeeper(
 		bankKeeper:   bankKeeper,
 		transactionKeeper: transactionKeeper,
 		distrKeeper:  distrKeeper,
+		maincoinKeeper: maincoinKeeper,
 
 		Params:          collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		NextOrderID:     collections.NewSequence(sb, types.NextOrderIDKey, "next_order_id"),

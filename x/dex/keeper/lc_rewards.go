@@ -259,18 +259,37 @@ func (k Keeper) ExceedsVolumeCap(ctx context.Context, order types.Order, tier ty
 	return newTotalVolume.GT(maxVolume), nil
 }
 
-// GetCurrentMarketPrice gets the current market price for a pair (placeholder - would need proper implementation)
+// GetCurrentMarketPrice gets the current market price for a pair
 func (k Keeper) GetCurrentMarketPrice(ctx context.Context, pairID uint64) math.LegacyDec {
-	// TODO: Implement proper price oracle or use last trade price
-	// For now, return a placeholder price in micro units
+	// For MC/TUSD pair, get the actual MainCoin price
+	if pairID == 1 {
+		if k.maincoinKeeper != nil {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			currentPrice := k.maincoinKeeper.GetCurrentPrice(sdkCtx)
+			if !currentPrice.IsZero() {
+				// Convert from whole units to micro units
+				// e.g., 0.000138518971498235 TUSD/MC = 138.518971498235 utusd/MC
+				return currentPrice.Mul(math.LegacyNewDec(1000000))
+			}
+		}
+	}
+	
+	// Fallback to default price if MainCoin keeper not available
 	// 0.0001 USD per MC = 100 micro USD per MC
 	return math.LegacyNewDec(100)
 }
 
-// GetMainCoinTotalSupply gets the total supply of MainCoin (placeholder)
+// GetMainCoinTotalSupply gets the total supply of MainCoin
 func (k Keeper) GetMainCoinTotalSupply(ctx context.Context) math.Int {
-	// TODO: Query MainCoin module for total supply
-	// For now, return a placeholder
+	if k.maincoinKeeper != nil {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		totalSupply := k.maincoinKeeper.GetTotalSupply(sdkCtx)
+		if !totalSupply.IsZero() {
+			return totalSupply
+		}
+	}
+	
+	// Fallback to default if MainCoin keeper not available
 	// 100,000 MC = 100,000,000,000 umc
 	return math.NewIntFromUint64(100000000000) // 100k MC in micro units
 }
@@ -383,31 +402,29 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 		"pairId", order.PairId,
 	)
 	
-	// Get market price to determine tier
-	marketPrice := k.GetCurrentMarketPrice(ctx, order.PairId)
+	// Get current system tier based on market conditions
+	marketPrice := k.GetCurrentMarketPrice(ctx, 1) // MC/TUSD pair
+	referencePrice := k.GetReferencePrice(ctx, 1)
 	
-	k.Logger(ctx).Info("Market price retrieved",
+	k.Logger(ctx).Info("Market and reference prices retrieved",
 		"orderId", order.Id,
 		"marketPrice", marketPrice,
+		"referencePrice", referencePrice,
 	)
 	
-	// Calculate price deviation
-	priceDeviation, err := k.CalculatePriceDeviation(order.Price.Amount, marketPrice)
-	if err != nil {
-		k.Logger(ctx).Error("Failed to calculate price deviation",
-			"orderId", order.Id,
-			"error", err,
-		)
-		return err
+	// Calculate system price deviation
+	systemPriceDeviation := math.LegacyZeroDec()
+	if !referencePrice.IsZero() {
+		systemPriceDeviation = marketPrice.Sub(referencePrice).Quo(referencePrice)
 	}
 	
-	k.Logger(ctx).Info("Price deviation calculated",
+	k.Logger(ctx).Info("System price deviation calculated",
 		"orderId", order.Id,
-		"priceDeviation", priceDeviation,
+		"systemPriceDeviation", systemPriceDeviation,
 	)
 	
-	// Get current tier
-	tier, err := k.GetTierByDeviation(ctx, order.PairId, priceDeviation)
+	// Get system-wide tier
+	tier, err := k.GetTierByDeviation(ctx, 1, systemPriceDeviation)
 	if err != nil {
 		k.Logger(ctx).Error("Failed to get tier by deviation",
 			"orderId", order.Id,
@@ -486,7 +503,7 @@ func (k Keeper) InitializeOrderRewards(ctx context.Context, order types.Order) e
 	k.Logger(ctx).Info("LC rewards initialized for order", 
 		"orderId", order.Id, 
 		"tier", tier.Id, 
-		"priceDeviation", priceDeviation,
+		"systemPriceDeviation", systemPriceDeviation,
 		"startTime", orderRewardInfo.StartTime,
 		"lastClaimedTime", orderRewardInfo.LastClaimedTime,
 	)
@@ -502,7 +519,9 @@ func (k Keeper) CalculatePriceDeviation(orderPrice math.Int, marketPrice math.Le
 	
 	// orderPrice is in micro units, marketPrice is also in micro units
 	orderPriceDec := math.LegacyNewDecFromInt(orderPrice)
-	deviation := orderPriceDec.Sub(marketPrice).Quo(marketPrice).Abs()
+	// Calculate deviation as (orderPrice - marketPrice) / marketPrice
+	// Negative values mean order price is below market price
+	deviation := orderPriceDec.Sub(marketPrice).Quo(marketPrice)
 	
 	return deviation, nil
 }

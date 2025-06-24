@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/core/address"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -42,4 +43,10 @@ type TransactionKeeper interface {
 // DistributionKeeper defines the expected interface for the Distribution module.
 type DistributionKeeper interface {
 	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
+}
+
+// MainCoinKeeper defines the expected interface for the MainCoin module.
+type MainCoinKeeper interface {
+	GetCurrentPrice(ctx sdk.Context) math.LegacyDec
+	GetTotalSupply(ctx sdk.Context) math.Int
 }
