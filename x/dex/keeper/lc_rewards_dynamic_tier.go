@@ -249,6 +249,19 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
 					
+					// Update the order's tier_id to reflect current system tier
+					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
+						if orderRewardInfo.TierId != systemTier.Id {
+							orderRewardInfo.TierId = systemTier.Id
+							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+								k.Logger(ctx).Error("Failed to update order tier",
+									"orderId", order.Id,
+									"error", err,
+								)
+							}
+						}
+					}
+					
 					// Log if this order has a spread bonus
 					if spreadMultiplier.GT(math.LegacyOneDec()) {
 						k.Logger(ctx).Info("Order receiving spread bonus",
@@ -341,6 +354,19 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					}
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
+					
+					// Update the order's tier_id to reflect current system tier
+					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
+						if orderRewardInfo.TierId != systemTier.Id {
+							orderRewardInfo.TierId = systemTier.Id
+							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+								k.Logger(ctx).Error("Failed to update order tier",
+									"orderId", order.Id,
+									"error", err,
+								)
+							}
+						}
+					}
 					
 					// Log if this order has a spread bonus
 					if spreadMultiplier.GT(math.LegacyOneDec()) {

@@ -134,17 +134,18 @@ export const LiquidityPositions: React.FC<Props> = ({
           eligibilityReason = 'Order fully filled';
         }
         
-        // Calculate tier based on price deviation from market
+        // Get order reward info from backend
+        const orderRewardInfo = orderRewardsMap.get(order.id);
+        
+        // Get tier from backend order reward info
         let tier = 1;
-        const priceDeviation = ((price - mcPrice) / mcPrice) * 100;
-        if (Math.abs(priceDeviation) > 12) tier = 4;
-        else if (Math.abs(priceDeviation) > 8) tier = 3;
-        else if (Math.abs(priceDeviation) > 3) tier = 2;
+        if (orderRewardInfo && orderRewardInfo.tier_id) {
+          tier = orderRewardInfo.tier_id;
+        }
         
         // Get actual spread multiplier from backend
         let spreadMultiplier = 1.0;
         let bonusType = '';
-        const orderRewardInfo = orderRewardsMap.get(order.id);
         
         if (orderRewardInfo && orderRewardInfo.spread_multiplier) {
           const backendMultiplier = parseFloat(orderRewardInfo.spread_multiplier);
