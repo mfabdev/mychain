@@ -28,7 +28,7 @@ const RewardEligibilityChart: React.FC<{
   return (
     <div className="mt-3">
       {/* Progress bar */}
-      <div className="h-8 bg-gray-700 rounded-lg overflow-hidden flex">
+      <div className="h-8 bg-gray-700 rounded-lg overflow-hidden flex relative">
         {eligiblePercent > 0 && (
           <div 
             className="bg-green-500 flex items-center justify-center text-xs font-bold"
@@ -51,6 +51,26 @@ const RewardEligibilityChart: React.FC<{
             style={{ width: `${ineligiblePercent}%` }}
           >
             {ineligiblePercent >= 10 && `${ineligiblePercent.toFixed(0)}%`}
+          </div>
+        )}
+      </div>
+      
+      {/* Legend with amounts */}
+      <div className="mt-1 flex justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-green-500 rounded"></span>
+          <span className="text-gray-400">Eligible: ${eligibleValue.toFixed(2)}</span>
+        </div>
+        {partialValue > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-yellow-500 rounded"></span>
+            <span className="text-gray-400">Partial: ${partialValue.toFixed(2)}</span>
+          </div>
+        )}
+        {ineligibleValue > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-red-500 rounded"></span>
+            <span className="text-gray-400">Ineligible: ${ineligibleValue.toFixed(2)}</span>
           </div>
         )}
       </div>
@@ -135,6 +155,18 @@ export const LiquidityPositions: React.FC<Props> = ({
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'active' | 'history'>('active');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [marketStats, setMarketStats] = useState({
+    totalBuyLiquidity: 0,
+    totalSellLiquidity: 0,
+    rewardedBuyVolume: 0,
+    rewardedSellVolume: 0,
+    highestRewardedBuyPrice: 0,
+    lowestRewardedBuyPrice: 0,
+    highestRewardedSellPrice: 0,
+    lowestRewardedSellPrice: 0,
+    buyOrders: [] as any[],
+    sellOrders: [] as any[]
+  });
 
   useEffect(() => {
     fetchPositionsAndHistory();
@@ -146,7 +178,84 @@ export const LiquidityPositions: React.FC<Props> = ({
     try {
       // Fetch all orders
       const orderBookRes = await fetchAPI('/mychain/dex/v1/order_book/1');
-      const allOrders = [...(orderBookRes.buy_orders || []), ...(orderBookRes.sell_orders || [])];
+      const buyOrders = orderBookRes.buy_orders || [];
+      const sellOrders = orderBookRes.sell_orders || [];
+      const allOrders = [...buyOrders, ...sellOrders];
+      
+      // Fetch all order rewards info for market statistics
+      const allOrderRewardsRes = await fetchAPI('/mychain/dex/v1/all_order_rewards');
+      const allOrderRewardsMap = new Map();
+      if (allOrderRewardsRes.rewards) {
+        allOrderRewardsRes.rewards.forEach((reward: any) => {
+          allOrderRewardsMap.set(reward.order_id, reward);
+        });
+      }
+      
+      // Calculate market statistics
+      let totalBuyLiquidity = 0;
+      let totalSellLiquidity = 0;
+      let rewardedBuyVolume = 0;
+      let rewardedSellVolume = 0;
+      let highestRewardedBuyPrice = 0;
+      let lowestRewardedBuyPrice = Infinity;
+      let highestRewardedSellPrice = 0;
+      let lowestRewardedSellPrice = Infinity;
+      
+      // Process buy orders
+      buyOrders.forEach((order: any) => {
+        const price = parseFloat(order.price.amount) / 1000000;
+        const amount = parseFloat(order.amount.amount) / 1000000;
+        const filled = parseFloat(order.filled_amount.amount) / 1000000;
+        const remaining = amount - filled;
+        const value = remaining * price;
+        
+        totalBuyLiquidity += value;
+        
+        const rewardInfo = allOrderRewardsMap.get(order.id);
+        if (rewardInfo && rewardInfo.is_eligible) {
+          const volumeCapFraction = parseFloat(rewardInfo.volume_cap_fraction || "1");
+          if (volumeCapFraction > 0) {
+            rewardedBuyVolume += value * volumeCapFraction;
+            if (price > highestRewardedBuyPrice) highestRewardedBuyPrice = price;
+            if (price < lowestRewardedBuyPrice) lowestRewardedBuyPrice = price;
+          }
+        }
+      });
+      
+      // Process sell orders
+      sellOrders.forEach((order: any) => {
+        const price = parseFloat(order.price.amount) / 1000000;
+        const amount = parseFloat(order.amount.amount) / 1000000;
+        const filled = parseFloat(order.filled_amount.amount) / 1000000;
+        const remaining = amount - filled;
+        const value = remaining * price;
+        
+        totalSellLiquidity += value;
+        
+        const rewardInfo = allOrderRewardsMap.get(order.id);
+        if (rewardInfo && rewardInfo.is_eligible) {
+          const volumeCapFraction = parseFloat(rewardInfo.volume_cap_fraction || "1");
+          if (volumeCapFraction > 0) {
+            rewardedSellVolume += value * volumeCapFraction;
+            if (price > highestRewardedSellPrice) highestRewardedSellPrice = price;
+            if (price < lowestRewardedSellPrice) lowestRewardedSellPrice = price;
+          }
+        }
+      });
+      
+      // Set market statistics
+      setMarketStats({
+        totalBuyLiquidity,
+        totalSellLiquidity,
+        rewardedBuyVolume,
+        rewardedSellVolume,
+        highestRewardedBuyPrice: highestRewardedBuyPrice === 0 ? 0 : highestRewardedBuyPrice,
+        lowestRewardedBuyPrice: lowestRewardedBuyPrice === Infinity ? 0 : lowestRewardedBuyPrice,
+        highestRewardedSellPrice: highestRewardedSellPrice === 0 ? 0 : highestRewardedSellPrice,
+        lowestRewardedSellPrice: lowestRewardedSellPrice === Infinity ? 0 : lowestRewardedSellPrice,
+        buyOrders: buyOrders.length,
+        sellOrders: sellOrders.length
+      });
       
       // Filter user's orders
       const userOrders = allOrders.filter((order: any) => order.maker === userAddress);
@@ -499,6 +608,92 @@ export const LiquidityPositions: React.FC<Props> = ({
         <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
           <p className="text-sm text-blue-400">Annual Rate</p>
           <p className="text-2xl font-bold text-blue-300">{currentAPR.toFixed(1)}%</p>
+        </div>
+      </div>
+
+      {/* Market Statistics */}
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-gray-300">📊 Market Statistics</h3>
+        
+        {/* Buy Side Statistics */}
+        <div className="mb-4">
+          <h4 className="text-md font-medium mb-2 text-green-400">Buy Orders</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Total Orders</p>
+              <p className="font-bold">{marketStats.buyOrders}</p>
+            </div>
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Total Liquidity</p>
+              <p className="font-bold">${marketStats.totalBuyLiquidity.toFixed(2)}</p>
+            </div>
+            <div className="bg-green-900/20 border border-green-500/30 rounded p-2">
+              <p className="text-xs text-green-400">Rewarded Volume</p>
+              <p className="font-bold text-green-300">${marketStats.rewardedBuyVolume.toFixed(2)}</p>
+              <p className="text-xs text-gray-500">{marketStats.totalBuyLiquidity > 0 ? `${((marketStats.rewardedBuyVolume / marketStats.totalBuyLiquidity) * 100).toFixed(1)}% of total` : '0%'}</p>
+            </div>
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Price Range (Rewarded)</p>
+              {marketStats.lowestRewardedBuyPrice > 0 ? (
+                <>
+                  <p className="font-bold text-sm">${marketStats.lowestRewardedBuyPrice.toFixed(6)}</p>
+                  <p className="text-xs text-gray-500">to ${marketStats.highestRewardedBuyPrice.toFixed(6)}</p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">No rewarded orders</p>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Sell Side Statistics */}
+        <div>
+          <h4 className="text-md font-medium mb-2 text-red-400">Sell Orders</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Total Orders</p>
+              <p className="font-bold">{marketStats.sellOrders}</p>
+            </div>
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Total Liquidity</p>
+              <p className="font-bold">${marketStats.totalSellLiquidity.toFixed(2)}</p>
+            </div>
+            <div className="bg-red-900/20 border border-red-500/30 rounded p-2">
+              <p className="text-xs text-red-400">Rewarded Volume</p>
+              <p className="font-bold text-red-300">${marketStats.rewardedSellVolume.toFixed(2)}</p>
+              <p className="text-xs text-gray-500">{marketStats.totalSellLiquidity > 0 ? `${((marketStats.rewardedSellVolume / marketStats.totalSellLiquidity) * 100).toFixed(1)}% of total` : '0%'}</p>
+            </div>
+            <div className="bg-gray-700/30 rounded p-2">
+              <p className="text-xs text-gray-400">Price Range (Rewarded)</p>
+              {marketStats.lowestRewardedSellPrice > 0 ? (
+                <>
+                  <p className="font-bold text-sm">${marketStats.lowestRewardedSellPrice.toFixed(6)}</p>
+                  <p className="text-xs text-gray-500">to ${marketStats.highestRewardedSellPrice.toFixed(6)}</p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">No rewarded orders</p>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Summary */}
+        <div className="mt-3 pt-3 border-t border-gray-700 text-sm">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-gray-400">Total Market Liquidity:</span>
+              <span className="font-bold ml-2">${(marketStats.totalBuyLiquidity + marketStats.totalSellLiquidity).toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Total Rewarded Volume:</span>
+              <span className="font-bold ml-2 text-green-400">${(marketStats.rewardedBuyVolume + marketStats.rewardedSellVolume).toFixed(2)}</span>
+              {(marketStats.totalBuyLiquidity + marketStats.totalSellLiquidity) > 0 && (
+                <span className="text-xs text-gray-500 ml-1">
+                  ({((marketStats.rewardedBuyVolume + marketStats.rewardedSellVolume) / (marketStats.totalBuyLiquidity + marketStats.totalSellLiquidity) * 100).toFixed(1)}%)
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

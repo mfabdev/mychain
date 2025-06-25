@@ -58,6 +58,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Query dynamic reward state and current rate",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
+				{
+					RpcMethod:      "AllOrderRewards",
+					Use:            "all-order-rewards",
+					Short:          "Query rewards for all orders in the system",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
+				},
 
 				// this line is used by ignite scaffolding # autocli/query
 			},

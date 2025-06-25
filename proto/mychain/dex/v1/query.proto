@@ -68,6 +68,11 @@ service Query {
   rpc EstimateOrderRewards(QueryEstimateOrderRewardsRequest) returns (QueryEstimateOrderRewardsResponse) {
     option (google.api.http).get = "/mychain/dex/v1/estimate_order_rewards";
   }
+  
+  // AllOrderRewards queries rewards for all orders in the system
+  rpc AllOrderRewards(QueryAllOrderRewardsRequest) returns (QueryAllOrderRewardsResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/all_order_rewards";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -304,4 +309,15 @@ message QueryEstimateOrderRewardsResponse {
   string reward_tier = 8;
   string current_best_bid = 9;
   string current_best_ask = 10;
+}
+
+// QueryAllOrderRewardsRequest is request for AllOrderRewards
+message QueryAllOrderRewardsRequest {
+  // Optional: filter by specific trading pair
+  uint64 pair_id = 1;
+}
+
+// QueryAllOrderRewardsResponse is response for AllOrderRewards
+message QueryAllOrderRewardsResponse {
+  repeated OrderRewardInfo rewards = 1 [(gogoproto.nullable) = false];
 }
