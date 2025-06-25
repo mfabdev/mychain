@@ -122,13 +122,22 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				continue
 			}
 			
-			// Sort orders by price (highest first for better liquidity)
-			// This prioritizes orders closer to market price
-			sortOrdersByPrice(tierLiq.eligibleOrders)
+			// We'll sort buy and sell orders separately after splitting them
 			
 			// Calculate volume caps for this tier
 			bidVolumeCap := tierLiq.tier.BidVolumeCap.Mul(mcSupplyValueInQuote)
 			askVolumeCap := tierLiq.tier.AskVolumeCap.Mul(mcSupplyValueInQuote)
+			
+			k.Logger(ctx).Info("Volume cap calculation",
+				"pairID", pairID,
+				"tier", tierID,
+				"mcTotalSupply", mcTotalSupply,
+				"mcSupplyValueInQuote", mcSupplyValueInQuote,
+				"tierBidCapPercent", tierLiq.tier.BidVolumeCap,
+				"tierAskCapPercent", tierLiq.tier.AskVolumeCap,
+				"bidVolumeCap", bidVolumeCap,
+				"askVolumeCap", askVolumeCap,
+			)
 			
 			// Process buy and sell orders separately with their respective caps
 			buyOrders := []types.Order{}
@@ -142,9 +151,39 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				}
 			}
 			
+			// Sort buy and sell orders separately to prioritize best prices
+			sortOrdersByPrice(buyOrders)
+			sortOrdersByPrice(sellOrders)
+			
 			// Process buy orders with bid volume cap
 			eligibleBuyValue := math.LegacyZeroDec()
+			k.Logger(ctx).Info("Processing buy orders",
+				"pairID", pairID,
+				"totalBuyOrders", len(buyOrders),
+				"bidVolumeCap", bidVolumeCap,
+			)
+			
+			// Debug: Log all buy order values
+			totalBuyOrderValue := math.LegacyZeroDec()
 			for _, order := range buyOrders {
+				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
+				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
+				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
+				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
+				totalBuyOrderValue = totalBuyOrderValue.Add(orderValue)
+				k.Logger(ctx).Info("Buy order value",
+					"orderId", order.Id,
+					"remaining", remainingWholeUnits,
+					"price", priceWholeUnits,
+					"value", orderValue,
+				)
+			}
+			k.Logger(ctx).Info("Total buy order value before cap",
+				"total", totalBuyOrderValue,
+				"cap", bidVolumeCap,
+			)
+			
+			for i, order := range buyOrders {
 				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
 				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
 				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
@@ -180,6 +219,16 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				cappedFraction := math.LegacyOneDec()
 				originalOrderValue := orderValue
 				
+				// Log order details before cap check
+				k.Logger(ctx).Info("Checking buy order against cap",
+					"orderIndex", i,
+					"orderId", order.Id,
+					"orderValue", orderValue,
+					"currentEligibleBuyValue", eligibleBuyValue,
+					"newEligibleValue", eligibleBuyValue.Add(orderValue),
+					"bidVolumeCap", bidVolumeCap,
+				)
+				
 				// Check if adding this order would exceed the cap
 				newEligibleValue := eligibleBuyValue.Add(orderValue)
 				if newEligibleValue.GT(bidVolumeCap) {
@@ -206,6 +255,35 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 							"eligibleBuyValue", eligibleBuyValue,
 							"bidVolumeCap", bidVolumeCap,
 						)
+						cappedFraction = math.LegacyZeroDec() // 0% eligible
+						
+						// Update or create order reward info even for excluded orders
+						orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id)
+						if err != nil {
+							// Create new order reward info for excluded order
+							currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+							orderRewardInfo = types.OrderRewardInfo{
+								OrderId:           order.Id,
+								TierId:            systemTier.Id,
+								StartTime:         currentTime.Unix(),
+								LastUpdated:       currentTime.Unix(),
+								AccumulatedTime:   0,
+								TotalRewards:      math.ZeroInt(),
+								LastClaimedTime:   currentTime.Unix(),
+								SpreadMultiplier:  math.LegacyOneDec(),
+								VolumeCapFraction: cappedFraction,
+							}
+						} else {
+							orderRewardInfo.VolumeCapFraction = cappedFraction
+							orderRewardInfo.TierId = systemTier.Id
+						}
+						if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+							k.Logger(ctx).Error("Failed to update excluded order info",
+								"orderId", order.Id,
+								"error", err,
+							)
+						}
+						
 						continue
 					}
 				}
@@ -289,7 +367,33 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 			
 			// Process sell orders with ask volume cap
 			eligibleSellValue := math.LegacyZeroDec()
+			k.Logger(ctx).Info("Processing sell orders",
+				"pairID", pairID,
+				"totalSellOrders", len(sellOrders),
+				"askVolumeCap", askVolumeCap,
+			)
+			
+			// Debug: Log all sell order values
+			totalSellOrderValue := math.LegacyZeroDec()
 			for _, order := range sellOrders {
+				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
+				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
+				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
+				orderValue := remainingWholeUnits.Mul(priceWholeUnits)
+				totalSellOrderValue = totalSellOrderValue.Add(orderValue)
+				k.Logger(ctx).Info("Sell order value",
+					"orderId", order.Id,
+					"remaining", remainingWholeUnits,
+					"price", priceWholeUnits,
+					"value", orderValue,
+				)
+			}
+			k.Logger(ctx).Info("Total sell order value before cap",
+				"total", totalSellOrderValue,
+				"cap", askVolumeCap,
+			)
+			
+			for i, order := range sellOrders {
 				remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
 				remainingWholeUnits := math.LegacyNewDecFromInt(remaining).Quo(math.LegacyNewDec(1000000))
 				priceWholeUnits := math.LegacyNewDecFromInt(order.Price.Amount).Quo(math.LegacyNewDec(1000000))
@@ -298,6 +402,16 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				// Track the cap fraction for this order
 				cappedFraction := math.LegacyOneDec()
 				originalOrderValue := orderValue
+				
+				// Log order details before cap check
+				k.Logger(ctx).Info("Checking sell order against cap",
+					"orderIndex", i,
+					"orderId", order.Id,
+					"orderValue", orderValue,
+					"currentEligibleSellValue", eligibleSellValue,
+					"newEligibleValue", eligibleSellValue.Add(orderValue),
+					"askVolumeCap", askVolumeCap,
+				)
 				
 				// Check if adding this order would exceed the cap
 				newEligibleValue := eligibleSellValue.Add(orderValue)
@@ -325,6 +439,35 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 							"eligibleSellValue", eligibleSellValue,
 							"askVolumeCap", askVolumeCap,
 						)
+						cappedFraction = math.LegacyZeroDec() // 0% eligible
+						
+						// Update or create order reward info even for excluded orders
+						orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id)
+						if err != nil {
+							// Create new order reward info for excluded order
+							currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+							orderRewardInfo = types.OrderRewardInfo{
+								OrderId:           order.Id,
+								TierId:            systemTier.Id,
+								StartTime:         currentTime.Unix(),
+								LastUpdated:       currentTime.Unix(),
+								AccumulatedTime:   0,
+								TotalRewards:      math.ZeroInt(),
+								LastClaimedTime:   currentTime.Unix(),
+								SpreadMultiplier:  math.LegacyOneDec(),
+								VolumeCapFraction: cappedFraction,
+							}
+						} else {
+							orderRewardInfo.VolumeCapFraction = cappedFraction
+							orderRewardInfo.TierId = systemTier.Id
+						}
+						if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+							k.Logger(ctx).Error("Failed to update excluded order info",
+								"orderId", order.Id,
+								"error", err,
+							)
+						}
+						
 						continue
 					}
 				}
@@ -589,8 +732,16 @@ func calculateOrderRewardsWithMultiplier(orderValue math.LegacyDec, dynamicRate 
 	return rounded.TruncateInt()
 }
 
-// sortOrdersByPrice sorts orders by price in descending order (highest first)
+// sortOrdersByPrice sorts orders by price to incentivize price support
+// For buy orders: highest price first (supporting MC price)
+// For sell orders: highest price first (motivating higher ask prices)
 func sortOrdersByPrice(orders []types.Order) {
+	if len(orders) == 0 {
+		return
+	}
+	
+	// Both buy and sell orders sorted by highest price first
+	// This incentivizes both sides to support higher MC prices
 	sort.Slice(orders, func(i, j int) bool {
 		return orders[i].Price.Amount.GT(orders[j].Price.Amount)
 	})

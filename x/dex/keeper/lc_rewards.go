@@ -304,14 +304,16 @@ func (k Keeper) GetMainCoinTotalSupply(ctx context.Context) math.Int {
 	return math.NewIntFromUint64(100000000000) // 100k MC in micro units
 }
 
-// GetMCSupplyValueInQuote calculates MC total supply value in quote currency
+// GetMCSupplyValueInQuote calculates MC total supply value in quote currency (returns whole units)
 func (k Keeper) GetMCSupplyValueInQuote(ctx context.Context, pairID uint64, mcSupply math.Int) math.LegacyDec {
 	// mcSupply is in micro units, need to convert to whole units
 	mcSupplyWholeUnits := math.LegacyNewDecFromInt(mcSupply).Quo(math.LegacyNewDec(1000000))
-	// currentPrice is in micro quote units per whole base unit
+	// currentPrice is in micro quote units per whole base unit (e.g., 138 utusd/MC)
 	currentPrice := k.GetCurrentMarketPrice(ctx, pairID)
-	// Value = supply in whole units × price
-	return mcSupplyWholeUnits.Mul(currentPrice)
+	// Value = supply in whole units × price in micro units / 1M to get whole quote units
+	// e.g., 100,000 MC × 138 utusd/MC / 1,000,000 = 13.8 TUSD
+	valueInMicroQuote := mcSupplyWholeUnits.Mul(currentPrice)
+	return valueInMicroQuote.Quo(math.LegacyNewDec(1000000))
 }
 
 // GetRollingVolume gets the rolling volume for a pair in a time window

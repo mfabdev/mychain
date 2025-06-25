@@ -1242,7 +1242,7 @@ export const DEXPage: React.FC = () => {
 
         {/* Liquidity Positions Tracker */}
         <LiquidityPositions 
-          userAddress="cosmos1cyyzpxplxdzkeea7kwsydadg87357qnalx9dqz"
+          userAddress="cosmos1phaxpevm5wecex2jyaqty2a4v02qj7qmhq3xz0"
           currentAPR={currentAPR}
           mcPrice={mcMarketPrice}
           onCancelOrder={handleCancelSpecificOrder}
