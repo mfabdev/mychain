@@ -468,6 +468,15 @@ export const LiquidityPositions: React.FC<Props> = ({
     <div className="bg-gray-800 rounded-lg p-6">
       <h2 className="text-xl font-bold mb-4">💎 Your Liquidity Positions</h2>
       
+      {/* Info Box */}
+      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 mb-4">
+        <p className="text-sm text-blue-400">
+          <strong>How it works:</strong> Place buy/sell orders on the DEX to earn LC rewards. 
+          Orders closer to market price earn more. Volume caps apply per tier.
+          Current system tier determines caps: Tier {positions[0]?.tier || 1}.
+        </p>
+      </div>
+      
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-700/50 rounded-lg p-4">

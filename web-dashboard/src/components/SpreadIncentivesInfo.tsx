@@ -56,8 +56,9 @@ export const SpreadIncentivesInfo: React.FC = () => {
         
         // Get current MC price
         const priceRes = await fetchAPI('/mychain/maincoin/v1/current_price');
-        if (priceRes?.current_price) {
-          setMcPrice(parseFloat(priceRes.current_price) / 1000000);
+        if (priceRes?.price) {
+          // Price is already in whole units (e.g., 0.000142)
+          setMcPrice(parseFloat(priceRes.price));
         }
       } catch (error) {
         console.error('Error fetching spread data:', error);

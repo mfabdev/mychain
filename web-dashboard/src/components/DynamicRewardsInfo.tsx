@@ -72,8 +72,10 @@ export const DynamicRewardsInfo: React.FC = () => {
 
         // Fetch MC price
         const priceRes = await fetchAPI('/mychain/maincoin/v1/current_price');
-        if (priceRes?.current_price) {
-          setMcPrice(parseFloat(priceRes.current_price) / 1000000);
+        if (priceRes?.price) {
+          // Price is already in whole units (e.g., 0.000142)
+          setMcPrice(parseFloat(priceRes.price));
+          console.log('DynamicRewardsInfo - MC Price from API:', priceRes.price);
         }
 
         // Fetch MC supply
@@ -166,9 +168,9 @@ export const DynamicRewardsInfo: React.FC = () => {
         </div>
 
         <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4">
-          <h3 className="text-sm text-yellow-400 mb-2">MC Price</h3>
+          <h3 className="text-sm text-yellow-400 mb-2">Current MC Market Price</h3>
           <p className="text-3xl font-bold text-yellow-300">${mcPrice.toFixed(6)}</p>
-          <p className="text-xs text-gray-400 mt-1">Reference for tier calculation</p>
+          <p className="text-xs text-gray-400 mt-1">Used to determine active liquidity tier</p>
         </div>
       </div>
 

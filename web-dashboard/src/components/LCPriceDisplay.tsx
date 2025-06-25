@@ -14,19 +14,20 @@ export const LCPriceDisplay: React.FC = () => {
   const [priceInfo, setPriceInfo] = useState<LCPriceInfo>({
     currentPrice: 0.0001, // Initial price: 0.0001 MC per LC
     marketPrice: null,
-    priceInUSD: 0.000001, // 0.0001 MC * $0.0001 per MC
+    priceInUSD: 0.0000000142, // 0.0001 MC * $0.000142 per MC (approximate)
     lastUpdate: new Date().toLocaleString(),
     has24HourData: false,
     lowestPrice24H: null
   });
-  const [mcPrice, setMcPrice] = useState<number>(0.0001);
+  const [mcPrice, setMcPrice] = useState<number>(0.000142); // More realistic default
 
   useEffect(() => {
     const fetchPriceData = async () => {
       try {
         // Get MC price in USD
         const mcPriceRes = await fetchAPI('/mychain/maincoin/v1/current_price');
-        const mcPriceUSD = mcPriceRes?.current_price ? parseFloat(mcPriceRes.current_price) / 1000000 : 0.0001;
+        const mcPriceUSD = mcPriceRes?.price ? parseFloat(mcPriceRes.price) : 0.000142;
+        console.log('LCPriceDisplay - MC Price from API:', mcPriceRes?.price, 'Parsed:', mcPriceUSD);
         setMcPrice(mcPriceUSD);
 
         // Get MC/LC order book (pair 2)
@@ -58,10 +59,13 @@ export const LCPriceDisplay: React.FC = () => {
         // Since we don't have 24h data yet, use initial price
         const referencePrice = marketPrice ? Math.max(0.0001, marketPrice) : 0.0001;
         
+        const lcPriceInUSD = referencePrice * mcPriceUSD;
+        console.log('LCPriceDisplay - LC price calc:', referencePrice, '*', mcPriceUSD, '=', lcPriceInUSD);
+        
         setPriceInfo({
           currentPrice: referencePrice,
           marketPrice: marketPrice,
-          priceInUSD: referencePrice * mcPriceUSD,
+          priceInUSD: lcPriceInUSD,
           lastUpdate: new Date().toLocaleString(),
           has24HourData: false,
           lowestPrice24H: null
@@ -85,26 +89,40 @@ export const LCPriceDisplay: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Current Reference Price */}
         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
-          <h3 className="text-sm text-green-400 mb-2">Reference Price</h3>
-          <p className="text-2xl font-bold text-green-300">{priceInfo.currentPrice.toFixed(6)} MC</p>
-          <p className="text-sm text-gray-400 mt-1">${priceInfo.priceInUSD.toFixed(8)} USD</p>
-          <p className="text-xs text-gray-500 mt-2">Never decreases</p>
+          <h3 className="text-sm text-green-400 mb-2">LC Reference Price</h3>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-gray-400">1 LC equals:</p>
+              <p className="text-xl font-bold text-green-300">{priceInfo.currentPrice.toFixed(6)} MC</p>
+            </div>
+            <div className="border-t border-gray-700 pt-2">
+              <p className="text-xs text-gray-400">USD value:</p>
+              <p className="text-lg font-semibold text-green-200">${priceInfo.priceInUSD.toFixed(11)}</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-3 italic">Price floor - never decreases</p>
         </div>
 
         {/* Market Price */}
         <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
-          <h3 className="text-sm text-blue-400 mb-2">Market Price</h3>
+          <h3 className="text-sm text-blue-400 mb-2">LC Market Price</h3>
           {priceInfo.marketPrice ? (
-            <>
-              <p className="text-2xl font-bold text-blue-300">{priceInfo.marketPrice.toFixed(6)} MC</p>
-              <p className="text-sm text-gray-400 mt-1">${(priceInfo.marketPrice * mcPrice).toFixed(8)} USD</p>
-              <p className="text-xs text-gray-500 mt-2">From order book</p>
-            </>
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs text-gray-400">1 LC trades at:</p>
+                <p className="text-xl font-bold text-blue-300">{priceInfo.marketPrice.toFixed(6)} MC</p>
+              </div>
+              <div className="border-t border-gray-700 pt-2">
+                <p className="text-xs text-gray-400">USD value:</p>
+                <p className="text-lg font-semibold text-blue-200">${(priceInfo.marketPrice * mcPrice).toFixed(11)}</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-3 italic">Based on order book</p>
+            </div>
           ) : (
-            <>
-              <p className="text-2xl font-bold text-gray-500">No Market</p>
-              <p className="text-sm text-gray-400 mt-1">Place MC/LC orders</p>
-            </>
+            <div className="text-center py-4">
+              <p className="text-lg font-bold text-gray-500">No Active Market</p>
+              <p className="text-sm text-gray-400 mt-2">Place MC/LC orders to establish market price</p>
+            </div>
           )}
         </div>
 
@@ -118,6 +136,13 @@ export const LCPriceDisplay: React.FC = () => {
             <p>• Based on lowest in 24h</p>
           </div>
         </div>
+      </div>
+
+      {/* Current MC Price Reference */}
+      <div className="mt-4 bg-gray-700/50 rounded-lg p-3 text-center">
+        <p className="text-sm text-gray-400">
+          Current MC price: <span className="font-semibold text-yellow-300">${mcPrice.toFixed(6)}</span> USD
+        </p>
       </div>
 
       {/* LC Rewards Value Calculator */}

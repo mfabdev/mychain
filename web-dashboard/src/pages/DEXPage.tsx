@@ -176,9 +176,10 @@ export const DEXPage: React.FC = () => {
         // Fetch current MC price
         try {
           const priceRes = await fetchAPI('/mychain/maincoin/v1/current_price');
-          if (priceRes.current_price) {
-            // Price is already in whole units (e.g., 0.0001001)
-            const priceInUSD = parseFloat(priceRes.current_price);
+          if (priceRes.price) {
+            // Price is already in whole units (e.g., 0.000142) - DO NOT DIVIDE BY 1M
+            const priceInUSD = parseFloat(priceRes.price);
+            console.log('MC Price from API:', priceRes.price, 'Parsed:', priceInUSD);
             setMcMarketPrice(priceInUSD);
           }
         } catch (err) {
@@ -547,9 +548,14 @@ export const DEXPage: React.FC = () => {
             
             {/* Market Price Display */}
             <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-yellow-400">Current MC Market Price:</span>
-                <span className="text-lg font-bold text-yellow-300">${mcMarketPrice.toFixed(6)}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-yellow-400">Current MC Market Price:</span>
+                  <span className="text-lg font-bold text-yellow-300">${mcMarketPrice.toFixed(6)}</span>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Actual market price from MainCoin module (Segment based pricing)
+                </p>
               </div>
             </div>
             
@@ -982,7 +988,13 @@ export const DEXPage: React.FC = () => {
 
           {/* Order Book */}
           <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Order Book</h2>
+            <h2 className="text-xl font-bold mb-4">📊 Order Book</h2>
+            
+            {/* Explanation */}
+            <div className="bg-gray-700/30 rounded-lg p-3 mb-4 text-sm text-gray-400">
+              <p className="mb-1"><strong>What is this?</strong> Live buy and sell orders for MC/TUSD trading pair.</p>
+              <p><strong>Current Market Price:</strong> ${mcMarketPrice.toFixed(6)} (from MainCoin segment pricing)</p>
+            </div>
             
             <div className="space-y-4">
               {/* Sell Orders */}
