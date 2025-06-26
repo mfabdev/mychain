@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chart Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 class="text-lg font-semibold mb-3 text-gray-300">💹 Market Price Range Test</h3>
+        
+        <!-- Price labels -->
+        <div class="flex justify-between text-xs text-gray-400 mb-2">
+            <span>$0.000100</span>
+            <span>Current MC: $0.000142</span>
+            <span>$0.000105</span>
+        </div>
+        
+        <!-- Chart container -->
+        <div class="relative h-32 bg-gray-900/50 rounded-lg overflow-hidden">
+            <!-- Current price line -->
+            <div class="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-20" style="left: 50%">
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-400 whitespace-nowrap">
+                    MC
+                </div>
+            </div>
+            
+            <!-- Buy order -->
+            <div class="absolute bg-green-500 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
+                 style="left: 10%; width: 2%; height: 20px; bottom: 10px"
+                 title="Buy Order at $0.0001">
+            </div>
+            
+            <!-- Sell order -->
+            <div class="absolute bg-red-500 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
+                 style="left: 90%; width: 2%; height: 20px; bottom: 10px"
+                 title="Sell Order at $0.000105">
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="mt-3 flex flex-wrap gap-4 text-xs">
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-green-500 rounded"></div>
+                <span class="text-gray-400">Buy (Eligible)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-500 rounded"></div>
+                <span class="text-gray-400">Sell (Eligible)</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

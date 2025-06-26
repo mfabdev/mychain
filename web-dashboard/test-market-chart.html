@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Market Chart Test</title>
+    <script>
+        // Test data
+        const testData = {
+            buyOrders: [
+                {id: "1", price: {amount: "100"}, amount: {amount: "1000000000"}, filled_amount: {amount: "0"}},
+                {id: "2", price: {amount: "99"}, amount: {amount: "2000000000"}, filled_amount: {amount: "0"}}
+            ],
+            sellOrders: [
+                {id: "5", price: {amount: "105"}, amount: {amount: "5000000000"}, filled_amount: {amount: "0"}},
+                {id: "6", price: {amount: "110"}, amount: {amount: "3000000000"}, filled_amount: {amount: "0"}}
+            ]
+        };
+
+        window.onload = () => {
+            // Process orders
+            const processedOrders = [];
+            
+            testData.buyOrders.forEach(order => {
+                const price = parseFloat(order.price.amount) / 1000000;
+                const amount = parseFloat(order.amount.amount) / 1000000;
+                const value = amount * price;
+                processedOrders.push({
+                    orderId: order.id,
+                    price: price,
+                    value: value,
+                    isBuy: true,
+                    status: 'eligible'
+                });
+            });
+            
+            testData.sellOrders.forEach(order => {
+                const price = parseFloat(order.price.amount) / 1000000;
+                const amount = parseFloat(order.amount.amount) / 1000000;
+                const value = amount * price;
+                processedOrders.push({
+                    orderId: order.id,
+                    price: price,
+                    value: value,
+                    isBuy: false,
+                    status: 'eligible'
+                });
+            });
+            
+            // Display results
+            document.getElementById('results').innerHTML = `
+                <h3>Processed Orders:</h3>
+                <pre>${JSON.stringify(processedOrders, null, 2)}</pre>
+                <p>Buy orders: ${testData.buyOrders.length}</p>
+                <p>Sell orders: ${testData.sellOrders.length}</p>
+                <p>Total processed: ${processedOrders.length}</p>
+            `;
+        };
+    </script>
+</head>
+<body>
+    <h1>Market Chart Test</h1>
+    <div id="results"></div>
+</body>
+</html>

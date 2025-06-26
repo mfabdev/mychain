@@ -2,6 +2,768 @@ import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { formatUnixTimestamp } from '../utils/formatters';
 
+// Component to visualize market price range
+const MarketPriceRangeChart: React.FC<{
+  allBuyOrders: any[];
+  allSellOrders: any[];
+  allOrderRewardsMap: Map<number, any>;
+  mcPrice: number;
+}> = ({ allBuyOrders, allSellOrders, allOrderRewardsMap, mcPrice }) => {
+  console.log('MarketPriceRangeChart rendering with:', {
+    buyOrders: allBuyOrders.length,
+    sellOrders: allSellOrders.length,
+    rewardsMapSize: allOrderRewardsMap.size,
+    mcPrice
+  });
+  // Process all orders with their eligibility status
+  const processedOrders: Array<{
+    orderId: number;
+    price: number;
+    value: number;
+    isBuy: boolean;
+    status: string;
+    volumeCapFraction: number;
+  }> = [];
+  
+  // Process buy orders (sorted by price descending)
+  const sortedBuyOrders = [...allBuyOrders].sort((a, b) => {
+    const priceA = parseFloat(a.price.amount) / 1000000;
+    const priceB = parseFloat(b.price.amount) / 1000000;
+    return priceB - priceA; // Highest to lowest for buys
+  });
+  
+  sortedBuyOrders.forEach(order => {
+    // Price is already in micro-units, so 100 = $0.0001
+    const price = parseFloat(order.price.amount) / 1000000;
+    const amount = parseFloat(order.amount.amount) / 1000000;
+    const filled = parseFloat(order.filled_amount.amount) / 1000000;
+    const remaining = amount - filled;
+    const value = remaining * price;
+    
+    console.log('Processing buy order:', {
+      orderId: order.id,
+      priceRaw: order.price.amount,
+      price,
+      remaining,
+      value
+    });
+    
+    if (remaining > 0) {
+      const orderId = typeof order.id === 'string' ? parseInt(order.id) : order.id;
+      const rewardInfo = allOrderRewardsMap.get(orderId);
+      const volumeCapFraction = rewardInfo ? parseFloat(rewardInfo.volume_cap_fraction || "1") : 1;
+      
+      let status = 'eligible';
+      if (volumeCapFraction === 0) {
+        status = 'ineligible';
+      } else if (volumeCapFraction < 1) {
+        status = 'partial';
+      }
+      
+      console.log(`Buy order ${orderId}: volumeCapFraction=${volumeCapFraction}, status=${status}`);
+      
+      processedOrders.push({
+        orderId,
+        price,
+        value,
+        isBuy: true,
+        status,
+        volumeCapFraction
+      });
+    }
+  });
+  
+  // Process sell orders (sorted by price ascending)
+  const sortedSellOrders = [...allSellOrders].sort((a, b) => {
+    const priceA = parseFloat(a.price.amount) / 1000000;
+    const priceB = parseFloat(b.price.amount) / 1000000;
+    return priceA - priceB; // Lowest to highest for sells
+  });
+  
+  sortedSellOrders.forEach(order => {
+    // Price is already in micro-units, so 105 = $0.000105
+    const price = parseFloat(order.price.amount) / 1000000;
+    const amount = parseFloat(order.amount.amount) / 1000000;
+    const filled = parseFloat(order.filled_amount.amount) / 1000000;
+    const remaining = amount - filled;
+    const value = remaining * price;
+    
+    console.log('Processing sell order:', {
+      orderId: order.id,
+      priceRaw: order.price.amount,
+      price,
+      remaining,
+      value
+    });
+    
+    if (remaining > 0) {
+      const orderId = typeof order.id === 'string' ? parseInt(order.id) : order.id;
+      const rewardInfo = allOrderRewardsMap.get(orderId);
+      const volumeCapFraction = rewardInfo ? parseFloat(rewardInfo.volume_cap_fraction || "1") : 1;
+      
+      let status = 'eligible';
+      if (volumeCapFraction === 0) {
+        status = 'ineligible';
+      } else if (volumeCapFraction < 1) {
+        status = 'partial';
+      }
+      
+      console.log(`Sell order ${orderId}: volumeCapFraction=${volumeCapFraction}, status=${status}`);
+      
+      processedOrders.push({
+        orderId,
+        price,
+        value,
+        isBuy: false,
+        status,
+        volumeCapFraction
+      });
+    }
+  });
+  
+  // Find price range
+  const allPrices = processedOrders.map(o => o.price);
+  const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 1;
+  const priceRange = maxPrice - minPrice;
+  
+  console.log('Market Price Range Debug:', {
+    processedOrders: processedOrders.length,
+    minPrice,
+    maxPrice,
+    priceRange,
+    mcPrice
+  });
+  
+  // Debug order status by price
+  console.log('Order Status by Price:');
+  const sortedByPrice = [...processedOrders].sort((a, b) => a.price - b.price);
+  sortedByPrice.forEach(order => {
+    console.log(`Price: $${order.price.toFixed(6)} - ${order.isBuy ? 'BUY' : 'SELL'} - Status: ${order.status} - VolCapFraction: ${order.volumeCapFraction}`);
+  });
+  
+  // Calculate positions on chart (0-100%)
+  const getPosition = (price: number) => {
+    if (priceRange === 0) return 50;
+    return ((price - minPrice) / priceRange) * 100;
+  };
+  
+  // Group orders by price for stacking
+  const priceGroups = new Map<string, typeof processedOrders>();
+  processedOrders.forEach(order => {
+    const key = `${order.price}-${order.isBuy}`;
+    if (!priceGroups.has(key)) {
+      priceGroups.set(key, []);
+    }
+    const group = priceGroups.get(key);
+    if (group) {
+      group.push(order);
+    }
+  });
+  
+  // Find the gap between buy and sell
+  const highestBuyPrice = Math.max(...processedOrders.filter(o => o.isBuy).map(o => o.price), 0);
+  const lowestSellPrice = Math.min(...processedOrders.filter(o => !o.isBuy).map(o => o.price), Infinity);
+  
+  // Simple test to ensure component renders
+  if (!allBuyOrders || !allSellOrders) {
+    return (
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-gray-300">💹 Market Price Range</h3>
+        <div className="text-center text-gray-400 py-4">
+          Loading market data...
+        </div>
+      </div>
+    );
+  }
+
+  // Sort all orders by price for range coloring
+  const sortedAllOrders = [...processedOrders].sort((a, b) => a.price - b.price);
+  
+  // Group orders by price to detect mixed statuses
+  const ordersByPrice = new Map();
+  processedOrders.forEach(order => {
+    const price = order.price;
+    if (!ordersByPrice.has(price)) {
+      ordersByPrice.set(price, []);
+    }
+    ordersByPrice.get(price).push(order);
+  });
+  
+  // Create price ranges with their status
+  const priceRanges = [];
+  for (let i = 0; i < sortedAllOrders.length - 1; i++) {
+    const currentOrder = sortedAllOrders[i];
+    const nextOrder = sortedAllOrders[i + 1];
+    
+    // Check if current position has mixed statuses
+    const ordersAtCurrentPrice = ordersByPrice.get(currentOrder.price) || [];
+    const currentStatuses = new Set(ordersAtCurrentPrice.map((o: any) => o.status));
+    const ordersAtNextPrice = ordersByPrice.get(nextOrder.price) || [];
+    const nextStatuses = new Set(ordersAtNextPrice.map((o: any) => o.status));
+    
+    // Determine the status of this range based on the orders
+    let rangeStatus = 'eligible';
+    let isMixed = false;
+    
+    // Check for mixed statuses at either end
+    if (currentStatuses.size > 1 || nextStatuses.size > 1) {
+      isMixed = true;
+      // Determine dominant status for mixed positions
+      if (currentStatuses.has('eligible') || nextStatuses.has('eligible')) {
+        rangeStatus = 'mixed-eligible';
+      } else if (currentStatuses.has('partial') || nextStatuses.has('partial')) {
+        rangeStatus = 'mixed-partial';
+      } else {
+        rangeStatus = 'mixed-ineligible';
+      }
+    } else {
+      // Single status at both ends
+      if (currentOrder.status === 'ineligible' && nextOrder.status === 'ineligible') {
+        rangeStatus = 'ineligible';
+      } else if (currentOrder.status === 'partial' || nextOrder.status === 'partial') {
+        rangeStatus = 'partial';
+      }
+    }
+    
+    priceRanges.push({
+      startPrice: currentOrder.price,
+      endPrice: nextOrder.price,
+      status: rangeStatus,
+      isMixed,
+      startPos: getPosition(currentOrder.price),
+      endPos: getPosition(nextOrder.price)
+    });
+  }
+
+  return (
+    <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+      <h3 className="text-lg font-semibold mb-3 text-gray-300">💹 Market Price Range</h3>
+      
+      {processedOrders.length === 0 ? (
+        <div className="text-center text-gray-400 py-8">
+          No active orders to display
+        </div>
+      ) : (
+        <>
+      {/* Price labels */}
+      <div className="flex justify-between text-xs text-gray-400 mb-2">
+        <span>${minPrice.toFixed(6)}</span>
+        <span>Current MC: ${mcPrice.toFixed(6)}</span>
+        <span>${maxPrice.toFixed(6)}</span>
+      </div>
+      
+      {/* Chart container with padding for labels and indicators */}
+      <div className="relative bg-gray-900/50 rounded-lg p-2" style={{ paddingBottom: '120px' }}>
+        {/* Inner chart area */}
+        <div className="relative h-32 overflow-visible">
+        {/* Price range coloring - THICKER LINE */}
+        <div className="absolute bottom-0 left-0 right-0 h-2">
+          {/* No orders range before first order */}
+          {minPrice < sortedAllOrders[0].price && (
+            <div 
+              className="absolute h-full bg-gray-700"
+              style={{ 
+                left: '0%',
+                width: `${getPosition(sortedAllOrders[0].price)}%`
+              }}
+            />
+          )}
+          
+          {/* Colored ranges between orders */}
+          {priceRanges.map((range, idx) => (
+            <div
+              key={idx}
+              className={`absolute h-full ${
+                range.status === 'mixed-eligible' ? 'bg-gradient-to-r from-green-500 to-yellow-500' :
+                range.status === 'mixed-partial' ? 'bg-gradient-to-r from-yellow-500 to-red-500' :
+                range.status === 'mixed-ineligible' ? 'bg-gradient-to-r from-red-500 to-gray-500' :
+                range.status === 'eligible' ? 'bg-green-500' :
+                range.status === 'partial' ? 'bg-yellow-500' :
+                range.status === 'ineligible' ? 'bg-red-500' :
+                'bg-gray-700'
+              }`}
+              style={{
+                left: `${range.startPos}%`,
+                width: `${range.endPos - range.startPos}%`
+              }}
+            />
+          ))}
+          
+          {/* No orders range after last order */}
+          {maxPrice > sortedAllOrders[sortedAllOrders.length - 1].price && (
+            <div 
+              className="absolute h-full bg-gray-700"
+              style={{ 
+                left: `${getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`,
+                width: `${100 - getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`
+              }}
+            />
+          )}
+        </div>
+        
+        {/* Price dots on the line with prices below */}
+        {Array.from(ordersByPrice.entries()).map(([price, ordersAtPrice], index) => {
+          const position = getPosition(price);
+          const statuses = new Set(ordersAtPrice.map((o: any) => o.status));
+          const isMixed = statuses.size > 1;
+          
+          // Determine dot style based on mixed status
+          let dotStyle = '';
+          if (isMixed) {
+            // Mixed status - use gradient or striped pattern
+            if (statuses.has('eligible') && statuses.has('partial')) {
+              dotStyle = 'bg-gradient-to-r from-green-400 to-yellow-400';
+            } else if (statuses.has('partial') && statuses.has('ineligible')) {
+              dotStyle = 'bg-gradient-to-r from-yellow-400 to-gray-400';
+            } else {
+              dotStyle = 'bg-gradient-to-r from-green-400 to-gray-400';
+            }
+          } else {
+            // Single status
+            const order = ordersAtPrice[0];
+            dotStyle = order.isBuy ? 
+              (order.status === 'eligible' ? 'bg-green-400' : 
+               order.status === 'partial' ? 'bg-yellow-400' : 'bg-gray-400') :
+              (order.status === 'eligible' ? 'bg-red-400' : 
+               order.status === 'partial' ? 'bg-orange-400' : 'bg-gray-400');
+          }
+          
+          // Alternate label positions to avoid overlap
+          const labelOffset = index % 2 === 0 ? '20px' : '40px';
+          
+          return (
+            <div
+              key={`dot-${price}`}
+              className="absolute"
+              style={{
+                bottom: '-2px',
+                left: `${position}%`,
+                transform: 'translateX(-50%)'
+              }}
+            >
+              {/* The dot */}
+              <div
+                className={`w-3 h-3 ${dotStyle} rounded-full border-2 border-gray-900 z-10 ${isMixed ? 'ring-2 ring-purple-400' : ''}`}
+                title={`$${price.toFixed(6)}`}
+              />
+              
+              {/* Price label below the dot - LARGER */}
+              <div 
+                className="absolute text-gray-300 whitespace-nowrap text-center font-medium"
+                style={{
+                  top: labelOffset,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '11px',
+                  lineHeight: '1.2'
+                }}
+              >
+                <div className="font-mono">${price.toFixed(6)}</div>
+                <div className="text-gray-400" style={{ fontSize: '9px' }}>
+                  {isMixed ? 'MIXED' : 
+                   ordersAtPrice.every((o: any) => o.isBuy) ? 'BUY' : 
+                   ordersAtPrice.every((o: any) => !o.isBuy) ? 'SELL' : 'BUY/SELL'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Directional indicators for eligible order placement */}
+        <div className="absolute left-0 right-0" style={{ bottom: '-65px' }}>
+          {/* Find eligible buy range */}
+          {(() => {
+            const eligibleBuyOrders = processedOrders.filter(o => o.isBuy && o.status === 'eligible');
+            const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
+            
+            if (eligibleBuyOrders.length > 0) {
+              const minBuyPrice = Math.min(...eligibleBuyOrders.map(o => o.price));
+              const maxBuyPrice = Math.max(...eligibleBuyOrders.map(o => o.price));
+              const startPos = getPosition(minBuyPrice);
+              const endPos = getPosition(maxBuyPrice);
+              
+              return (
+                <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%` }}>
+                  <div className="w-full relative">
+                    <div className="absolute inset-0 border-t-2 border-green-500 opacity-50"></div>
+                    <div className="absolute left-0 top-0 transform -translate-y-1/2">
+                      <div className="text-green-500 text-lg">←</div>
+                    </div>
+                    <div className="absolute right-0 top-0 transform -translate-y-1/2">
+                      <div className="text-green-500 text-lg">→</div>
+                    </div>
+                    <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-green-400 text-xs font-semibold whitespace-nowrap">
+                      Buy Rewards: Right → Left (≤$${maxBuyPrice.toFixed(6)})
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Find eligible sell range */}
+          {(() => {
+            const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
+            
+            if (eligibleSellOrders.length > 0) {
+              const minSellPrice = Math.min(...eligibleSellOrders.map(o => o.price));
+              const maxSellPrice = Math.max(...eligibleSellOrders.map(o => o.price));
+              const startPos = getPosition(minSellPrice);
+              const endPos = getPosition(maxSellPrice);
+              
+              return (
+                <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%`, top: '20px' }}>
+                  <div className="w-full relative">
+                    <div className="absolute inset-0 border-t-2 border-red-500 opacity-50"></div>
+                    <div className="absolute left-0 top-0 transform -translate-y-1/2">
+                      <div className="text-red-500 text-lg">←</div>
+                    </div>
+                    <div className="absolute right-0 top-0 transform -translate-y-1/2">
+                      <div className="text-red-500 text-lg">→</div>
+                    </div>
+                    <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-red-400 text-xs font-semibold whitespace-nowrap">
+                      Sell Rewards SHOULD BE: Right → Left (but it's backwards!)
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Ineligible zone indicator */}
+          {(() => {
+            const ineligibleSells = processedOrders.filter(o => !o.isBuy && o.status === 'ineligible');
+            if (ineligibleSells.length > 0) {
+              const maxIneligibleSellPrice = Math.max(...ineligibleSells.map(o => o.price));
+              return (
+                <div className="absolute left-0 right-0" style={{ top: '45px' }}>
+                  <div className="text-center text-gray-400 text-xs">
+                    ⚠️ Sell orders below ${(maxIneligibleSellPrice + 0.000001).toFixed(6)} are too close to spread (no rewards)
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Reward distribution issue indicator */}
+          {(() => {
+            const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => b.price - a.price);
+            let showPriorityIssue = false;
+            
+            if (sellOrders.length > 1) {
+              const highestSell = sellOrders[0];
+              const hasIncorrectPriority = highestSell.status === 'partial' && sellOrders.some(o => o.price < highestSell.price && o.status === 'eligible');
+              
+              if (hasIncorrectPriority) {
+                showPriorityIssue = true;
+                return (
+                  <div className="absolute left-0 right-0" style={{ top: '65px' }}>
+                    <div className="text-center text-red-500 text-xs font-bold">
+                      ⚠️ CRITICAL: Sell reward logic is REVERSED!
+                    </div>
+                    <div className="text-center text-orange-400 text-xs mt-1">
+                      Highest sell at ${highestSell.price.toFixed(6)} gets only {(highestSell.volumeCapFraction * 100).toFixed(1)}% rewards
+                    </div>
+                    <div className="text-orange-300 text-xs mt-1">
+                      Expected: Like buys, rewards should go from furthest to closest (right to left)
+                    </div>
+                  </div>
+                );
+              }
+            }
+            return null;
+          })()}
+          
+          {/* Bonus price indicators */}
+          {(() => {
+            const partialOrders = processedOrders.filter(o => o.status === 'partial');
+            if (partialOrders.length > 0) {
+              const bonusPrices = Array.from(new Set(partialOrders.map(o => o.price)));
+              // Check if we showed priority issue
+              const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => b.price - a.price);
+              const showOffset = sellOrders.length > 1 && sellOrders[0].status === 'partial' && 
+                               sellOrders.some(o => o.price < sellOrders[0].price && o.status === 'eligible');
+              
+              return (
+                <div className="absolute left-0 right-0" style={{ top: showOffset ? '95px' : '65px' }}>
+                  <div className="text-center text-yellow-400 text-xs font-semibold mb-1">
+                    Partial Reward Prices:
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    {bonusPrices.map(price => (
+                      <div key={price} className="text-yellow-300 font-mono text-xs">
+                        ${price.toFixed(6)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </div>
+        
+        {/* Reward flow direction indicators */}
+        <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
+          <div className="text-green-400 text-xs flex items-center gap-1">
+            <span>Buy rewards</span>
+            <span className="text-lg">→</span>
+          </div>
+          <div className="text-red-400 text-xs flex items-center gap-1">
+            <span className="text-lg">←</span>
+            <span>Sell rewards (expected)</span>
+          </div>
+        </div>
+        
+        {/* Current price line */}
+        <div 
+          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-20"
+          style={{ left: `${getPosition(mcPrice)}%` }}
+          title={`Current MC Price: $${mcPrice.toFixed(6)}`}
+        >
+          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-400 whitespace-nowrap">
+            MC
+          </div>
+        </div>
+        
+        {/* Uncovered territory - gap between highest buy and lowest sell */}
+        {highestBuyPrice < lowestSellPrice && lowestSellPrice !== Infinity && (
+          <>
+            {/* Visual gap indicator */}
+            <div 
+              className="absolute h-full bg-gray-800/50 border-x border-gray-600 border-dashed"
+              style={{ 
+                left: `${getPosition(highestBuyPrice)}%`,
+                width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
+              }}
+            >
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs text-gray-500 font-semibold">
+                SPREAD
+              </div>
+            </div>
+            
+            {/* Add gap to the bottom range line */}
+            <div 
+              className="absolute bottom-0 h-2 bg-gray-700"
+              style={{ 
+                left: `${getPosition(highestBuyPrice)}%`,
+                width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
+              }}
+            />
+          </>
+        )}
+        
+        {/* Render orders */}
+        {Array.from(priceGroups.entries()).map(([key, orders], groupIndex) => {
+          const position = getPosition(orders[0].price);
+          const isBuy = orders[0].isBuy;
+          // Alternate label positions to avoid overlap
+          const labelOffset = groupIndex % 2 === 0 ? '8px' : '28px';
+          
+          return (
+            <div key={key} className="absolute" style={{ left: `${position}%`, transform: 'translateX(-50%)' }}>
+              {/* Stack orders at same price */}
+              {orders.map((order, index) => {
+                // Make bars more visible - minimum 20px, scale up based on value
+                const height = Math.max(20, Math.min(60, order.value * 10)); // Scale height by value
+                const bottom = 20 + index * 25; // Stack vertically, leave space for price label
+                
+                let bgColor = '';
+                let borderColor = '';
+                if (order.status === 'eligible') {
+                  bgColor = isBuy ? 'bg-green-500' : 'bg-red-500';
+                  borderColor = isBuy ? 'border-green-600' : 'border-red-600';
+                } else if (order.status === 'partial') {
+                  bgColor = isBuy ? 'bg-yellow-500' : 'bg-orange-500';
+                  borderColor = isBuy ? 'border-yellow-600' : 'border-orange-600';
+                } else {
+                  bgColor = 'bg-gray-600';
+                  borderColor = 'border-gray-700';
+                }
+                
+                console.log(`Rendering order ${order.orderId}: ${isBuy ? 'BUY' : 'SELL'} - status: ${order.status} - colors: ${bgColor}`);
+                
+                return (
+                  <div
+                    key={`${order.orderId}`}
+                    className={`absolute ${bgColor} ${borderColor} border-2 rounded-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer`}
+                    style={{
+                      width: '8px',
+                      height: `${height}px`,
+                      bottom: `${bottom}px`,
+                      left: '-4px'
+                    }}
+                    title={`Order #${order.orderId} - ${isBuy ? 'Buy' : 'Sell'} at $${order.price.toFixed(6)} - Value: $${order.value.toFixed(2)} - ${order.status}${order.status === 'partial' ? ` (${(order.volumeCapFraction * 100).toFixed(0)}%)` : ''}`}
+                  />
+                );
+              })}
+            </div>
+          );
+        })}
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="mt-6 space-y-2">
+        <div className="text-xs font-semibold text-gray-300">Order Bars:</div>
+        <div className="flex flex-wrap gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-500 border border-green-600 rounded-sm"></div>
+            <span className="text-gray-400">Buy (Eligible)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-yellow-500 border border-yellow-600 rounded-sm"></div>
+            <span className="text-gray-400">Buy (Partial)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 border border-red-600 rounded-sm"></div>
+            <span className="text-gray-400">Sell (Eligible)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-orange-500 border border-orange-600 rounded-sm"></div>
+            <span className="text-gray-400">Sell (Partial)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-gray-600 border border-gray-700 rounded-sm"></div>
+            <span className="text-gray-400">Ineligible</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-0.5 h-3 bg-blue-500"></div>
+            <span className="text-gray-400">Current Price</span>
+          </div>
+        </div>
+        
+        <div className="text-xs font-semibold text-gray-300 mt-3">Price Range Colors:</div>
+        <div className="flex items-center gap-3 text-xs flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-2 bg-green-500"></div>
+            <span className="text-gray-400">Eligible Range</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-2 bg-yellow-500"></div>
+            <span className="text-gray-400">Partial Range</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-2 bg-red-500"></div>
+            <span className="text-gray-400">Ineligible Range</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-2 bg-gradient-to-r from-green-500 to-yellow-500"></div>
+            <span className="text-gray-400">Mixed Status</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-2 bg-gray-700"></div>
+            <span className="text-gray-400">No Orders</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Price Range Information */}
+      <div className="mt-6 grid grid-cols-2 gap-6">
+        {/* Buy Side Ranges */}
+        <div className="bg-gray-800/50 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-gray-300 mb-3">Buy Order Status by Price</h4>
+          <div className="space-y-3 text-xs">
+            {(() => {
+              // Group buy orders by price
+              const buyOrders = processedOrders.filter(o => o.isBuy).sort((a, b) => b.price - a.price);
+              const priceGroups = new Map();
+              
+              buyOrders.forEach(order => {
+                const price = order.price.toFixed(6);
+                if (!priceGroups.has(price)) {
+                  priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
+                }
+                priceGroups.get(price)[(order as any).status]++;
+              });
+              
+              return Array.from(priceGroups.entries()).map(([price, counts]) => (
+                <div key={price} className="border-l-2 border-gray-700 pl-3">
+                  <div className="font-mono text-gray-200 mb-1">${price}</div>
+                  {counts.eligible > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded"></div>
+                      <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {counts.partial > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded"></div>
+                      <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {counts.ineligible > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded"></div>
+                      <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                </div>
+              ));
+            })()}
+            {processedOrders.filter(o => o.isBuy).length === 0 && (
+              <div className="text-gray-500">No buy orders</div>
+            )}
+          </div>
+        </div>
+        
+        {/* Sell Side Ranges */}
+        <div className="bg-gray-800/50 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-gray-300 mb-3">Sell Order Status by Price</h4>
+          <div className="space-y-3 text-xs">
+            {(() => {
+              // Group sell orders by price
+              const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => a.price - b.price);
+              const priceGroups = new Map();
+              
+              sellOrders.forEach(order => {
+                const price = order.price.toFixed(6);
+                if (!priceGroups.has(price)) {
+                  priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
+                }
+                priceGroups.get(price)[(order as any).status]++;
+              });
+              
+              return Array.from(priceGroups.entries()).map(([price, counts]) => (
+                <div key={price} className="border-l-2 border-gray-700 pl-3">
+                  <div className="font-mono text-gray-200 mb-1">${price}</div>
+                  {counts.eligible > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded"></div>
+                      <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {counts.partial > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded"></div>
+                      <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {counts.ineligible > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded"></div>
+                      <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                </div>
+              ));
+            })()}
+            {processedOrders.filter(o => !o.isBuy).length === 0 && (
+              <div className="text-gray-500">No sell orders</div>
+            )}
+          </div>
+        </div>
+      </div>
+      </>
+      )}
+    </div>
+  );
+};
+
 // Component to visualize reward eligibility
 const RewardEligibilityChart: React.FC<{
   positions: LiquidityPosition[];
@@ -167,6 +929,9 @@ export const LiquidityPositions: React.FC<Props> = ({
     buyOrders: [] as any[],
     sellOrders: [] as any[]
   });
+  const [allBuyOrders, setAllBuyOrders] = useState<any[]>([]);
+  const [allSellOrders, setAllSellOrders] = useState<any[]>([]);
+  const [allOrderRewardsMap, setAllOrderRewardsMap] = useState<Map<number, any>>(new Map());
 
   useEffect(() => {
     fetchPositionsAndHistory();
@@ -182,14 +947,30 @@ export const LiquidityPositions: React.FC<Props> = ({
       const sellOrders = orderBookRes.sell_orders || [];
       const allOrders = [...buyOrders, ...sellOrders];
       
+      // Store raw order data for price range chart
+      setAllBuyOrders(buyOrders);
+      setAllSellOrders(sellOrders);
+      
       // Fetch all order rewards info for market statistics
-      const allOrderRewardsRes = await fetchAPI('/mychain/dex/v1/all_order_rewards');
       const allOrderRewardsMap = new Map();
-      if (allOrderRewardsRes.rewards) {
-        allOrderRewardsRes.rewards.forEach((reward: any) => {
-          allOrderRewardsMap.set(reward.order_id, reward);
-        });
+      try {
+        const allOrderRewardsRes = await fetchAPI('/mychain/dex/v1/all_order_rewards');
+        console.log('All order rewards response:', allOrderRewardsRes);
+        if (allOrderRewardsRes.rewards) {
+          allOrderRewardsRes.rewards.forEach((reward: any) => {
+            // Parse order_id as a number since it comes as a string
+            const orderId = parseInt(reward.order_id);
+            allOrderRewardsMap.set(orderId, reward);
+            console.log(`Order ${orderId} reward info:`, reward);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch all order rewards:', error);
+        // Continue without market statistics
       }
+      
+      // Store the rewards map for the price range chart
+      setAllOrderRewardsMap(allOrderRewardsMap);
       
       // Calculate market statistics
       let totalBuyLiquidity = 0;
@@ -202,6 +983,7 @@ export const LiquidityPositions: React.FC<Props> = ({
       let lowestRewardedSellPrice = Infinity;
       
       // Process buy orders
+      console.log('Processing buy orders:', buyOrders.length);
       buyOrders.forEach((order: any) => {
         const price = parseFloat(order.price.amount) / 1000000;
         const amount = parseFloat(order.amount.amount) / 1000000;
@@ -211,14 +993,24 @@ export const LiquidityPositions: React.FC<Props> = ({
         
         totalBuyLiquidity += value;
         
-        const rewardInfo = allOrderRewardsMap.get(order.id);
-        if (rewardInfo && rewardInfo.is_eligible) {
+        const orderId = typeof order.id === 'string' ? parseInt(order.id) : order.id;
+        const rewardInfo = allOrderRewardsMap.get(orderId);
+        if (rewardInfo) {
+          console.log(`Buy order ${orderId} reward info:`, rewardInfo);
           const volumeCapFraction = parseFloat(rewardInfo.volume_cap_fraction || "1");
-          if (volumeCapFraction > 0) {
-            rewardedBuyVolume += value * volumeCapFraction;
+          console.log(`Buy order ${orderId}: value=${value}, volumeCapFraction=${volumeCapFraction}, remaining=${remaining}`);
+          // Order is eligible if it has any volume cap fraction > 0
+          if (volumeCapFraction > 0 && value > 0) {
+            const rewardedAmount = value * volumeCapFraction;
+            console.log(`Buy order ${orderId} is eligible: value=${value}, volumeCapFraction=${volumeCapFraction}, rewardedAmount=${rewardedAmount}`);
+            rewardedBuyVolume += rewardedAmount;
             if (price > highestRewardedBuyPrice) highestRewardedBuyPrice = price;
             if (price < lowestRewardedBuyPrice) lowestRewardedBuyPrice = price;
+          } else {
+            console.log(`Buy order ${orderId} not eligible: value=${value}, volumeCapFraction=${volumeCapFraction}`);
           }
+        } else {
+          console.log(`No reward info for buy order ${orderId}`);
         }
       });
       
@@ -232,18 +1024,37 @@ export const LiquidityPositions: React.FC<Props> = ({
         
         totalSellLiquidity += value;
         
-        const rewardInfo = allOrderRewardsMap.get(order.id);
-        if (rewardInfo && rewardInfo.is_eligible) {
+        const orderId = typeof order.id === 'string' ? parseInt(order.id) : order.id;
+        const rewardInfo = allOrderRewardsMap.get(orderId);
+        if (rewardInfo) {
+          console.log(`Sell order ${orderId} reward info:`, rewardInfo);
           const volumeCapFraction = parseFloat(rewardInfo.volume_cap_fraction || "1");
-          if (volumeCapFraction > 0) {
-            rewardedSellVolume += value * volumeCapFraction;
+          console.log(`Sell order ${orderId}: value=${value}, volumeCapFraction=${volumeCapFraction}, remaining=${remaining}`);
+          // Order is eligible if it has any volume cap fraction > 0
+          if (volumeCapFraction > 0 && value > 0) {
+            const rewardedAmount = value * volumeCapFraction;
+            console.log(`Sell order ${orderId} is eligible: value=${value}, volumeCapFraction=${volumeCapFraction}, rewardedAmount=${rewardedAmount}`);
+            rewardedSellVolume += rewardedAmount;
             if (price > highestRewardedSellPrice) highestRewardedSellPrice = price;
             if (price < lowestRewardedSellPrice) lowestRewardedSellPrice = price;
+          } else {
+            console.log(`Sell order ${orderId} not eligible: value=${value}, volumeCapFraction=${volumeCapFraction}`);
           }
+        } else {
+          console.log(`No reward info for sell order ${orderId}`);
         }
       });
       
       // Set market statistics
+      console.log('Market statistics calculated:', {
+        totalBuyLiquidity,
+        totalSellLiquidity,
+        rewardedBuyVolume,
+        rewardedSellVolume,
+        buyOrdersCount: buyOrders.length,
+        sellOrdersCount: sellOrders.length
+      });
+      
       setMarketStats({
         totalBuyLiquidity,
         totalSellLiquidity,
@@ -610,6 +1421,14 @@ export const LiquidityPositions: React.FC<Props> = ({
           <p className="text-2xl font-bold text-blue-300">{currentAPR.toFixed(1)}%</p>
         </div>
       </div>
+
+      {/* Market Price Range Chart */}
+      <MarketPriceRangeChart 
+        allBuyOrders={allBuyOrders}
+        allSellOrders={allSellOrders}
+        allOrderRewardsMap={allOrderRewardsMap}
+        mcPrice={mcPrice}
+      />
 
       {/* Market Statistics */}
       <div className="bg-gray-800/50 rounded-lg p-4 mb-6">

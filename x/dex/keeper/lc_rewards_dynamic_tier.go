@@ -155,6 +155,16 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 			sortOrdersByPrice(buyOrders)
 			sortOrdersByPrice(sellOrders)
 			
+			// Debug: Log sell order prices after sorting
+			k.Logger(ctx).Info("Sell orders after sorting")
+			for idx, order := range sellOrders {
+				k.Logger(ctx).Info("Sorted sell order",
+					"index", idx,
+					"orderId", order.Id,
+					"price", order.Price.Amount,
+				)
+			}
+			
 			// Process buy orders with bid volume cap
 			eligibleBuyValue := math.LegacyZeroDec()
 			k.Logger(ctx).Info("Processing buy orders",
@@ -234,10 +244,12 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				if newEligibleValue.GT(bidVolumeCap) {
 					// Check if we can partially include this order
 					remainingCap := bidVolumeCap.Sub(eligibleBuyValue)
-					if remainingCap.IsPositive() {
+					// Consider very small remaining cap as zero to avoid precision issues
+					minCap := math.LegacyMustNewDecFromStr("0.000001")
+					if remainingCap.GT(minCap) && remainingCap.LT(orderValue) {
 						// Calculate what fraction of the order fits under the cap
 						cappedFraction = remainingCap.Quo(orderValue)
-						orderValue = orderValue.Mul(cappedFraction)
+						orderValue = remainingCap // Use exactly the remaining cap amount
 						
 						k.Logger(ctx).Info("Buy order partially capped",
 							"orderId", order.Id,
@@ -246,6 +258,14 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 							"cappedFraction", cappedFraction,
 							"remainingCap", remainingCap,
 							"bidVolumeCap", bidVolumeCap,
+						)
+					} else if remainingCap.GTE(orderValue) {
+						// Order fully fits under the cap, no capping needed
+						// cappedFraction remains 1.0
+						k.Logger(ctx).Info("Buy/Sell order fully fits under cap",
+							"orderId", order.Id,
+							"orderValue", orderValue,
+							"remainingCap", remainingCap,
 						)
 					} else {
 						// No room left under the cap, skip this order entirely
@@ -325,33 +345,61 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					)
 				}
 				
+				// Always update or create order reward info to track volume cap fraction
+				orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id)
+				if err != nil {
+					// Create new order reward info if it doesn't exist
+					currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+					orderRewardInfo = types.OrderRewardInfo{
+						OrderId:           order.Id,
+						TierId:            systemTier.Id,
+						StartTime:         currentTime.Unix(),
+						LastUpdated:       currentTime.Unix(),
+						AccumulatedTime:   0,
+						TotalRewards:      math.ZeroInt(),
+						LastClaimedTime:   currentTime.Unix(),
+						SpreadMultiplier:  spreadMultiplier,
+						VolumeCapFraction: cappedFraction,
+					}
+					k.Logger(ctx).Info("Creating new order reward info during distribution",
+						"orderId", order.Id,
+						"volumeCapFraction", cappedFraction,
+					)
+				} else {
+					// Update existing order reward info
+					updateNeeded := false
+					if orderRewardInfo.TierId != systemTier.Id {
+						orderRewardInfo.TierId = systemTier.Id
+						updateNeeded = true
+					}
+					if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
+						orderRewardInfo.VolumeCapFraction = cappedFraction
+						updateNeeded = true
+					}
+					if updateNeeded {
+						k.Logger(ctx).Info("Updating order reward info volume cap fraction",
+							"orderId", order.Id,
+							"oldFraction", orderRewardInfo.VolumeCapFraction,
+							"newFraction", cappedFraction,
+						)
+					}
+				}
+				
+				// Save the order reward info
+				if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+					k.Logger(ctx).Error("Failed to save order reward info",
+						"orderId", order.Id,
+						"error", err,
+					)
+				}
+				
+				// Add rewards to user total if positive
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()
 					}
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
-					
-					// Update the order's tier_id and volume cap fraction
-					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
-						updateNeeded := false
-						if orderRewardInfo.TierId != systemTier.Id {
-							orderRewardInfo.TierId = systemTier.Id
-							updateNeeded = true
-						}
-						if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
-							orderRewardInfo.VolumeCapFraction = cappedFraction
-							updateNeeded = true
-						}
-						if updateNeeded {
-							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
-								k.Logger(ctx).Error("Failed to update order info",
-									"orderId", order.Id,
-									"error", err,
-								)
-							}
-						}
-					}
 					
 					// Log if this order has a spread bonus
 					if spreadMultiplier.GT(math.LegacyOneDec()) {
@@ -418,10 +466,12 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 				if newEligibleValue.GT(askVolumeCap) {
 					// Check if we can partially include this order
 					remainingCap := askVolumeCap.Sub(eligibleSellValue)
-					if remainingCap.IsPositive() {
+					// Consider very small remaining cap as zero to avoid precision issues
+					minCap := math.LegacyMustNewDecFromStr("0.000001")
+					if remainingCap.GT(minCap) && remainingCap.LT(orderValue) {
 						// Calculate what fraction of the order fits under the cap
 						cappedFraction = remainingCap.Quo(orderValue)
-						orderValue = orderValue.Mul(cappedFraction)
+						orderValue = remainingCap // Use exactly the remaining cap amount
 						
 						k.Logger(ctx).Info("Sell order partially capped",
 							"orderId", order.Id,
@@ -431,6 +481,14 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 							"remainingCap", remainingCap,
 							"askVolumeCap", askVolumeCap,
 						)
+					} else if remainingCap.GTE(orderValue) {
+						// Order fully fits under the cap, no capping needed
+						// cappedFraction remains 1.0
+						k.Logger(ctx).Info("Buy/Sell order fully fits under cap",
+							"orderId", order.Id,
+							"orderValue", orderValue,
+							"remainingCap", remainingCap,
+						)
 					} else {
 						// No room left under the cap, skip this order entirely
 						k.Logger(ctx).Info("Sell order excluded by volume cap",
@@ -438,6 +496,7 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 							"orderValue", orderValue,
 							"eligibleSellValue", eligibleSellValue,
 							"askVolumeCap", askVolumeCap,
+							"remainingCap", remainingCap,
 						)
 						cappedFraction = math.LegacyZeroDec() // 0% eligible
 						
@@ -472,6 +531,7 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					}
 				}
 				
+				// Add only the capped value to eligible value tracker
 				eligibleSellValue = eligibleSellValue.Add(orderValue)
 				
 				// Get spread multiplier for this order
@@ -509,33 +569,61 @@ func (k Keeper) DistributeLiquidityRewardsWithDynamicRate(ctx context.Context) e
 					)
 				}
 				
+				// Always update or create order reward info to track volume cap fraction
+				orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id)
+				if err != nil {
+					// Create new order reward info if it doesn't exist
+					currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+					orderRewardInfo = types.OrderRewardInfo{
+						OrderId:           order.Id,
+						TierId:            systemTier.Id,
+						StartTime:         currentTime.Unix(),
+						LastUpdated:       currentTime.Unix(),
+						AccumulatedTime:   0,
+						TotalRewards:      math.ZeroInt(),
+						LastClaimedTime:   currentTime.Unix(),
+						SpreadMultiplier:  spreadMultiplier,
+						VolumeCapFraction: cappedFraction,
+					}
+					k.Logger(ctx).Info("Creating new order reward info during distribution",
+						"orderId", order.Id,
+						"volumeCapFraction", cappedFraction,
+					)
+				} else {
+					// Update existing order reward info
+					updateNeeded := false
+					if orderRewardInfo.TierId != systemTier.Id {
+						orderRewardInfo.TierId = systemTier.Id
+						updateNeeded = true
+					}
+					if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
+						orderRewardInfo.VolumeCapFraction = cappedFraction
+						updateNeeded = true
+					}
+					if updateNeeded {
+						k.Logger(ctx).Info("Updating order reward info volume cap fraction",
+							"orderId", order.Id,
+							"oldFraction", orderRewardInfo.VolumeCapFraction,
+							"newFraction", cappedFraction,
+						)
+					}
+				}
+				
+				// Save the order reward info
+				if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
+					k.Logger(ctx).Error("Failed to save order reward info",
+						"orderId", order.Id,
+						"error", err,
+					)
+				}
+				
+				// Add rewards to user total if positive
 				if orderRewards.IsPositive() {
 					if _, exists := userRewardMap[order.Maker]; !exists {
 						userRewardMap[order.Maker] = math.ZeroInt()
 					}
 					userRewardMap[order.Maker] = userRewardMap[order.Maker].Add(orderRewards)
 					totalRewardsToDistribute = totalRewardsToDistribute.Add(orderRewards)
-					
-					// Update the order's tier_id and volume cap fraction
-					if orderRewardInfo, err := k.OrderRewards.Get(ctx, order.Id); err == nil {
-						updateNeeded := false
-						if orderRewardInfo.TierId != systemTier.Id {
-							orderRewardInfo.TierId = systemTier.Id
-							updateNeeded = true
-						}
-						if orderRewardInfo.VolumeCapFraction.IsNil() || !orderRewardInfo.VolumeCapFraction.Equal(cappedFraction) {
-							orderRewardInfo.VolumeCapFraction = cappedFraction
-							updateNeeded = true
-						}
-						if updateNeeded {
-							if err := k.OrderRewards.Set(ctx, order.Id, orderRewardInfo); err != nil {
-								k.Logger(ctx).Error("Failed to update order info",
-									"orderId", order.Id,
-									"error", err,
-								)
-							}
-						}
-					}
 					
 					// Log if this order has a spread bonus
 					if spreadMultiplier.GT(math.LegacyOneDec()) {
