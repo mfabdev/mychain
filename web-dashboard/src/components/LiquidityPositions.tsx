@@ -206,6 +206,10 @@ const MarketPriceRangeChart: React.FC<{
     let rangeStatus = 'eligible';
     let isMixed = false;
     
+    // Get the actual status from the first order at each price
+    const currentStatus = ordersAtCurrentPrice[0]?.status || currentOrder.status;
+    const nextStatus = ordersAtNextPrice[0]?.status || nextOrder.status;
+    
     // Check for mixed statuses at either end
     if (currentStatuses.size > 1 || nextStatuses.size > 1) {
       isMixed = true;
@@ -218,11 +222,13 @@ const MarketPriceRangeChart: React.FC<{
         rangeStatus = 'mixed-ineligible';
       }
     } else {
-      // Single status at both ends
-      if (currentOrder.status === 'ineligible' && nextOrder.status === 'ineligible') {
+      // Single status at both ends - use the worst status
+      if (currentStatus === 'ineligible' || nextStatus === 'ineligible') {
         rangeStatus = 'ineligible';
-      } else if (currentOrder.status === 'partial' || nextOrder.status === 'partial') {
+      } else if (currentStatus === 'partial' || nextStatus === 'partial') {
         rangeStatus = 'partial';
+      } else if (currentStatus === 'eligible' && nextStatus === 'eligible') {
+        rangeStatus = 'eligible';
       }
     }
     
@@ -236,9 +242,14 @@ const MarketPriceRangeChart: React.FC<{
     });
   }
 
+  // Separate buy and sell orders for detailed charts
+  const buyOrdersProcessed = processedOrders.filter(o => o.isBuy).sort((a, b) => b.price - a.price);
+  const sellOrdersProcessed = processedOrders.filter(o => !o.isBuy).sort((a, b) => a.price - b.price);
+
   return (
-    <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
-      <h3 className="text-lg font-semibold mb-3 text-gray-300">💹 Market Price Range</h3>
+    <>
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-gray-300">💹 Market Price Range Overview</h3>
       
       {processedOrders.length === 0 ? (
         <div className="text-center text-gray-400 py-8">
@@ -246,521 +257,1419 @@ const MarketPriceRangeChart: React.FC<{
         </div>
       ) : (
         <>
-      {/* Price labels */}
-      <div className="flex justify-between text-xs text-gray-400 mb-2">
-        <span>${minPrice.toFixed(6)}</span>
-        <span>Current MC: ${mcPrice.toFixed(6)}</span>
-        <span>${maxPrice.toFixed(6)}</span>
-      </div>
-      
-      {/* Chart container with padding for labels and indicators */}
-      <div className="relative bg-gray-900/50 rounded-lg p-2" style={{ paddingBottom: '120px' }}>
-        {/* Inner chart area */}
-        <div className="relative h-32 overflow-visible">
-        {/* Price range coloring - THICKER LINE */}
-        <div className="absolute bottom-0 left-0 right-0 h-2">
-          {/* No orders range before first order */}
-          {minPrice < sortedAllOrders[0].price && (
-            <div 
-              className="absolute h-full bg-gray-700"
-              style={{ 
-                left: '0%',
-                width: `${getPosition(sortedAllOrders[0].price)}%`
-              }}
-            />
-          )}
-          
-          {/* Colored ranges between orders */}
-          {priceRanges.map((range, idx) => (
-            <div
-              key={idx}
-              className={`absolute h-full ${
-                range.status === 'mixed-eligible' ? 'bg-gradient-to-r from-green-500 to-yellow-500' :
-                range.status === 'mixed-partial' ? 'bg-gradient-to-r from-yellow-500 to-red-500' :
-                range.status === 'mixed-ineligible' ? 'bg-gradient-to-r from-red-500 to-gray-500' :
-                range.status === 'eligible' ? 'bg-green-500' :
-                range.status === 'partial' ? 'bg-yellow-500' :
-                range.status === 'ineligible' ? 'bg-red-500' :
-                'bg-gray-700'
-              }`}
-              style={{
-                left: `${range.startPos}%`,
-                width: `${range.endPos - range.startPos}%`
-              }}
-            />
-          ))}
-          
-          {/* No orders range after last order */}
-          {maxPrice > sortedAllOrders[sortedAllOrders.length - 1].price && (
-            <div 
-              className="absolute h-full bg-gray-700"
-              style={{ 
-                left: `${getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`,
-                width: `${100 - getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`
-              }}
-            />
-          )}
+          {/* Price labels */}
+          <div className="flex justify-between text-xs text-gray-400 mb-2">
+          <span>${minPrice.toFixed(6)}</span>
+          <span>Current MC: ${mcPrice.toFixed(6)}</span>
+          <span>${maxPrice.toFixed(6)}</span>
         </div>
         
-        {/* Price dots on the line with prices below */}
-        {Array.from(ordersByPrice.entries()).map(([price, ordersAtPrice], index) => {
-          const position = getPosition(price);
-          const statuses = new Set(ordersAtPrice.map((o: any) => o.status));
-          const isMixed = statuses.size > 1;
-          
-          // Determine dot style based on mixed status
-          let dotStyle = '';
-          if (isMixed) {
-            // Mixed status - use gradient or striped pattern
-            if (statuses.has('eligible') && statuses.has('partial')) {
-              dotStyle = 'bg-gradient-to-r from-green-400 to-yellow-400';
-            } else if (statuses.has('partial') && statuses.has('ineligible')) {
-              dotStyle = 'bg-gradient-to-r from-yellow-400 to-gray-400';
-            } else {
-              dotStyle = 'bg-gradient-to-r from-green-400 to-gray-400';
-            }
-          } else {
-            // Single status
-            const order = ordersAtPrice[0];
-            dotStyle = order.isBuy ? 
-              (order.status === 'eligible' ? 'bg-green-400' : 
-               order.status === 'partial' ? 'bg-yellow-400' : 'bg-gray-400') :
-              (order.status === 'eligible' ? 'bg-red-400' : 
-               order.status === 'partial' ? 'bg-orange-400' : 'bg-gray-400');
-          }
-          
-          // Alternate label positions to avoid overlap
-          const labelOffset = index % 2 === 0 ? '20px' : '40px';
-          
-          return (
-            <div
-              key={`dot-${price}`}
-              className="absolute"
-              style={{
-                bottom: '-2px',
-                left: `${position}%`,
-                transform: 'translateX(-50%)'
-              }}
-            >
-              {/* The dot */}
-              <div
-                className={`w-3 h-3 ${dotStyle} rounded-full border-2 border-gray-900 z-10 ${isMixed ? 'ring-2 ring-purple-400' : ''}`}
-                title={`$${price.toFixed(6)}`}
-              />
+        {/* Chart container with padding for labels and indicators */}
+        <div className="relative bg-gray-900/50 rounded-lg p-2" style={{ paddingBottom: '120px', paddingTop: '60px' }}>
+          {/* Volume indicators at the top */}
+          <div className="absolute top-0 left-0 right-0" style={{ height: '60px' }}>
+            {Array.from(ordersByPrice.entries()).map(([price, ordersAtPrice], index) => {
+              const position = getPosition(price);
+              // Calculate total volume at this price point
+              const totalVolume = ordersAtPrice.reduce((sum: number, order: any) => {
+                const amount = parseFloat(order.value) / order.price; // Convert value back to amount
+                return sum + amount;
+              }, 0);
               
-              {/* Price label below the dot - LARGER */}
+              return (
+                <div
+                  key={`volume-${price}`}
+                  className="absolute text-center"
+                  style={{
+                    left: `${position}%`,
+                    transform: 'translateX(-50%)',
+                    top: '5px'
+                  }}
+                >
+                  {/* Volume number */}
+                  <div className="text-xs font-bold text-yellow-400 mb-1">
+                    {totalVolume >= 1000 ? `${(totalVolume/1000).toFixed(1)}k` : totalVolume.toFixed(1)} MC
+                  </div>
+                  {/* Connecting line/bracket */}
+                  <div className="relative">
+                    <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-yellow-400/50" style={{ height: '30px' }}></div>
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3">
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-yellow-400/50"></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Inner chart area */}
+          <div className="relative h-32 overflow-visible">
+          {/* Price range coloring - THICKER LINE */}
+          <div className="absolute bottom-0 left-0 right-0 h-2">
+            {/* No orders range before first order */}
+            {minPrice < sortedAllOrders[0].price && (
               <div 
-                className="absolute text-gray-300 whitespace-nowrap text-center font-medium"
+                className="absolute h-full bg-gray-700"
+                style={{ 
+                  left: '0%',
+                  width: `${getPosition(sortedAllOrders[0].price)}%`
+                }}
+              />
+            )}
+            
+            {/* Colored ranges between orders */}
+            {priceRanges.map((range, idx) => (
+              <div
+                key={idx}
+                className={`absolute h-full ${
+                  range.status === 'mixed-eligible' ? 'bg-gradient-to-r from-green-500 to-yellow-500' :
+                  range.status === 'mixed-partial' ? 'bg-gradient-to-r from-yellow-500 to-red-500' :
+                  range.status === 'mixed-ineligible' ? 'bg-gradient-to-r from-red-500 to-gray-500' :
+                  range.status === 'eligible' ? 'bg-green-500' :
+                  range.status === 'partial' ? 'bg-yellow-500' :
+                  range.status === 'ineligible' ? 'bg-red-500' :
+                  'bg-gray-700'
+                }`}
                 style={{
-                  top: labelOffset,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: '11px',
-                  lineHeight: '1.2'
+                  left: `${range.startPos}%`,
+                  width: `${range.endPos - range.startPos}%`
+                }}
+              />
+            ))}
+            
+            {/* No orders range after last order */}
+            {maxPrice > sortedAllOrders[sortedAllOrders.length - 1].price && (
+              <div 
+                className="absolute h-full bg-gray-700"
+                style={{ 
+                  left: `${getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`,
+                  width: `${100 - getPosition(sortedAllOrders[sortedAllOrders.length - 1].price)}%`
+                }}
+              />
+            )}
+          </div>
+          
+          {/* Price dots on the line with prices below */}
+          {Array.from(ordersByPrice.entries()).map(([price, ordersAtPrice], index) => {
+            const position = getPosition(price);
+            const statuses = new Set(ordersAtPrice.map((o: any) => o.status));
+            const isMixed = statuses.size > 1;
+            
+            // Determine dot style based on mixed status
+            let dotStyle = '';
+            if (isMixed) {
+              // Mixed status - use gradient or striped pattern
+              if (statuses.has('eligible') && statuses.has('partial')) {
+                dotStyle = 'bg-gradient-to-r from-green-400 to-yellow-400';
+              } else if (statuses.has('partial') && statuses.has('ineligible')) {
+                dotStyle = 'bg-gradient-to-r from-yellow-400 to-gray-400';
+              } else {
+                dotStyle = 'bg-gradient-to-r from-green-400 to-gray-400';
+              }
+            } else {
+              // Single status - all orders at this price have the same status
+              const status = ordersAtPrice[0].status;
+              if (status === 'eligible') {
+                dotStyle = 'bg-green-400';
+              } else if (status === 'partial') {
+                dotStyle = 'bg-yellow-400';
+              } else {
+                dotStyle = 'bg-red-500'; // Use red for ineligible
+              }
+            }
+            
+            // Alternate label positions to avoid overlap
+            const labelOffset = index % 2 === 0 ? '20px' : '40px';
+            
+            return (
+              <div
+                key={`dot-${price}`}
+                className="absolute"
+                style={{
+                  bottom: '-2px',
+                  left: `${position}%`,
+                  transform: 'translateX(-50%)'
                 }}
               >
-                <div className="font-mono">${price.toFixed(6)}</div>
-                <div className="text-gray-400" style={{ fontSize: '9px' }}>
-                  {isMixed ? 'MIXED' : 
-                   ordersAtPrice.every((o: any) => o.isBuy) ? 'BUY' : 
-                   ordersAtPrice.every((o: any) => !o.isBuy) ? 'SELL' : 'BUY/SELL'}
+                {/* The dot */}
+                <div
+                  className={`w-3 h-3 ${dotStyle} rounded-full border-2 border-gray-900 z-10 ${isMixed ? 'ring-2 ring-purple-400' : ''}`}
+                  title={`$${price.toFixed(6)}`}
+                />
+                
+                {/* Price label below the dot - LARGER */}
+                <div 
+                  className="absolute text-gray-300 whitespace-nowrap text-center font-medium"
+                  style={{
+                    top: labelOffset,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: '11px',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  <div className="font-mono">${price.toFixed(6)}</div>
+                  <div className="text-gray-400" style={{ fontSize: '9px' }}>
+                    {isMixed ? 'MIXED' : 
+                     ordersAtPrice.every((o: any) => o.isBuy) ? 'BUY' : 
+                     ordersAtPrice.every((o: any) => !o.isBuy) ? 'SELL' : 'BUY/SELL'}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-        
-        {/* Directional indicators for eligible order placement */}
-        <div className="absolute left-0 right-0" style={{ bottom: '-65px' }}>
-          {/* Find eligible buy range */}
-          {(() => {
-            const eligibleBuyOrders = processedOrders.filter(o => o.isBuy && o.status === 'eligible');
-            const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
-            
-            if (eligibleBuyOrders.length > 0) {
-              const minBuyPrice = Math.min(...eligibleBuyOrders.map(o => o.price));
-              const maxBuyPrice = Math.max(...eligibleBuyOrders.map(o => o.price));
-              const startPos = getPosition(minBuyPrice);
-              const endPos = getPosition(maxBuyPrice);
-              
-              return (
-                <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%` }}>
-                  <div className="w-full relative">
-                    <div className="absolute inset-0 border-t-2 border-green-500 opacity-50"></div>
-                    <div className="absolute left-0 top-0 transform -translate-y-1/2">
-                      <div className="text-green-500 text-lg">←</div>
-                    </div>
-                    <div className="absolute right-0 top-0 transform -translate-y-1/2">
-                      <div className="text-green-500 text-lg">→</div>
-                    </div>
-                    <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-green-400 text-xs font-semibold whitespace-nowrap">
-                      Buy Rewards: Right → Left (≤$${maxBuyPrice.toFixed(6)})
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
+            );
+          })}
           
-          {/* Find eligible sell range */}
-          {(() => {
-            const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
-            
-            if (eligibleSellOrders.length > 0) {
-              const minSellPrice = Math.min(...eligibleSellOrders.map(o => o.price));
-              const maxSellPrice = Math.max(...eligibleSellOrders.map(o => o.price));
-              const startPos = getPosition(minSellPrice);
-              const endPos = getPosition(maxSellPrice);
+          {/* Directional indicators for eligible order placement */}
+          <div className="absolute left-0 right-0" style={{ bottom: '-65px' }}>
+            {/* Find eligible buy range */}
+            {(() => {
+              const eligibleBuyOrders = processedOrders.filter(o => o.isBuy && o.status === 'eligible');
+              const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
               
-              return (
-                <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%`, top: '20px' }}>
-                  <div className="w-full relative">
-                    <div className="absolute inset-0 border-t-2 border-red-500 opacity-50"></div>
-                    <div className="absolute left-0 top-0 transform -translate-y-1/2">
-                      <div className="text-red-500 text-lg">←</div>
-                    </div>
-                    <div className="absolute right-0 top-0 transform -translate-y-1/2">
-                      <div className="text-red-500 text-lg">→</div>
-                    </div>
-                    <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-red-400 text-xs font-semibold whitespace-nowrap">
-                      Sell Rewards SHOULD BE: Right → Left (but it's backwards!)
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
-          
-          {/* Ineligible zone indicator */}
-          {(() => {
-            const ineligibleSells = processedOrders.filter(o => !o.isBuy && o.status === 'ineligible');
-            if (ineligibleSells.length > 0) {
-              const maxIneligibleSellPrice = Math.max(...ineligibleSells.map(o => o.price));
-              return (
-                <div className="absolute left-0 right-0" style={{ top: '45px' }}>
-                  <div className="text-center text-gray-400 text-xs">
-                    ⚠️ Sell orders below ${(maxIneligibleSellPrice + 0.000001).toFixed(6)} are too close to spread (no rewards)
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
-          
-          {/* Reward distribution issue indicator */}
-          {(() => {
-            const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => b.price - a.price);
-            let showPriorityIssue = false;
-            
-            if (sellOrders.length > 1) {
-              const highestSell = sellOrders[0];
-              const hasIncorrectPriority = highestSell.status === 'partial' && sellOrders.some(o => o.price < highestSell.price && o.status === 'eligible');
-              
-              if (hasIncorrectPriority) {
-                showPriorityIssue = true;
+              if (eligibleBuyOrders.length > 0) {
+                const minBuyPrice = Math.min(...eligibleBuyOrders.map(o => o.price));
+                const maxBuyPrice = Math.max(...eligibleBuyOrders.map(o => o.price));
+                const startPos = getPosition(minBuyPrice);
+                const endPos = getPosition(maxBuyPrice);
+                
                 return (
-                  <div className="absolute left-0 right-0" style={{ top: '65px' }}>
-                    <div className="text-center text-red-500 text-xs font-bold">
-                      ⚠️ CRITICAL: Sell reward logic is REVERSED!
-                    </div>
-                    <div className="text-center text-orange-400 text-xs mt-1">
-                      Highest sell at ${highestSell.price.toFixed(6)} gets only {(highestSell.volumeCapFraction * 100).toFixed(1)}% rewards
-                    </div>
-                    <div className="text-orange-300 text-xs mt-1">
-                      Expected: Like buys, rewards should go from furthest to closest (right to left)
+                  <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%` }}>
+                    <div className="w-full relative">
+                      <div className="absolute inset-0 border-t-2 border-green-500 opacity-50"></div>
+                      <div className="absolute left-0 top-0 transform -translate-y-1/2">
+                        <div className="text-green-500 text-lg">←</div>
+                      </div>
+                      <div className="absolute right-0 top-0 transform -translate-y-1/2">
+                        <div className="text-green-500 text-lg">→</div>
+                      </div>
+                      <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-green-400 text-xs font-semibold whitespace-nowrap">
+                        Buy Rewards: Right → Left (≤$${maxBuyPrice.toFixed(6)})
+                      </div>
                     </div>
                   </div>
                 );
               }
-            }
-            return null;
-          })()}
-          
-          {/* Bonus price indicators */}
-          {(() => {
-            const partialOrders = processedOrders.filter(o => o.status === 'partial');
-            if (partialOrders.length > 0) {
-              const bonusPrices = Array.from(new Set(partialOrders.map(o => o.price)));
-              // Check if we showed priority issue
+              return null;
+            })()}
+            
+            {/* Find eligible sell range */}
+            {(() => {
+              const eligibleSellOrders = processedOrders.filter(o => !o.isBuy && o.status === 'eligible');
+              
+              if (eligibleSellOrders.length > 0) {
+                const minSellPrice = Math.min(...eligibleSellOrders.map(o => o.price));
+                const maxSellPrice = Math.max(...eligibleSellOrders.map(o => o.price));
+                const startPos = getPosition(minSellPrice);
+                const endPos = getPosition(maxSellPrice);
+                
+                return (
+                  <div className="absolute flex items-center" style={{ left: `${startPos}%`, width: `${endPos - startPos}%`, top: '20px' }}>
+                    <div className="w-full relative">
+                      <div className="absolute inset-0 border-t-2 border-red-500 opacity-50"></div>
+                      <div className="absolute left-0 top-0 transform -translate-y-1/2">
+                        <div className="text-red-500 text-lg">←</div>
+                      </div>
+                      <div className="absolute right-0 top-0 transform -translate-y-1/2">
+                        <div className="text-red-500 text-lg">→</div>
+                      </div>
+                      <div className="absolute left-1/2 transform -translate-x-1/2 -top-4 text-red-400 text-xs font-semibold whitespace-nowrap">
+                        Sell Rewards SHOULD BE: Right → Left (but it's backwards!)
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Ineligible zone indicator */}
+            {(() => {
+              const ineligibleSells = processedOrders.filter(o => !o.isBuy && o.status === 'ineligible');
+              if (ineligibleSells.length > 0) {
+                const maxIneligibleSellPrice = Math.max(...ineligibleSells.map(o => o.price));
+                return (
+                  <div className="absolute left-0 right-0" style={{ top: '45px' }}>
+                    <div className="text-center text-gray-400 text-xs">
+                      ⚠️ Sell orders below ${(maxIneligibleSellPrice + 0.000001).toFixed(6)} are too close to spread (no rewards)
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Reward distribution issue indicator */}
+            {(() => {
               const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => b.price - a.price);
-              const showOffset = sellOrders.length > 1 && sellOrders[0].status === 'partial' && 
-                               sellOrders.some(o => o.price < sellOrders[0].price && o.status === 'eligible');
+              let showPriorityIssue = false;
+              
+              if (sellOrders.length > 1) {
+                const highestSell = sellOrders[0];
+                const hasIncorrectPriority = highestSell.status === 'partial' && sellOrders.some(o => o.price < highestSell.price && o.status === 'eligible');
+                
+                if (hasIncorrectPriority) {
+                  showPriorityIssue = true;
+                  return (
+                    <div className="absolute left-0 right-0" style={{ top: '65px' }}>
+                      <div className="text-center text-red-500 text-xs font-bold">
+                        ⚠️ CRITICAL: Sell reward logic is REVERSED!
+                      </div>
+                      <div className="text-center text-orange-400 text-xs mt-1">
+                        Highest sell at ${highestSell.price.toFixed(6)} gets only {(highestSell.volumeCapFraction * 100).toFixed(1)}% rewards
+                      </div>
+                      <div className="text-orange-300 text-xs mt-1">
+                        Expected: Like buys, rewards should go from furthest to closest (right to left)
+                      </div>
+                    </div>
+                  );
+                }
+              }
+              return null;
+            })()}
+            
+            {/* Bonus price indicators */}
+            {(() => {
+              const partialOrders = processedOrders.filter(o => o.status === 'partial');
+              if (partialOrders.length > 0) {
+                const bonusPrices = Array.from(new Set(partialOrders.map(o => o.price)));
+                // Check if we showed priority issue
+                const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => b.price - a.price);
+                const showOffset = sellOrders.length > 1 && sellOrders[0].status === 'partial' && 
+                                 sellOrders.some(o => o.price < sellOrders[0].price && o.status === 'eligible');
+                
+                return (
+                  <div className="absolute left-0 right-0" style={{ top: showOffset ? '95px' : '65px' }}>
+                    <div className="text-center text-yellow-400 text-xs font-semibold mb-1">
+                      Partial Reward Prices:
+                    </div>
+                    <div className="flex justify-center gap-3">
+                      {bonusPrices.map(price => (
+                        <div key={price} className="text-yellow-300 font-mono text-xs">
+                          ${price.toFixed(6)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+          
+          {/* Reward flow direction indicators */}
+          <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
+            <div className="text-green-400 text-xs flex items-center gap-1">
+              <span>Buy rewards</span>
+              <span className="text-lg">→</span>
+            </div>
+            <div className="text-red-400 text-xs flex items-center gap-1">
+              <span className="text-lg">←</span>
+              <span>Sell rewards (expected)</span>
+            </div>
+          </div>
+          
+          {/* Current price line */}
+          <div 
+            className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-20"
+            style={{ left: `${getPosition(mcPrice)}%` }}
+            title={`Current MC Price: $${mcPrice.toFixed(6)}`}
+          >
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-400 whitespace-nowrap">
+              MC
+            </div>
+          </div>
+          
+          {/* Uncovered territory - gap between highest buy and lowest sell */}
+          {highestBuyPrice < lowestSellPrice && lowestSellPrice !== Infinity && (
+            <>
+              {/* Visual gap indicator */}
+              <div 
+                className="absolute h-full bg-gray-800/50 border-x border-gray-600 border-dashed"
+                style={{ 
+                  left: `${getPosition(highestBuyPrice)}%`,
+                  width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
+                }}
+              >
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs text-gray-500 font-semibold">
+                  SPREAD
+                </div>
+              </div>
+              
+              {/* Add gap to the bottom range line */}
+              <div 
+                className="absolute bottom-0 h-2 bg-gray-700"
+                style={{ 
+                  left: `${getPosition(highestBuyPrice)}%`,
+                  width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
+                }}
+              />
+            </>
+          )}
+          
+          {/* Render orders */}
+          {Array.from(priceGroups.entries()).map(([key, orders], groupIndex) => {
+            const position = getPosition(orders[0].price);
+            const isBuy = orders[0].isBuy;
+            // Alternate label positions to avoid overlap
+            const labelOffset = groupIndex % 2 === 0 ? '8px' : '28px';
+            
+            return (
+              <div key={key} className="absolute" style={{ left: `${position}%`, transform: 'translateX(-50%)' }}>
+                {/* Stack orders at same price */}
+                {orders.map((order, index) => {
+                  // Make bars more visible - minimum 20px, scale up based on value
+                  const height = Math.max(20, Math.min(60, order.value * 10)); // Scale height by value
+                  const bottom = 20 + index * 25; // Stack vertically, leave space for price label
+                  
+                  let bgColor = '';
+                  let borderColor = '';
+                  if (order.status === 'eligible') {
+                    bgColor = isBuy ? 'bg-green-500' : 'bg-red-500';
+                    borderColor = isBuy ? 'border-green-600' : 'border-red-600';
+                  } else if (order.status === 'partial') {
+                    bgColor = isBuy ? 'bg-yellow-500' : 'bg-orange-500';
+                    borderColor = isBuy ? 'border-yellow-600' : 'border-orange-600';
+                  } else {
+                    bgColor = 'bg-gray-600';
+                    borderColor = 'border-gray-700';
+                  }
+                  
+                  console.log(`Rendering order ${order.orderId}: ${isBuy ? 'BUY' : 'SELL'} - status: ${order.status} - colors: ${bgColor}`);
+                  
+                  return (
+                    <div
+                      key={`${order.orderId}`}
+                      className={`absolute ${bgColor} ${borderColor} border-2 rounded-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer`}
+                      style={{
+                        width: '8px',
+                        height: `${height}px`,
+                        bottom: `${bottom}px`,
+                        left: '-4px'
+                      }}
+                      title={`Order #${order.orderId} - ${isBuy ? 'Buy' : 'Sell'} at $${order.price.toFixed(6)} - Value: $${order.value.toFixed(2)} - ${order.status}${order.status === 'partial' ? ` (${(order.volumeCapFraction * 100).toFixed(0)}%)` : ''}`}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
+          </div>
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-6 space-y-2">
+          <div className="text-xs font-semibold text-gray-300">Order Bars:</div>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 border border-green-600 rounded-sm"></div>
+              <span className="text-gray-400">Buy (Eligible)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-500 border border-yellow-600 rounded-sm"></div>
+              <span className="text-gray-400">Buy (Partial)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 border border-red-600 rounded-sm"></div>
+              <span className="text-gray-400">Sell (Eligible)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-orange-500 border border-orange-600 rounded-sm"></div>
+              <span className="text-gray-400">Sell (Partial)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-600 border border-gray-700 rounded-sm"></div>
+              <span className="text-gray-400">Ineligible</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-0.5 h-3 bg-blue-500"></div>
+              <span className="text-gray-400">Current Price</span>
+            </div>
+          </div>
+          
+          <div className="text-xs font-semibold text-gray-300 mt-3">Price Range Colors:</div>
+          <div className="flex items-center gap-3 text-xs flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-2 bg-green-500"></div>
+              <span className="text-gray-400">Eligible Range</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-2 bg-yellow-500"></div>
+              <span className="text-gray-400">Partial Range</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-2 bg-red-500"></div>
+              <span className="text-gray-400">Ineligible Range</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-2 bg-gradient-to-r from-green-500 to-yellow-500"></div>
+              <span className="text-gray-400">Mixed Status</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-2 bg-gray-700"></div>
+              <span className="text-gray-400">No Orders</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Price Range Information */}
+        <div className="mt-6 grid grid-cols-2 gap-6">
+          {/* Buy Side Ranges */}
+          <div className="bg-gray-800/50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-300 mb-3">Buy Order Status by Price</h4>
+            <div className="space-y-3 text-xs">
+              {(() => {
+                // Group buy orders by price
+                const buyOrders = processedOrders.filter(o => o.isBuy).sort((a, b) => b.price - a.price);
+                const priceGroups = new Map();
+                
+                buyOrders.forEach(order => {
+                  const price = order.price.toFixed(6);
+                  if (!priceGroups.has(price)) {
+                    priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
+                  }
+                  priceGroups.get(price)[(order as any).status]++;
+                });
+                
+                return Array.from(priceGroups.entries()).map(([price, counts]) => (
+                  <div key={price} className="border-l-2 border-gray-700 pl-3">
+                    <div className="font-mono text-gray-200 mb-1">${price}</div>
+                    {counts.eligible > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded"></div>
+                        <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {counts.partial > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded"></div>
+                        <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {counts.ineligible > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded"></div>
+                        <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
+              {processedOrders.filter(o => o.isBuy).length === 0 && (
+                <div className="text-gray-500">No buy orders</div>
+              )}
+            </div>
+          </div>
+          
+          {/* Sell Side Ranges */}
+          <div className="bg-gray-800/50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-300 mb-3">Sell Order Status by Price</h4>
+            <div className="space-y-3 text-xs">
+              {(() => {
+                // Group sell orders by price
+                const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => a.price - b.price);
+                const priceGroups = new Map();
+                
+                sellOrders.forEach(order => {
+                  const price = order.price.toFixed(6);
+                  if (!priceGroups.has(price)) {
+                    priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
+                  }
+                  priceGroups.get(price)[(order as any).status]++;
+                });
+                
+                return Array.from(priceGroups.entries()).map(([price, counts]) => (
+                  <div key={price} className="border-l-2 border-gray-700 pl-3">
+                    <div className="font-mono text-gray-200 mb-1">${price}</div>
+                    {counts.eligible > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded"></div>
+                        <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {counts.partial > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded"></div>
+                        <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    {counts.ineligible > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded"></div>
+                        <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
+              {processedOrders.filter(o => !o.isBuy).length === 0 && (
+                <div className="text-gray-500">No sell orders</div>
+              )}
+            </div>
+          </div>
+        </div>
+        </>
+      )}
+      </div>
+
+      {/* Detailed Buy Orders Chart */}
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-green-400">📈 Buy Orders Detail</h3>
+        
+        {/* Visual Buy Order Chart */}
+        <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
+          {/* Current System State */}
+          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded">
+            <div className="text-sm">
+              <div className="flex justify-between mb-1">
+                <span className="text-blue-300">Current System Tier:</span>
+                <span className="text-white font-semibold">
+                  {(() => {
+                    // Determine which tier we're in based on market conditions
+                    const priceDeviation = ((mcPrice - mcPrice) / mcPrice) * 100; // This would come from actual market data
+                    if (priceDeviation >= 0) return "Tier 1 (Tightest caps)";
+                    if (priceDeviation >= -3) return "Tier 2 (Moderate caps)";
+                    if (priceDeviation >= -8) return "Tier 3 (Looser caps)";
+                    return "Tier 4 (Loosest caps)";
+                  })()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-blue-300">Current Reward Rate:</span>
+                <span className="text-green-400 font-semibold">7% - 100% APR (Dynamic)</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Volume Cap Visualization */}
+          <div className="mb-3">
+            <div className="text-xs text-gray-400 mb-1">Buy Side Volume Cap Usage (Orders processed by price priority)</div>
+            <div className="relative h-8 bg-gray-800 rounded overflow-hidden">
+              {/* Show cumulative volume usage */}
+              {(() => {
+                let cumulativePercent = 0;
+                const capUsage = buyOrdersProcessed.map((order, idx) => {
+                  const volume = order.value;
+                  const percentOfCap = (volume / (mcPrice * 1000000 * 0.02)) * 100; // Assuming tier 1 with 2% cap
+                  const startPercent = cumulativePercent;
+                  cumulativePercent += percentOfCap;
+                  
+                  return {
+                    order,
+                    startPercent,
+                    width: percentOfCap,
+                    overCap: cumulativePercent > 100
+                  };
+                });
+                
+                return capUsage.map((item, idx) => (
+                  <div
+                    key={`cap-${item.order.orderId}`}
+                    className={`absolute h-full ${
+                      item.order.status === 'eligible' ? 'bg-green-500' :
+                      item.order.status === 'partial' ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{
+                      left: `${Math.min(item.startPercent, 100)}%`,
+                      width: `${Math.min(item.width, 100 - item.startPercent)}%`
+                    }}
+                    title={`Order ${item.order.orderId}: ${item.order.status}`}
+                  />
+                ));
+              })()}
+              {/* Cap line */}
+              <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-white"></div>
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-white">100% Cap</span>
+            </div>
+          </div>
+          
+          {/* Price scale - horizontal layout */}
+          <div className="relative h-32 mt-4 mb-16">
+            <div className="relative w-full h-full">
+              {/* Price axis at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-600"></div>
+              
+              {/* Price markers on x-axis */}
+              <div className="absolute bottom-0 left-0" style={{ left: '0%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.84).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '25%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.88).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '50%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.92).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '75%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.97).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0 right-0" style={{ left: '100%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 right-0 text-xs text-white whitespace-nowrap">
+                  ${mcPrice.toFixed(6)}
+                </div>
+              </div>
+              
+              {/* Market price indicator */}
+              <div className="absolute bottom-0 top-4" style={{ left: '100%' }}>
+                <div className="absolute bottom-0 top-0 w-0.5 bg-white border-r-2 border-dashed border-white/50"></div>
+                <div className="absolute top-0 right-0 transform translate-x-2 text-xs text-white bg-gray-800 px-1 rounded">
+                  Market
+                </div>
+              </div>
+              
+              {/* Bracket zones below price axis */}
+              <div className="absolute -bottom-4 left-0 right-0">
+                {(() => {
+                  // Calculate volumes for different reward zones
+                  let noRewardsVolume = 0;  // Below 84% of market price
+                  let eligibleVolume = 0;   // 84% to 100% of market price
+                  let ineligibleVolume = 0; // Orders that exceed volume caps
+                  let totalBuyVolume = 0;
+                  
+                  buyOrdersProcessed.forEach(order => {
+                    const volume = order.value / order.price;
+                    totalBuyVolume += volume;
+                    
+                    if (order.price < mcPrice * 0.84) {
+                      noRewardsVolume += volume;
+                    } else if (order.status === 'eligible') {
+                      eligibleVolume += volume;
+                    } else if (order.status === 'partial') {
+                      const eligiblePortion = volume * order.volumeCapFraction;
+                      const ineligiblePortion = volume * (1 - order.volumeCapFraction);
+                      eligibleVolume += eligiblePortion;
+                      ineligibleVolume += ineligiblePortion;
+                    } else {
+                      ineligibleVolume += volume;
+                    }
+                  });
+                  
+                  const formatVolume = (vol: number) => {
+                    if (vol >= 1000000) return `${(vol/1000000).toFixed(1)}M`;
+                    if (vol >= 1000) return `${(vol/1000).toFixed(1)}k`;
+                    return vol.toFixed(0);
+                  };
+                  
+                  const formatPercent = (vol: number) => {
+                    return totalBuyVolume > 0 ? `${((vol / totalBuyVolume) * 100).toFixed(1)}%` : '0%';
+                  };
+                  
+                  return (
+                    <>
+                      {/* No rewards bracket (far left) */}
+                      {noRewardsVolume > 0 && (
+                        <div className="absolute" style={{ left: '0%', width: '10%' }}>
+                          <div className="relative">
+                            {/* Bracket with arrows */}
+                            <div className="relative h-8 mb-2">
+                              <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gray-500"></div>
+                              <div className="absolute left-0 top-0 w-0.5 h-4 bg-gray-500"></div>
+                              <div className="absolute right-0 top-0 w-0.5 h-4 bg-gray-500"></div>
+                              {/* Left arrow pointing up */}
+                              <div className="absolute left-0 -top-2">
+                                <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-gray-500"></div>
+                              </div>
+                              {/* Right arrow pointing to 84% price */}
+                              <div className="absolute right-0 -top-2">
+                                <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-gray-500"></div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-400 whitespace-nowrap text-center">
+                              <div className="font-semibold">No Rewards</div>
+                              <div className="text-[10px]">Below ${(mcPrice * 0.84).toFixed(6)}</div>
+                              <div className="font-bold text-white">{formatVolume(noRewardsVolume)} MC</div>
+                              <div className="text-[10px]">{formatPercent(noRewardsVolume)} of buy volume</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Eligible rewards bracket */}
+                      <div className="absolute" style={{ left: noRewardsVolume > 0 ? '10%' : '0%', width: '90%' }}>
+                        <div className="relative">
+                          {/* Bracket with arrows */}
+                          <div className="relative h-8 mb-2">
+                            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-green-500"></div>
+                            <div className="absolute left-0 top-0 w-0.5 h-4 bg-green-500"></div>
+                            <div className="absolute right-0 top-0 w-0.5 h-4 bg-green-500"></div>
+                            {/* Left arrow pointing to 84% price */}
+                            <div className="absolute left-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-green-500"></div>
+                            </div>
+                            {/* Right arrow pointing to market price */}
+                            <div className="absolute right-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-green-500"></div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-green-400 whitespace-nowrap text-center">
+                            <div className="font-semibold">Eligible for Rewards</div>
+                            <div className="text-[10px]">${(mcPrice * 0.84).toFixed(6)} - ${mcPrice.toFixed(6)}</div>
+                            <div className="font-bold text-white">{formatVolume(eligibleVolume)} MC</div>
+                            <div className="text-[10px]">{formatPercent(eligibleVolume)} of buy volume</div>
+                            <div className="text-[10px] text-green-500">Earns 7% APR base rewards</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Ineligible bracket (overlaps with eligible range) */}
+                      {ineligibleVolume > 0 && (
+                        <div className="absolute" style={{ left: '40%', width: '50%' }}>
+                          <div className="relative mt-20">
+                            <div className="text-xs text-red-400 whitespace-nowrap text-center">
+                              <div className="font-semibold">Volume Cap Exceeded</div>
+                              <div className="text-[10px]">Orders beyond tier limits</div>
+                              <div className="font-bold text-white">{formatVolume(ineligibleVolume)} MC</div>
+                              <div className="text-[10px]">{formatPercent(ineligibleVolume)} of buy volume</div>
+                              <div className="text-[10px] text-gray-500">No rewards on excess volume</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+              
+              {/* Plot buy orders with stacked bars */}
+              {(() => {
+                console.log('Buy orders to process:', buyOrdersProcessed.length, buyOrdersProcessed);
+                // Group orders by price to show stacked amounts
+                const priceGroups = new Map();
+                buyOrdersProcessed.forEach(order => {
+                  const price = order.price.toFixed(6);
+                  if (!priceGroups.has(price)) {
+                    priceGroups.set(price, { 
+                      price: order.price,
+                      orders: [],
+                      totalVolume: 0,
+                      eligibleVolume: 0,
+                      partialVolume: 0,
+                      ineligibleVolume: 0
+                    });
+                  }
+                  const group = priceGroups.get(price);
+                  const volume = order.value / order.price;
+                  group.orders.push(order);
+                  group.totalVolume += volume;
+                  
+                  if (order.status === 'eligible') {
+                    group.eligibleVolume += volume;
+                  } else if (order.status === 'partial') {
+                    // For partial orders, calculate the eligible and ineligible portions
+                    const eligiblePortion = volume * order.volumeCapFraction;
+                    const ineligiblePortion = volume * (1 - order.volumeCapFraction);
+                    group.partialVolume += eligiblePortion;
+                    group.ineligibleVolume += ineligiblePortion;
+                  } else {
+                    group.ineligibleVolume += volume;
+                  }
+                });
+
+                return Array.from(priceGroups.values()).map((group, index) => {
+                  const priceRatio = group.price / mcPrice;
+                  const xPosition = Math.max(0, Math.min(100, (priceRatio - 0.84) / 0.16 * 100));
+                  const maxHeight = 100; // Maximum height in pixels
+                  const volumeScale = 50; // Scale factor for volume to pixels
+                  
+                  // Calculate heights for each segment
+                  const eligibleHeight = (group.eligibleVolume / volumeScale) * maxHeight / (group.totalVolume / volumeScale);
+                  const partialHeight = (group.partialVolume / volumeScale) * maxHeight / (group.totalVolume / volumeScale);
+                  const ineligibleHeight = (group.ineligibleVolume / volumeScale) * maxHeight / (group.totalVolume / volumeScale);
+                  const totalHeight = Math.min(group.totalVolume / volumeScale, maxHeight);
+                  
+                  // Estimate spread multiplier
+                  const spreadMultiplier = group.price >= mcPrice * 0.98 ? 2.0 :
+                                         group.price >= mcPrice * 0.95 ? 1.5 :
+                                         group.price >= mcPrice * 0.92 ? 1.3 : 1.1;
+                  
+                  return (
+                    <div
+                      key={`buy-stack-${group.price}`}
+                      className="absolute"
+                      style={{
+                        left: `${xPosition}%`,
+                        bottom: '0',
+                        transform: 'translateX(-50%)'
+                      }}
+                    >
+                      {/* Stacked bar sitting on the axis */}
+                      <div 
+                        className="absolute w-10"
+                        style={{
+                          height: `${totalHeight}px`,
+                          bottom: '0'
+                        }}
+                      >
+                        {/* Eligible portion (bottom) */}
+                        {group.eligibleVolume > 0 && (
+                          <div 
+                            className="absolute bottom-0 left-0 right-0 bg-green-500"
+                            style={{ height: `${(group.eligibleVolume / group.totalVolume) * 100}%` }}
+                            title={`Eligible: ${group.eligibleVolume.toFixed(2)} MC`}
+                          >
+                            {group.eligibleVolume > 100 && (
+                              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-xs text-white font-semibold">
+                                {group.eligibleVolume >= 1000 ? `${(group.eligibleVolume/1000).toFixed(1)}k` : group.eligibleVolume.toFixed(0)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Partial portion (middle) */}
+                        {group.partialVolume > 0 && (
+                          <div 
+                            className="absolute left-0 right-0 bg-yellow-500"
+                            style={{ 
+                              bottom: `${(group.eligibleVolume / group.totalVolume) * 100}%`,
+                              height: `${(group.partialVolume / group.totalVolume) * 100}%` 
+                            }}
+                            title={`Partial: ${group.partialVolume.toFixed(2)} MC`}
+                          />
+                        )}
+                        
+                        {/* Ineligible portion (top) */}
+                        {group.ineligibleVolume > 0 && (
+                          <div 
+                            className="absolute top-0 left-0 right-0 bg-red-500"
+                            style={{ height: `${(group.ineligibleVolume / group.totalVolume) * 100}%` }}
+                            title={`Ineligible: ${group.ineligibleVolume.toFixed(2)} MC`}
+                          />
+                        )}
+                        
+                        {/* Priority number on top */}
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-gray-700 rounded-full w-5 h-5 flex items-center justify-center">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Total volume label above bar */}
+                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-300 font-semibold whitespace-nowrap">
+                          {group.totalVolume >= 1000 ? `${(group.totalVolume/1000).toFixed(1)}k` : group.totalVolume.toFixed(0)} MC
+                        </div>
+                        
+                        {/* Spread multiplier below */}
+                        {spreadMultiplier > 1 && (
+                          <div className={`absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-bold ${
+                            spreadMultiplier >= 2 ? 'text-purple-400' :
+                            spreadMultiplier >= 1.5 ? 'text-blue-400' :
+                            'text-blue-300'
+                          }`}>
+                            {spreadMultiplier}x
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Price indicator at base */}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                    </div>
+                  );
+                });
+              })()}
+              </div>
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2 bg-gray-800 rounded">
+              <div className="font-semibold text-gray-300 mb-1">Bar Colors (Stacked):</div>
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-green-500 mr-1"></span>
+                  <span>Eligible amount (Full rewards)</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-yellow-500 mr-1"></span>
+                  <span>Partial amount (Reduced rewards)</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-red-500 mr-1"></span>
+                  <span>Ineligible amount (No rewards)</span>
+                </div>
+                <div className="text-gray-400 mt-1">
+                  Bar height = Total volume at price
+                </div>
+              </div>
+            </div>
+            <div className="p-2 bg-gray-800 rounded">
+              <div className="font-semibold text-gray-300 mb-1">Spread Bonuses:</div>
+              <div className="space-y-1">
+                <div><span className="inline-block w-3 h-3 bg-purple-400 rounded-full mr-1"></span>2.0x (75%+ spread reduction)</div>
+                <div><span className="inline-block w-3 h-3 bg-blue-400 rounded-full mr-1"></span>1.5x (50%+ spread reduction)</div>
+                <div><span className="text-gray-500">Numbers show processing priority</span></div>
+              </div>
+            </div>
+          </div>
+        
+        {buyOrdersProcessed.length === 0 ? (
+          <div className="text-center text-gray-400 py-4">No buy orders</div>
+        ) : (
+          <div className="space-y-3">
+            {/* Current market price reference */}
+            <div className="text-sm text-gray-400 mb-2">
+              Current MC Price: ${mcPrice.toFixed(6)}
+            </div>
+            
+            {/* Buy orders list */}
+            {buyOrdersProcessed.map((order, index) => {
+              const pricePercentFromMarket = ((order.price - mcPrice) / mcPrice) * 100;
+              const volume = order.value / order.price;
               
               return (
-                <div className="absolute left-0 right-0" style={{ top: showOffset ? '95px' : '65px' }}>
-                  <div className="text-center text-yellow-400 text-xs font-semibold mb-1">
-                    Partial Reward Prices:
-                  </div>
-                  <div className="flex justify-center gap-3">
-                    {bonusPrices.map(price => (
-                      <div key={price} className="text-yellow-300 font-mono text-xs">
-                        ${price.toFixed(6)}
+                <div key={`buy-${order.orderId}`} className={`p-3 rounded-lg border ${
+                  order.status === 'eligible' ? 'bg-green-900/20 border-green-500/30' :
+                  order.status === 'partial' ? 'bg-yellow-900/20 border-yellow-500/30' :
+                  'bg-red-900/20 border-red-500/30'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-white">
+                        ${order.price.toFixed(6)} ({pricePercentFromMarket > 0 ? '+' : ''}{pricePercentFromMarket.toFixed(1)}% from market)
                       </div>
-                    ))}
+                      <div className="text-sm text-gray-400">
+                        Volume: {volume.toFixed(2)} MC • Value: ${order.value.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className={`text-xs px-2 py-1 rounded ${
+                      order.status === 'eligible' ? 'bg-green-600/30 text-green-400' :
+                      order.status === 'partial' ? 'bg-yellow-600/30 text-yellow-400' :
+                      'bg-red-600/30 text-red-400'
+                    }`}>
+                      {order.status === 'eligible' ? '✓ Full Rewards' :
+                       order.status === 'partial' ? `${(order.volumeCapFraction * 100).toFixed(0)}% Rewards` :
+                       '✗ No Rewards'}
+                    </div>
                   </div>
                 </div>
               );
-            }
-            return null;
-          })()}
-        </div>
-        
-        {/* Reward flow direction indicators */}
-        <div className="absolute top-2 left-0 right-0 flex justify-between px-4">
-          <div className="text-green-400 text-xs flex items-center gap-1">
-            <span>Buy rewards</span>
-            <span className="text-lg">→</span>
-          </div>
-          <div className="text-red-400 text-xs flex items-center gap-1">
-            <span className="text-lg">←</span>
-            <span>Sell rewards (expected)</span>
-          </div>
-        </div>
-        
-        {/* Current price line */}
-        <div 
-          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-20"
-          style={{ left: `${getPosition(mcPrice)}%` }}
-          title={`Current MC Price: $${mcPrice.toFixed(6)}`}
-        >
-          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-400 whitespace-nowrap">
-            MC
-          </div>
-        </div>
-        
-        {/* Uncovered territory - gap between highest buy and lowest sell */}
-        {highestBuyPrice < lowestSellPrice && lowestSellPrice !== Infinity && (
-          <>
-            {/* Visual gap indicator */}
-            <div 
-              className="absolute h-full bg-gray-800/50 border-x border-gray-600 border-dashed"
-              style={{ 
-                left: `${getPosition(highestBuyPrice)}%`,
-                width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
-              }}
-            >
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs text-gray-500 font-semibold">
-                SPREAD
+            })}
+            
+            {/* Suggestions for optimal placement */}
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-2">💡 Strategy Tips for Maximum Rewards:</h4>
+              <div className="space-y-2 text-sm text-gray-300">
+                <div>
+                  <span className="text-green-400 font-semibold">1. Price Priority:</span> Place orders at higher prices to get processed first
+                </div>
+                <div>
+                  <span className="text-purple-400 font-semibold">2. Spread Reduction:</span> Get up to 2x bonus by placing orders close to the best ask price
+                </div>
+                <div>
+                  <span className="text-yellow-400 font-semibold">3. Volume Caps:</span> Check tier capacity before placing large orders
+                </div>
+                <div>
+                  <span className="text-blue-400 font-semibold">4. Dynamic Rates:</span> Rewards adjust every 6 hours based on liquidity needs (7%-100% APR)
+                </div>
+                <div className="mt-2 text-xs text-gray-400">
+                  Current best positions: Near ${mcPrice.toFixed(6)} for maximum spread bonus + high priority
+                </div>
               </div>
             </div>
-            
-            {/* Add gap to the bottom range line */}
-            <div 
-              className="absolute bottom-0 h-2 bg-gray-700"
-              style={{ 
-                left: `${getPosition(highestBuyPrice)}%`,
-                width: `${getPosition(lowestSellPrice) - getPosition(highestBuyPrice)}%`
-              }}
-            />
-          </>
+          </div>
         )}
+      </div>
+
+      {/* Detailed Sell Orders Chart */}
+      <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-red-400">📉 Sell Orders Detail</h3>
         
-        {/* Render orders */}
-        {Array.from(priceGroups.entries()).map(([key, orders], groupIndex) => {
-          const position = getPosition(orders[0].price);
-          const isBuy = orders[0].isBuy;
-          // Alternate label positions to avoid overlap
-          const labelOffset = groupIndex % 2 === 0 ? '8px' : '28px';
-          
-          return (
-            <div key={key} className="absolute" style={{ left: `${position}%`, transform: 'translateX(-50%)' }}>
-              {/* Stack orders at same price */}
-              {orders.map((order, index) => {
-                // Make bars more visible - minimum 20px, scale up based on value
-                const height = Math.max(20, Math.min(60, order.value * 10)); // Scale height by value
-                const bottom = 20 + index * 25; // Stack vertically, leave space for price label
-                
-                let bgColor = '';
-                let borderColor = '';
-                if (order.status === 'eligible') {
-                  bgColor = isBuy ? 'bg-green-500' : 'bg-red-500';
-                  borderColor = isBuy ? 'border-green-600' : 'border-red-600';
-                } else if (order.status === 'partial') {
-                  bgColor = isBuy ? 'bg-yellow-500' : 'bg-orange-500';
-                  borderColor = isBuy ? 'border-yellow-600' : 'border-orange-600';
-                } else {
-                  bgColor = 'bg-gray-600';
-                  borderColor = 'border-gray-700';
-                }
-                
-                console.log(`Rendering order ${order.orderId}: ${isBuy ? 'BUY' : 'SELL'} - status: ${order.status} - colors: ${bgColor}`);
-                
-                return (
-                  <div
-                    key={`${order.orderId}`}
-                    className={`absolute ${bgColor} ${borderColor} border-2 rounded-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer`}
-                    style={{
-                      width: '8px',
-                      height: `${height}px`,
-                      bottom: `${bottom}px`,
-                      left: '-4px'
-                    }}
-                    title={`Order #${order.orderId} - ${isBuy ? 'Buy' : 'Sell'} at $${order.price.toFixed(6)} - Value: $${order.value.toFixed(2)} - ${order.status}${order.status === 'partial' ? ` (${(order.volumeCapFraction * 100).toFixed(0)}%)` : ''}`}
-                  />
-                );
-              })}
+        {/* Visual Sell Order Chart */}
+        <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
+          {/* Current System State */}
+          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded">
+            <div className="text-sm">
+              <div className="flex justify-between mb-1">
+                <span className="text-blue-300">Current System Tier:</span>
+                <span className="text-white font-semibold">Same as Buy Side</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                ⚠️ Note: Sell orders only receive rewards when at or below market price (negative deviation system)
+              </div>
             </div>
-          );
-        })}
-        </div>
-      </div>
-      
-      {/* Legend */}
-      <div className="mt-6 space-y-2">
-        <div className="text-xs font-semibold text-gray-300">Order Bars:</div>
-        <div className="flex flex-wrap gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 border border-green-600 rounded-sm"></div>
-            <span className="text-gray-400">Buy (Eligible)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 border border-yellow-600 rounded-sm"></div>
-            <span className="text-gray-400">Buy (Partial)</span>
+          
+          {/* Volume Cap Visualization */}
+          <div className="mb-3">
+            <div className="text-xs text-gray-400 mb-1">Sell Side Volume Cap Usage (Orders processed by price priority)</div>
+            <div className="relative h-8 bg-gray-800 rounded overflow-hidden">
+              {/* Show cumulative volume usage */}
+              {(() => {
+                let cumulativePercent = 0;
+                const capUsage = sellOrdersProcessed.map((order, idx) => {
+                  const volume = order.value;
+                  const percentOfCap = (volume / (mcPrice * 1000000 * 0.01)) * 100; // Assuming tier 1 with 1% cap for sells
+                  const startPercent = cumulativePercent;
+                  cumulativePercent += percentOfCap;
+                  
+                  return {
+                    order,
+                    startPercent,
+                    width: percentOfCap,
+                    overCap: cumulativePercent > 100
+                  };
+                });
+                
+                return capUsage.map((item, idx) => (
+                  <div
+                    key={`cap-sell-${item.order.orderId}`}
+                    className={`absolute h-full ${
+                      item.order.status === 'eligible' ? 'bg-green-500' :
+                      item.order.status === 'partial' ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{
+                      left: `${Math.min(item.startPercent, 100)}%`,
+                      width: `${Math.min(item.width, 100 - item.startPercent)}%`
+                    }}
+                    title={`Order ${item.order.orderId}: ${item.order.status}`}
+                  />
+                ));
+              })()}
+              {/* Cap line */}
+              <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-white"></div>
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-white">100% Cap</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 border border-red-600 rounded-sm"></div>
-            <span className="text-gray-400">Sell (Eligible)</span>
+          
+          {/* Price scale for sells - horizontal layout */}
+          <div className="relative h-32 mt-4 mb-16">
+            <div className="relative w-full h-full">
+              {/* Price axis at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-600"></div>
+              
+              {/* Price markers on x-axis */}
+              <div className="absolute bottom-0 left-0" style={{ left: '0%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.90).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '33%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 0.97).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '50%' }}>
+                <div className="absolute bottom-0 w-0.5 h-4 bg-white"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-white whitespace-nowrap font-semibold">
+                  ${mcPrice.toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0" style={{ left: '67%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 1.03).toFixed(6)}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0 right-0" style={{ left: '100%' }}>
+                <div className="absolute bottom-0 w-0.5 h-2 bg-gray-500"></div>
+                <div className="absolute -bottom-6 right-0 text-xs text-gray-400 whitespace-nowrap">
+                  ${(mcPrice * 1.10).toFixed(6)}
+                </div>
+              </div>
+              
+              {/* Market price boundary */}
+              <div className="absolute bottom-0 top-4" style={{ left: '50%' }}>
+                <div className="absolute bottom-0 top-0 w-0.5 bg-green-500 border-l-2 border-dashed border-green-500/50"></div>
+                <div className="absolute top-0 left-0 transform -translate-x-1/2 text-xs text-green-400 bg-gray-800 px-1 rounded">
+                  Rewards Start
+                </div>
+              </div>
+              
+              {/* Zone brackets below price axis */}
+              <div className="absolute -bottom-4 left-0 right-0">
+                {(() => {
+                  // Calculate volumes for each zone
+                  let eligibleVolume = 0;
+                  let noRewardsVolume = 0;
+                  let totalSellVolume = 0;
+                  
+                  sellOrdersProcessed.forEach(order => {
+                    const volume = order.value / order.price;
+                    totalSellVolume += volume;
+                    
+                    if (order.price <= mcPrice) {
+                      eligibleVolume += volume;
+                    } else {
+                      noRewardsVolume += volume;
+                    }
+                  });
+                  
+                  const formatVolume = (vol: number) => {
+                    if (vol >= 1000000) return `${(vol/1000000).toFixed(1)}M`;
+                    if (vol >= 1000) return `${(vol/1000).toFixed(1)}k`;
+                    return vol.toFixed(0);
+                  };
+                  
+                  const formatPercent = (vol: number) => {
+                    return totalSellVolume > 0 ? `${((vol / totalSellVolume) * 100).toFixed(1)}%` : '0%';
+                  };
+                  
+                  return (
+                    <>
+                      {/* Eligible rewards bracket */}
+                      <div className="absolute" style={{ left: '0%', width: '50%' }}>
+                        <div className="relative">
+                          {/* Bracket with arrows */}
+                          <div className="relative h-8 mb-2">
+                            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-green-500"></div>
+                            <div className="absolute left-0 top-0 w-0.5 h-4 bg-green-500"></div>
+                            <div className="absolute right-0 top-0 w-0.5 h-4 bg-green-500"></div>
+                            {/* Left arrow pointing to min price */}
+                            <div className="absolute left-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-green-500"></div>
+                            </div>
+                            {/* Right arrow pointing to market price */}
+                            <div className="absolute right-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-green-500"></div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-green-400 whitespace-nowrap text-center">
+                            <div className="font-semibold">Eligible for Rewards</div>
+                            <div className="text-[10px]">${(mcPrice * 0.90).toFixed(6)} - ${mcPrice.toFixed(6)}</div>
+                            <div className="font-bold text-white">{formatVolume(eligibleVolume)} MC</div>
+                            <div className="text-[10px]">{formatPercent(eligibleVolume)} of sell volume</div>
+                            <div className="text-[10px] text-green-500">Earns 7% APR base rewards</div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* No rewards bracket */}
+                      <div className="absolute" style={{ left: '50%', width: '50%' }}>
+                        <div className="relative">
+                          {/* Bracket with arrows */}
+                          <div className="relative h-8 mb-2">
+                            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gray-500"></div>
+                            <div className="absolute left-0 top-0 w-0.5 h-4 bg-gray-500"></div>
+                            <div className="absolute right-0 top-0 w-0.5 h-4 bg-gray-500"></div>
+                            {/* Left arrow pointing to market price */}
+                            <div className="absolute left-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-gray-500"></div>
+                            </div>
+                            {/* Right arrow pointing to max price */}
+                            <div className="absolute right-0 -top-2">
+                              <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[6px] border-b-gray-500"></div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-400 whitespace-nowrap text-center">
+                            <div className="font-semibold">No Rewards</div>
+                            <div className="text-[10px]">Above ${mcPrice.toFixed(6)}</div>
+                            <div className="font-bold text-white">{formatVolume(noRewardsVolume)} MC</div>
+                            <div className="text-[10px]">{formatPercent(noRewardsVolume)} of sell volume</div>
+                            <div className="text-[10px] text-gray-500">No rewards earned</div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+              
+              {/* Plot sell orders with stacked bars */}
+              {(() => {
+                // Group orders by price to show stacked amounts
+                const priceGroups = new Map();
+                sellOrdersProcessed.forEach(order => {
+                  const price = order.price.toFixed(6);
+                  if (!priceGroups.has(price)) {
+                    priceGroups.set(price, { 
+                      price: order.price,
+                      orders: [],
+                      totalVolume: 0,
+                      eligibleVolume: 0,
+                      partialVolume: 0,
+                      ineligibleVolume: 0
+                    });
+                  }
+                  const group = priceGroups.get(price);
+                  const volume = order.value / order.price;
+                  group.orders.push(order);
+                  group.totalVolume += volume;
+                  
+                  if (order.status === 'eligible') {
+                    group.eligibleVolume += volume;
+                  } else if (order.status === 'partial') {
+                    // For partial orders, calculate the eligible and ineligible portions
+                    const eligiblePortion = volume * order.volumeCapFraction;
+                    const ineligiblePortion = volume * (1 - order.volumeCapFraction);
+                    group.partialVolume += eligiblePortion;
+                    group.ineligibleVolume += ineligiblePortion;
+                  } else {
+                    group.ineligibleVolume += volume;
+                  }
+                });
+
+                return Array.from(priceGroups.values()).map((group, index) => {
+                  const priceRatio = group.price / mcPrice;
+                  const xPosition = Math.max(0, Math.min(100, (priceRatio - 0.90) / 0.20 * 100));
+                  const maxHeight = 100; // Maximum height in pixels
+                  const volumeScale = 50; // Scale factor for volume to pixels
+                  
+                  // Calculate heights for each segment
+                  const totalHeight = Math.min(group.totalVolume / volumeScale, maxHeight);
+                  
+                  return (
+                    <div
+                      key={`sell-stack-${group.price}`}
+                      className="absolute"
+                      style={{
+                        left: `${xPosition}%`,
+                        bottom: '0',
+                        transform: 'translateX(-50%)'
+                      }}
+                    >
+                      {/* Stacked bar sitting on the axis */}
+                      <div 
+                        className="absolute w-10"
+                        style={{
+                          height: `${totalHeight}px`,
+                          bottom: '0'
+                        }}
+                      >
+                        {/* Eligible portion (bottom) */}
+                        {group.eligibleVolume > 0 && (
+                          <div 
+                            className="absolute bottom-0 left-0 right-0 bg-green-500"
+                            style={{ height: `${(group.eligibleVolume / group.totalVolume) * 100}%` }}
+                            title={`Eligible: ${group.eligibleVolume.toFixed(2)} MC`}
+                          >
+                            {group.eligibleVolume > 100 && (
+                              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-xs text-white font-semibold">
+                                {group.eligibleVolume >= 1000 ? `${(group.eligibleVolume/1000).toFixed(1)}k` : group.eligibleVolume.toFixed(0)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Partial portion (middle) */}
+                        {group.partialVolume > 0 && (
+                          <div 
+                            className="absolute left-0 right-0 bg-yellow-500"
+                            style={{ 
+                              bottom: `${(group.eligibleVolume / group.totalVolume) * 100}%`,
+                              height: `${(group.partialVolume / group.totalVolume) * 100}%` 
+                            }}
+                            title={`Partial: ${group.partialVolume.toFixed(2)} MC`}
+                          />
+                        )}
+                        
+                        {/* Ineligible portion (top) */}
+                        {group.ineligibleVolume > 0 && (
+                          <div 
+                            className="absolute top-0 left-0 right-0 bg-red-500"
+                            style={{ height: `${(group.ineligibleVolume / group.totalVolume) * 100}%` }}
+                            title={`Ineligible: ${group.ineligibleVolume.toFixed(2)} MC`}
+                          />
+                        )}
+                        
+                        {/* Priority number on top */}
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-gray-700 rounded-full w-5 h-5 flex items-center justify-center">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Total volume label above bar */}
+                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-300 font-semibold whitespace-nowrap">
+                          {group.totalVolume >= 1000 ? `${(group.totalVolume/1000).toFixed(1)}k` : group.totalVolume.toFixed(0)} MC
+                        </div>
+                      </div>
+                      
+                      {/* Price indicator at base */}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-500 border border-orange-600 rounded-sm"></div>
-            <span className="text-gray-400">Sell (Partial)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-600 border border-gray-700 rounded-sm"></div>
-            <span className="text-gray-400">Ineligible</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-3 bg-blue-500"></div>
-            <span className="text-gray-400">Current Price</span>
+          
+          {/* Important note about sell rewards */}
+          <div className="mt-3 p-2 bg-yellow-900/20 border border-yellow-500/30 rounded text-xs text-yellow-400">
+            ⚠️ Important: Sell orders only receive LC rewards when placed at or below market price due to the negative deviation tier system.
           </div>
         </div>
         
-        <div className="text-xs font-semibold text-gray-300 mt-3">Price Range Colors:</div>
-        <div className="flex items-center gap-3 text-xs flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-2 bg-green-500"></div>
-            <span className="text-gray-400">Eligible Range</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-2 bg-yellow-500"></div>
-            <span className="text-gray-400">Partial Range</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-2 bg-red-500"></div>
-            <span className="text-gray-400">Ineligible Range</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-2 bg-gradient-to-r from-green-500 to-yellow-500"></div>
-            <span className="text-gray-400">Mixed Status</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-2 bg-gray-700"></div>
-            <span className="text-gray-400">No Orders</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Price Range Information */}
-      <div className="mt-6 grid grid-cols-2 gap-6">
-        {/* Buy Side Ranges */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-300 mb-3">Buy Order Status by Price</h4>
-          <div className="space-y-3 text-xs">
-            {(() => {
-              // Group buy orders by price
-              const buyOrders = processedOrders.filter(o => o.isBuy).sort((a, b) => b.price - a.price);
-              const priceGroups = new Map();
+        {sellOrdersProcessed.length === 0 ? (
+          <div className="text-center text-gray-400 py-4">No sell orders</div>
+        ) : (
+          <div className="space-y-3">
+            {/* Current market price reference */}
+            <div className="text-sm text-gray-400 mb-2">
+              Current MC Price: ${mcPrice.toFixed(6)}
+            </div>
+            
+            {/* Sell orders list */}
+            {sellOrdersProcessed.map((order, index) => {
+              const pricePercentFromMarket = ((order.price - mcPrice) / mcPrice) * 100;
+              const volume = order.value / order.price;
               
-              buyOrders.forEach(order => {
-                const price = order.price.toFixed(6);
-                if (!priceGroups.has(price)) {
-                  priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
-                }
-                priceGroups.get(price)[(order as any).status]++;
-              });
-              
-              return Array.from(priceGroups.entries()).map(([price, counts]) => (
-                <div key={price} className="border-l-2 border-gray-700 pl-3">
-                  <div className="font-mono text-gray-200 mb-1">${price}</div>
-                  {counts.eligible > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded"></div>
-                      <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
+              return (
+                <div key={`sell-${order.orderId}`} className={`p-3 rounded-lg border ${
+                  order.status === 'eligible' ? 'bg-green-900/20 border-green-500/30' :
+                  order.status === 'partial' ? 'bg-yellow-900/20 border-yellow-500/30' :
+                  'bg-red-900/20 border-red-500/30'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-white">
+                        ${order.price.toFixed(6)} ({pricePercentFromMarket > 0 ? '+' : ''}{pricePercentFromMarket.toFixed(1)}% from market)
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        Volume: {volume.toFixed(2)} MC • Value: ${order.value.toFixed(2)}
+                      </div>
                     </div>
-                  )}
-                  {counts.partial > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded"></div>
-                      <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
+                    <div className={`text-xs px-2 py-1 rounded ${
+                      order.status === 'eligible' ? 'bg-green-600/30 text-green-400' :
+                      order.status === 'partial' ? 'bg-yellow-600/30 text-yellow-400' :
+                      'bg-red-600/30 text-red-400'
+                    }`}>
+                      {order.status === 'eligible' ? '✓ Full Rewards' :
+                       order.status === 'partial' ? `${(order.volumeCapFraction * 100).toFixed(0)}% Rewards` :
+                       '✗ No Rewards'}
                     </div>
-                  )}
-                  {counts.ineligible > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 rounded"></div>
-                      <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              ));
-            })()}
-            {processedOrders.filter(o => o.isBuy).length === 0 && (
-              <div className="text-gray-500">No buy orders</div>
-            )}
+              );
+            })}
+            
+            {/* Suggestions for optimal placement */}
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-2">💡 Suggested Sell Levels for Rewards:</h4>
+              <div className="space-y-1 text-sm text-gray-300">
+                {(() => {
+                  const suggestions = [];
+                  if (mcPrice > 0) {
+                    // Since we only have negative deviations, sell orders get rewards when at or below market
+                    suggestions.push(`• $${mcPrice.toFixed(6)} - At market (Tier 1) - Eligible for rewards`);
+                    suggestions.push(`• $${(mcPrice * 0.97).toFixed(6)} - 3% below market (Tier 2) - Higher tier rewards`);
+                    suggestions.push(`• Note: Sell orders above market price are not eligible for LC rewards`);
+                  }
+                  return suggestions.map((s, i) => <div key={i}>{s}</div>);
+                })()}
+              </div>
+            </div>
           </div>
-        </div>
-        
-        {/* Sell Side Ranges */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-300 mb-3">Sell Order Status by Price</h4>
-          <div className="space-y-3 text-xs">
-            {(() => {
-              // Group sell orders by price
-              const sellOrders = processedOrders.filter(o => !o.isBuy).sort((a, b) => a.price - b.price);
-              const priceGroups = new Map();
-              
-              sellOrders.forEach(order => {
-                const price = order.price.toFixed(6);
-                if (!priceGroups.has(price)) {
-                  priceGroups.set(price, { eligible: 0, partial: 0, ineligible: 0 });
-                }
-                priceGroups.get(price)[(order as any).status]++;
-              });
-              
-              return Array.from(priceGroups.entries()).map(([price, counts]) => (
-                <div key={price} className="border-l-2 border-gray-700 pl-3">
-                  <div className="font-mono text-gray-200 mb-1">${price}</div>
-                  {counts.eligible > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded"></div>
-                      <span className="text-gray-400">{counts.eligible} eligible order{counts.eligible > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                  {counts.partial > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded"></div>
-                      <span className="text-gray-400">{counts.partial} partial order{counts.partial > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                  {counts.ineligible > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 rounded"></div>
-                      <span className="text-gray-400">{counts.ineligible} ineligible order{counts.ineligible > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                </div>
-              ));
-            })()}
-            {processedOrders.filter(o => !o.isBuy).length === 0 && (
-              <div className="text-gray-500">No sell orders</div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
-      </>
-      )}
-    </div>
+    </>
   );
 };
 

@@ -498,6 +498,7 @@ export const DEXPage: React.FC = () => {
         {/* LC Price Information */}
         <LCPriceDisplay />
 
+
         {/* Liquidity Terms and Information */}
         <div className="bg-gray-800 rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4">📊 Liquidity Provider Information</h2>
@@ -646,10 +647,10 @@ export const DEXPage: React.FC = () => {
                     
                     // Calculate tier thresholds and volumes
                     const sellTiers = [
-                      { tier: 1, desc: "At market price", threshold: marketPrice, cap: 0.01, premium: 0 },
-                      { tier: 2, desc: "3% above market", threshold: marketPrice * 1.03, cap: 0.03, premium: 3 },
-                      { tier: 3, desc: "8% above market", threshold: marketPrice * 1.08, cap: 0.04, premium: 8 },
-                      { tier: 4, desc: "12% above market", threshold: marketPrice * 1.12, cap: 0.05, premium: 12 }
+                      { tier: 1, desc: "At market price", threshold: marketPrice, cap: 0.01, discount: 0 },
+                      { tier: 2, desc: "3% below market", threshold: marketPrice * 0.97, cap: 0.03, discount: 3 },
+                      { tier: 3, desc: "8% below market", threshold: marketPrice * 0.92, cap: 0.04, discount: 8 },
+                      { tier: 4, desc: "12% below market", threshold: marketPrice * 0.88, cap: 0.05, discount: 12 }
                     ];
                     
                     return sellTiers.map(tier => {
@@ -659,11 +660,12 @@ export const DEXPage: React.FC = () => {
                         const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
                         
                         // Check if order falls in this tier's price range
-                        const minPrice = tier.threshold;
-                        const nextTier = tier.tier < 4 ? sellTiers[tier.tier] : null;
-                        const maxPrice = nextTier ? nextTier.threshold : Infinity;
+                        // For sell orders with negative deviation, check if price is at or below threshold
+                        const maxPrice = tier.threshold;
+                        const prevTier = tier.tier > 1 ? sellTiers[tier.tier - 2] : null;
+                        const minPrice = prevTier ? prevTier.threshold : 0;
                         
-                        if (orderPrice >= minPrice && orderPrice < maxPrice) {
+                        if (orderPrice <= maxPrice && orderPrice > minPrice) {
                           return sum + (remaining / 1000000);
                         }
                         return sum;
