@@ -152,6 +152,25 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 		os.Stderr.WriteString(fmt.Sprintf("DEX: BeginBlock called at height %d\n", sdkCtx.BlockHeight()))
 	}
 	
+	// One-time matching of existing crossed orders
+	// This is needed because orders created before matching implementation won't match
+	// Check if fix has been applied by looking for a specific key in state
+	fixAppliedKey := []byte("dex_crossed_orders_fix_applied")
+	storeService := am.keeper.GetStoreService()
+	store := storeService.OpenKVStore(ctx)
+	hasKey, err := store.Has(fixAppliedKey)
+	if err == nil && !hasKey {
+		am.keeper.Logger(ctx).Info("Running one-time order matching for existing crossed orders")
+		if err := am.keeper.MatchAllCrossedOrders(ctx); err != nil {
+			am.keeper.Logger(ctx).Error("Failed to match crossed orders", "error", err)
+		} else {
+			// Mark as applied
+			if err := store.Set(fixAppliedKey, []byte{1}); err == nil {
+				am.keeper.Logger(ctx).Info("Crossed orders fix applied successfully")
+			}
+		}
+	}
+	
 	// Initialize on first block if not already initialized
 	// This is a workaround because InitGenesis is not being called by the framework for custom modules
 	if sdkCtx.BlockHeight() == 1 {
@@ -284,6 +303,14 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 func (am AppModule) EndBlock(ctx context.Context) error {
+	am.keeper.Logger(ctx).Info("DEX EndBlock called")
+	
+	// Match all crossed orders
+	if err := am.keeper.MatchAllCrossedOrders(ctx); err != nil {
+		// Log error but don't halt the chain
+		am.keeper.Logger(ctx).Error("failed to match crossed orders", "error", err)
+	}
+	
 	// Burn all collected fees at the end of each block
 	if err := am.keeper.BurnCollectedFees(ctx); err != nil {
 		// Log error but don't halt the chain

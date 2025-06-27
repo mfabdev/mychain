@@ -118,6 +118,11 @@ func (k *Keeper) SetTransactionKeeper(tk types.TransactionKeeper) {
 	k.transactionKeeper = tk
 }
 
+// GetStoreService returns the store service
+func (k Keeper) GetStoreService() corestore.KVStoreService {
+	return k.storeService
+}
+
 // GetTransactionKeeper returns the transaction keeper
 func (k Keeper) GetTransactionKeeper() types.TransactionKeeper {
 	return k.transactionKeeper
