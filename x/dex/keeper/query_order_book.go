@@ -30,9 +30,9 @@ func (q queryServer) OrderBook(ctx context.Context, req *types.QueryOrderBookReq
 			return false, nil
 		}
 
-		// Skip fully filled orders
+		// Skip fully filled orders (including overfilled due to bug)
 		remaining := order.Amount.Amount.Sub(order.FilledAmount.Amount)
-		if remaining.IsZero() {
+		if remaining.IsZero() || remaining.IsNegative() {
 			return false, nil
 		}
 

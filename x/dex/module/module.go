@@ -305,6 +305,24 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 func (am AppModule) EndBlock(ctx context.Context) error {
 	am.keeper.Logger(ctx).Info("DEX EndBlock called")
 	
+	// One-time fix for order 18 - run again with v2 key
+	// Check if fix has been applied
+	fixAppliedKey := []byte("order_18_fix_applied_v2")
+	storeService := am.keeper.GetStoreService()
+	store := storeService.OpenKVStore(ctx)
+	hasKey, err := store.Has(fixAppliedKey)
+	if err == nil && !hasKey {
+		am.keeper.Logger(ctx).Info("Running one-time fix for order 18 (v2)")
+		if err := am.keeper.FixOrder18(ctx); err != nil {
+			am.keeper.Logger(ctx).Error("failed to fix order 18", "error", err)
+		} else {
+			// Mark as applied
+			if err := store.Set(fixAppliedKey, []byte{1}); err == nil {
+				am.keeper.Logger(ctx).Info("Order 18 fix applied successfully (v2)")
+			}
+		}
+	}
+	
 	// Match all crossed orders
 	if err := am.keeper.MatchAllCrossedOrders(ctx); err != nil {
 		// Log error but don't halt the chain

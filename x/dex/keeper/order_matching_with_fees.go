@@ -117,9 +117,8 @@ func (k Keeper) ExecuteOrderWithFees(ctx context.Context, buyOrder, sellOrder *t
 		)
 	}
 	
-	// Update order filled amounts
-	buyOrder.FilledAmount.Amount = buyOrder.FilledAmount.Amount.Add(matchAmount)
-	sellOrder.FilledAmount.Amount = sellOrder.FilledAmount.Amount.Add(matchAmount)
+	// Don't update filled amounts here - they are updated in MatchOrder after this function returns
+	// to avoid double counting
 	
 	// Update orders in state
 	if err := k.Orders.Set(ctx, buyOrder.Id, *buyOrder); err != nil {
@@ -194,9 +193,8 @@ func (k Keeper) ExecuteOrderNoFees(ctx context.Context, buyOrder, sellOrder *typ
 		return err
 	}
 	
-	// Update filled amounts
-	buyOrder.FilledAmount.Amount = buyOrder.FilledAmount.Amount.Add(matchAmount)
-	sellOrder.FilledAmount.Amount = sellOrder.FilledAmount.Amount.Add(matchAmount)
+	// Don't update filled amounts here - they are updated in MatchOrder after this function returns
+	// to avoid double counting
 	
 	return nil
 }

@@ -97,6 +97,19 @@ message PriceReference {
   int64 last_updated = 3;
 }
 
+// Trade represents an executed trade
+message Trade {
+  uint64 id = 1;
+  uint64 pair_id = 2;
+  uint64 buy_order_id = 3;
+  uint64 sell_order_id = 4;
+  string buyer = 5;
+  string seller = 6;
+  cosmos.base.v1beta1.Coin price = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin amount = 8 [(gogoproto.nullable) = false];
+  int64 executed_at = 9;
+}
+
 // UserReward contains user LC rewards summary
 message UserReward {
   string address = 1;

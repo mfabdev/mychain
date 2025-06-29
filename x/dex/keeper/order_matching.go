@@ -7,6 +7,7 @@ import (
 
 	"mychain/x/dex/types"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -130,6 +131,15 @@ func (k Keeper) MatchOrder(ctx context.Context, order types.Order) error {
 			break
 		}
 		
+		// Reload the opposite order to get the latest filled amount
+		// This is crucial because the order might have been updated in a previous iteration
+		currentOpposite, err := k.Orders.Get(ctx, oppositeOrder.Id)
+		if err != nil {
+			k.Logger(ctx).Error("Failed to reload opposite order", "order_id", oppositeOrder.Id, "error", err)
+			continue
+		}
+		oppositeOrder = currentOpposite
+		
 		// Calculate how much can be matched
 		oppositeRemaining := oppositeOrder.Amount.Amount.Sub(oppositeOrder.FilledAmount.Amount)
 		matchAmount := math.MinInt(remainingToFill, oppositeRemaining)
@@ -157,6 +167,37 @@ func (k Keeper) MatchOrder(ctx context.Context, order types.Order) error {
 		if err != nil {
 			k.Logger(ctx).Error("Failed to execute trade", "error", err, "buy_order", buyOrder.Id, "sell_order", sellOrder.Id)
 			continue
+		}
+		
+		// Record the trade
+		tradeID, err := k.NextTradeID.Next(ctx)
+		if err != nil {
+			k.Logger(ctx).Error("Failed to get next trade ID", "error", err)
+			continue
+		}
+		
+		trade := types.Trade{
+			Id:          tradeID,
+			PairId:      order.PairId,
+			BuyOrderId:  buyOrder.Id,
+			SellOrderId: sellOrder.Id,
+			Buyer:       buyOrder.Maker,
+			Seller:      sellOrder.Maker,
+			Price:       oppositeOrder.Price, // Use the matched order's price
+			Amount:      sdk.NewCoin(order.Amount.Denom, matchAmount),
+			ExecutedAt:  sdkCtx.BlockTime().Unix(),
+		}
+		
+		err = k.Trades.Set(ctx, tradeID, trade)
+		if err != nil {
+			k.Logger(ctx).Error("Failed to save trade", "error", err, "trade_id", tradeID)
+			// Continue processing even if trade recording fails
+		}
+		
+		// Add to pair trades index
+		err = k.PairTrades.Set(ctx, collections.Join(order.PairId, tradeID), tradeID)
+		if err != nil {
+			k.Logger(ctx).Error("Failed to save pair trade index", "error", err)
 		}
 		
 		// Update filled amounts

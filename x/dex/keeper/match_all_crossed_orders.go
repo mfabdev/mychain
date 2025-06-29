@@ -63,18 +63,31 @@ func (k Keeper) MatchAllCrossedOrders(ctx context.Context) error {
 		
 		// Check each buy order against each sell order
 		for _, buyOrder := range buyOrders {
+			// Reload buy order to get latest state
+			currentBuy, err := k.Orders.Get(ctx, buyOrder.Id)
+			if err != nil {
+				k.Logger(ctx).Error("Failed to reload buy order", "order_id", buyOrder.Id, "error", err)
+				continue
+			}
+			
+			// Skip if fully filled
+			buyRemaining := currentBuy.Amount.Amount.Sub(currentBuy.FilledAmount.Amount)
+			if buyRemaining.IsZero() || buyRemaining.IsNegative() {
+				continue
+			}
+			
 			for _, sellOrder := range sellOrders {
 				// Check if prices cross (buy price >= sell price)
-				if buyOrder.Price.Amount.GTE(sellOrder.Price.Amount) {
+				if currentBuy.Price.Amount.GTE(sellOrder.Price.Amount) {
 					k.Logger(ctx).Info("Found crossed orders",
-						"buy_order_id", buyOrder.Id,
-						"buy_price", buyOrder.Price.Amount,
+						"buy_order_id", currentBuy.Id,
+						"buy_price", currentBuy.Price.Amount,
 						"sell_order_id", sellOrder.Id,
 						"sell_price", sellOrder.Price.Amount,
 					)
 					
-					// Match this specific buy order
-					if err := k.MatchOrder(ctx, buyOrder); err != nil {
+					// Match this specific buy order (use currentBuy which has latest state)
+					if err := k.MatchOrder(ctx, currentBuy); err != nil {
 						k.Logger(ctx).Error("Failed to match order", 
 							"order_id", buyOrder.Id,
 							"error", err,

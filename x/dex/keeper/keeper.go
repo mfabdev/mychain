@@ -37,10 +37,13 @@ type Keeper struct {
 	PriceReferences  collections.Map[uint64, types.PriceReference]
 	LCTotalSupply    collections.Item[math.Int]
 	DynamicRewardState collections.Item[types.DynamicRewardState]
+	NextTradeID      collections.Sequence
+	Trades           collections.Map[uint64, types.Trade]
 	
 	// Indexes
 	UserOrders       collections.Map[collections.Pair[string, uint64], uint64] // (user, orderID) -> orderID
 	PairOrders       collections.Map[collections.Pair[uint64, uint64], uint64] // (pairID, orderID) -> orderID
+	PairTrades       collections.Map[collections.Pair[uint64, uint64], uint64] // (pairID, tradeID) -> tradeID
 	
 	// Expected keepers
 	authKeeper types.AuthKeeper
@@ -89,8 +92,11 @@ func NewKeeper(
 		PriceReferences: collections.NewMap(sb, types.PriceReferencesKey, "price_references", collections.Uint64Key, codec.CollValue[types.PriceReference](cdc)),
 		LCTotalSupply:      collections.NewItem(sb, types.LCTotalSupplyKey, "lc_total_supply", sdk.IntValue),
 		DynamicRewardState: collections.NewItem(sb, types.DynamicRewardStateKey, "dynamic_reward_state", codec.CollValue[types.DynamicRewardState](cdc)),
+		NextTradeID:        collections.NewSequence(sb, types.NextTradeIDKey, "next_trade_id"),
+		Trades:             collections.NewMap(sb, types.TradesKey, "trades", collections.Uint64Key, codec.CollValue[types.Trade](cdc)),
 		UserOrders:         collections.NewMap(sb, types.UserOrdersKey, "user_orders", collections.PairKeyCodec(collections.StringKey, collections.Uint64Key), collections.Uint64Value),
 		PairOrders:         collections.NewMap(sb, types.PairOrdersKey, "pair_orders", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.Uint64Value),
+		PairTrades:         collections.NewMap(sb, types.PairTradesKey, "pair_trades", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), collections.Uint64Value),
 	}
 
 	schema, err := sb.Build()

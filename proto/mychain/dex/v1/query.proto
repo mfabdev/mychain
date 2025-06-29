@@ -73,6 +73,11 @@ service Query {
   rpc AllOrderRewards(QueryAllOrderRewardsRequest) returns (QueryAllOrderRewardsResponse) {
     option (google.api.http).get = "/mychain/dex/v1/all_order_rewards";
   }
+  
+  // Trades queries recent trades
+  rpc Trades(QueryTradesRequest) returns (QueryTradesResponse) {
+    option (google.api.http).get = "/mychain/dex/v1/trades";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -320,4 +325,17 @@ message QueryAllOrderRewardsRequest {
 // QueryAllOrderRewardsResponse is response for AllOrderRewards
 message QueryAllOrderRewardsResponse {
   repeated OrderRewardInfo rewards = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryTradesRequest is request for Trades
+message QueryTradesRequest {
+  // Optional: filter by specific trading pair
+  uint64 pair_id = 1;
+  // Optional: limit number of results (default 100, max 1000)
+  uint32 limit = 2;
+}
+
+// QueryTradesResponse is response for Trades
+message QueryTradesResponse {
+  repeated Trade trades = 1 [(gogoproto.nullable) = false];
 }

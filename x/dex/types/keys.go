@@ -30,4 +30,7 @@ var (
 	UserOrdersKey         = collections.NewPrefix(10) // "user_orders"
 	PairOrdersKey         = collections.NewPrefix(11) // "pair_orders"
 	DynamicRewardStateKey = collections.NewPrefix(12) // "dynamic_reward_state"
+	NextTradeIDKey        = collections.NewPrefix(13) // "next_trade_id"
+	TradesKey             = collections.NewPrefix(14) // "trades"
+	PairTradesKey         = collections.NewPrefix(15) // "pair_trades"
 )

@@ -48,10 +48,12 @@ export const DEXPage: React.FC = () => {
   const [isCancellingOrder, setIsCancellingOrder] = useState(false);
   const [cancelStatus, setCancelStatus] = useState<string>('');
   const [manualOrders, setManualOrders] = useState<any[]>([]);
+  const [recentTrades, setRecentTrades] = useState<any[]>([]);
   const [userBalances, setUserBalances] = useState<any>(null);
   const [dexParams, setDexParams] = useState<any>(null);
   const [mcSupply, setMcSupply] = useState<string>('0');
   const [mcMarketPrice, setMcMarketPrice] = useState<number>(0.0001);
+  const [lastTradePrice, setLastTradePrice] = useState<number | null>(null);
   const [validationWarning, setValidationWarning] = useState<string>('');
   const [currentAPR, setCurrentAPR] = useState<number>(100); // Default to 100% APR
 
@@ -218,12 +220,14 @@ export const DEXPage: React.FC = () => {
         // Transform orders into display format
         const transformOrder = (order: any) => {
           const priceValue = parseFloat(order.price?.amount || '0') / 1000000;
-          const amountValue = parseFloat(order.amount?.amount || '0') / 1000000;
-          const totalValue = priceValue * amountValue;
+          const originalAmount = parseFloat(order.amount?.amount || '0');
+          const filledAmount = parseFloat(order.filled_amount?.amount || '0');
+          const remainingAmount = (originalAmount - filledAmount) / 1000000;
+          const totalValue = priceValue * remainingAmount;
           
           return {
             price: priceValue.toFixed(6),
-            amount: amountValue.toFixed(6),
+            amount: remainingAmount.toFixed(6),
             total: totalValue.toFixed(6)
           };
         };
@@ -252,6 +256,22 @@ export const DEXPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch user rewards:', error);
+      }
+      
+      // Fetch recent trades
+      try {
+        const tradesResponse = await fetchAPI(`/mychain/dex/v1/trades?pair_id=${selectedPair}&limit=20`);
+        if (tradesResponse && tradesResponse.trades) {
+          setRecentTrades(tradesResponse.trades);
+          // Update last trade price if there are trades
+          if (tradesResponse.trades.length > 0) {
+            const lastTrade = tradesResponse.trades[0]; // Most recent trade
+            const lastPrice = parseFloat(lastTrade.price.amount) / 1000000;
+            setLastTradePrice(lastPrice);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch trades:', error);
       }
       
       setLoading(false);
@@ -1020,7 +1040,9 @@ export const DEXPage: React.FC = () => {
 
               {/* Current Price */}
               <div className="text-center py-2 border-y border-gray-600">
-                <div className="text-lg font-bold text-yellow-400">0.000100</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {lastTradePrice ? lastTradePrice.toFixed(6) : 'No trades yet'}
+                </div>
                 <div className="text-xs text-gray-500">Last Price</div>
               </div>
 
@@ -1050,16 +1072,41 @@ export const DEXPage: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">Recent Trades</h2>
             
             <div className="space-y-1">
-              <div className="grid grid-cols-3 text-xs text-gray-400 mb-2">
+              <div className="grid grid-cols-4 text-xs text-gray-400 mb-2">
                 <div>Price</div>
                 <div>Amount</div>
+                <div>Type</div>
                 <div>Time</div>
               </div>
               
-              {/* No trades yet */}
-              <div className="text-center text-gray-500 text-sm py-4">
-                No trades executed yet
-              </div>
+              {recentTrades && recentTrades.length > 0 ? (
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {recentTrades.map((trade, index) => {
+                    const price = parseFloat(trade.price.amount) / 1000000;
+                    const amount = parseFloat(trade.amount.amount) / 1000000;
+                    const isBuyerTaker = trade.buy_order_id > trade.sell_order_id;
+                    const timestamp = new Date(parseInt(trade.executed_at) * 1000);
+                    const timeStr = timestamp.toLocaleTimeString();
+                    
+                    return (
+                      <div key={index} className="grid grid-cols-4 text-xs hover:bg-gray-700/50 rounded px-1 py-1">
+                        <div className={isBuyerTaker ? 'text-green-400' : 'text-red-400'}>
+                          {price.toFixed(6)}
+                        </div>
+                        <div>{amount.toFixed(2)}</div>
+                        <div className={isBuyerTaker ? 'text-green-400' : 'text-red-400'}>
+                          {isBuyerTaker ? 'Buy' : 'Sell'}
+                        </div>
+                        <div className="text-gray-500">{timeStr}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 text-sm py-4">
+                  No trades executed yet
+                </div>
+              )}
             </div>
           </div>
         </div>
