@@ -226,10 +226,10 @@ export const OrderPlacementGuide: React.FC = () => {
   // Calculate bonus tier prices
   const currentSpread = bestAsk !== Infinity && bestBid > 0 ? bestAsk - bestBid : 0;
   const buyBonusTiers = bestAsk !== Infinity && bestBid > 0 ? [
-    { multiplier: '1.1x', reduction: '5-24%', price: bestBid + currentSpread * 0.95 },
-    { multiplier: '1.3x', reduction: '25-49%', price: bestBid + currentSpread * 0.75 },
+    { multiplier: '2.0x', reduction: '75%+', price: bestBid + currentSpread * 0.75 },
     { multiplier: '1.5x', reduction: '50-74%', price: bestBid + currentSpread * 0.50 },
-    { multiplier: '2.0x', reduction: '75%+', price: bestBid + currentSpread * 0.25 }
+    { multiplier: '1.3x', reduction: '25-49%', price: bestBid + currentSpread * 0.25 },
+    { multiplier: '1.1x', reduction: '5-24%', price: bestBid + currentSpread * 0.05 }
   ] : [];
   
   const sellBonusTiers = [
@@ -249,8 +249,9 @@ export const OrderPlacementGuide: React.FC = () => {
       if (price <= bestBid) return '-';
       
       // Check which tier this price falls into by comparing with tier prices
-      // Start from the highest multiplier (lowest price) and work up
-      for (let i = buyBonusTiers.length - 1; i >= 0; i--) {
+      // For buy orders: higher price = higher bonus
+      // Tiers are ordered from highest bonus to lowest, so check in order
+      for (let i = 0; i < buyBonusTiers.length; i++) {
         const tier = buyBonusTiers[i];
         if (price >= tier.price) {
           return tier.multiplier;
