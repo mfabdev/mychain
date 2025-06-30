@@ -296,7 +296,7 @@ export const OrderPlacementGuide: React.FC = () => {
                     <div className="font-mono text-green-400">
                       Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.25).toFixed(6) : '---'}
                     </div>
-                    {bestAsk !== Infinity && orderType === 'buy' && price >= (bestAsk - (bestAsk - bestBid) * 0.25) && (
+                    {bestAsk !== Infinity && orderType === 'buy' && parseFloat(userPrice) >= (bestAsk - (bestAsk - bestBid) * 0.25) && (
                       <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
                     )}
                   </div>
@@ -310,8 +310,8 @@ export const OrderPlacementGuide: React.FC = () => {
                       Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.50).toFixed(6) : '---'}
                     </div>
                     {bestAsk !== Infinity && orderType === 'buy' && 
-                     price >= (bestAsk - (bestAsk - bestBid) * 0.50) && 
-                     price < (bestAsk - (bestAsk - bestBid) * 0.25) && (
+                     parseFloat(userPrice) >= (bestAsk - (bestAsk - bestBid) * 0.50) && 
+                     parseFloat(userPrice) < (bestAsk - (bestAsk - bestBid) * 0.25) && (
                       <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
                     )}
                   </div>
@@ -350,7 +350,7 @@ export const OrderPlacementGuide: React.FC = () => {
                     <div className="font-mono text-red-400">
                       Price needed: ${(avgAsk * 1.5).toFixed(6)}
                     </div>
-                    {orderType === 'sell' && price >= avgAsk * 1.5 && (
+                    {orderType === 'sell' && parseFloat(userPrice) >= avgAsk * 1.5 && (
                       <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
                     )}
                   </div>
@@ -363,7 +363,7 @@ export const OrderPlacementGuide: React.FC = () => {
                     <div className="font-mono text-red-400">
                       Price needed: ${(avgAsk * 1.2).toFixed(6)}
                     </div>
-                    {orderType === 'sell' && price >= avgAsk * 1.2 && price < avgAsk * 1.5 && (
+                    {orderType === 'sell' && parseFloat(userPrice) >= avgAsk * 1.2 && parseFloat(userPrice) < avgAsk * 1.5 && (
                       <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
                     )}
                   </div>
