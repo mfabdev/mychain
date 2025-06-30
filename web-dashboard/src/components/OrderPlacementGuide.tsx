@@ -958,8 +958,8 @@ export const OrderPlacementGuide: React.FC = () => {
                           }
                         }
                         
-                        // Show more orders for better context
-                        const ordersToShow = 5;
+                        // Show more orders for better context (increased to show all bonus tiers)
+                        const ordersToShow = 10;
                         
                         // Get all unique prices including bonus thresholds
                         const priceSet = new Set(orders.map((o: any) => o.price));
@@ -1219,8 +1219,34 @@ export const OrderPlacementGuide: React.FC = () => {
                                           <span className="w-24 text-yellow-400 font-bold">${priceLevel.toFixed(6)}</span>
                                           <span className="w-12 text-center text-yellow-400 font-bold">{bonusTier.multiplier}</span>
                                           <span className="w-12 text-center text-gray-500">-</span>
-                                          <span className="w-16 text-right text-gray-500">-</span>
-                                          <span className="w-16 text-right text-gray-500">-</span>
+                                          <span className="w-16 text-right text-gray-400 text-xs" title="Total MC at or above this price">
+                                            {(() => {
+                                              // Calculate total MC up to this threshold
+                                              let totalMC = 0;
+                                              for (const order of sortedOrders) {
+                                                if (orderType === 'buy' && order.price >= priceLevel) {
+                                                  totalMC += order.amount;
+                                                } else if (orderType === 'sell' && order.price <= priceLevel) {
+                                                  totalMC += order.amount;
+                                                }
+                                              }
+                                              return totalMC > 0 ? `≤${totalMC.toFixed(0)}` : '-';
+                                            })()}
+                                          </span>
+                                          <span className="w-16 text-right text-gray-400 text-xs" title="Total value at or above this price">
+                                            {(() => {
+                                              // Calculate total value up to this threshold
+                                              let totalValue = 0;
+                                              for (const order of sortedOrders) {
+                                                if (orderType === 'buy' && order.price >= priceLevel) {
+                                                  totalValue += order.value;
+                                                } else if (orderType === 'sell' && order.price <= priceLevel) {
+                                                  totalValue += order.value;
+                                                }
+                                              }
+                                              return totalValue > 0 ? `≤$${totalValue.toFixed(2)}` : '-';
+                                            })()}
+                                          </span>
                                           <span className="w-16 text-center text-gray-500">-</span>
                                         </div>
                                       )}
