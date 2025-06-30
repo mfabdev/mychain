@@ -1549,72 +1549,19 @@ export const OrderPlacementGuide: React.FC = () => {
                                             })()}
                                           </span>
                                           <span className="w-12 text-center text-gray-500">-</span>
-                                          <span className="w-16 text-right text-gray-400 text-xs" title="Total MC at or above this price">
+                                          <span className="w-16 text-right text-gray-400 text-xs" title="Maximum MC cap at this price">
                                             {(() => {
-                                              // For bonus thresholds, show cumulative totals of orders that would qualify
-                                              let totalMC = 0;
-                                              let totalOrders = 0;
-                                              
-                                              for (const order of sortedOrders) {
-                                                if (orderType === 'buy') {
-                                                  // For buy orders, count all orders at or above this threshold
-                                                  if (order.price >= priceLevel) {
-                                                    totalMC += order.amount;
-                                                    totalOrders++;
-                                                  }
-                                                } else {
-                                                  // For sell orders, count all orders at or below this threshold
-                                                  if (order.price <= priceLevel) {
-                                                    totalMC += order.amount;
-                                                    totalOrders++;
-                                                  }
-                                                }
-                                              }
-                                              
-                                              // If no orders qualify yet, show the total that WOULD qualify at this price
-                                              if (totalOrders === 0) {
-                                                // Count all orders that would move to this price level for the bonus
-                                                for (const order of sortedOrders) {
-                                                  totalMC += order.amount;
-                                                }
-                                                return totalMC > 0 ? `(${totalMC.toFixed(0)})` : '-';
-                                              }
-                                              
-                                              return `≤${totalMC.toFixed(0)}`;
+                                              // For bonus thresholds, show the maximum cap volume
+                                              const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
+                                              const maxMC = volumeCap / priceLevel;
+                                              return maxMC.toFixed(0);
                                             })()}
                                           </span>
-                                          <span className="w-16 text-right text-gray-400 text-xs" title="Total value at or above this price">
+                                          <span className="w-16 text-right text-gray-400 text-xs" title="Maximum volume cap">
                                             {(() => {
-                                              // For bonus thresholds, show cumulative totals of orders that would qualify
-                                              let totalValue = 0;
-                                              let totalOrders = 0;
-                                              
-                                              for (const order of sortedOrders) {
-                                                if (orderType === 'buy') {
-                                                  // For buy orders, count all orders at or above this threshold
-                                                  if (order.price >= priceLevel) {
-                                                    totalValue += order.value;
-                                                    totalOrders++;
-                                                  }
-                                                } else {
-                                                  // For sell orders, count all orders at or below this threshold
-                                                  if (order.price <= priceLevel) {
-                                                    totalValue += order.value;
-                                                    totalOrders++;
-                                                  }
-                                                }
-                                              }
-                                              
-                                              // If no orders qualify yet, show the total that WOULD qualify at this price
-                                              if (totalOrders === 0) {
-                                                // Count all orders that would move to this price level for the bonus
-                                                for (const order of sortedOrders) {
-                                                  totalValue += order.value;
-                                                }
-                                                return totalValue > 0 ? `($${totalValue.toFixed(2)})` : '-';
-                                              }
-                                              
-                                              return `≤$${totalValue.toFixed(2)}`;
+                                              // Show the volume cap in dollars
+                                              const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
+                                              return `$${volumeCap.toFixed(2)}`;
                                             })()}
                                           </span>
                                           <span className="w-16 text-center text-gray-500">-</span>
