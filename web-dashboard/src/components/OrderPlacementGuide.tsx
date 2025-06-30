@@ -223,13 +223,43 @@ export const OrderPlacementGuide: React.FC = () => {
     ? sellOrders.reduce((sum: number, o: OrderBookOrder) => sum + parseFloat(o.price.amount) / 1000000, 0) / sellOrders.length
     : placementData.mcPrice;
   
-  // Calculate bonus tier prices
+  // Calculate bonus tier prices to match blockchain logic
+  // Blockchain calculates: spreadReduction = (currentSpreadPct - newSpreadPct) / currentSpreadPct
+  // where currentSpreadPct = (bestAsk - bestBid) / bestBid
+  // and newSpreadPct = (bestAsk - orderPrice) / orderPrice
   const currentSpread = bestAsk !== Infinity && bestBid > 0 ? bestAsk - bestBid : 0;
+  
+  // Function to calculate price needed for specific spread reduction
+  const calculatePriceForReduction = (reductionTarget: number): number => {
+    if (bestBid === 0) {
+      // If no bid exists, any price creates 100% reduction
+      return bestAsk * (1 - reductionTarget);
+    }
+    
+    // We need to solve for orderPrice where:
+    // reduction = 1 - (newSpreadPct / currentSpreadPct)
+    // reduction = 1 - ((bestAsk - orderPrice) / orderPrice) / ((bestAsk - bestBid) / bestBid)
+    // reduction = 1 - ((bestAsk - orderPrice) * bestBid) / (orderPrice * (bestAsk - bestBid))
+    
+    // After algebraic manipulation:
+    // orderPrice = (bestAsk * bestBid * (1 - reduction)) / (bestBid - reduction * (bestAsk - bestBid))
+    
+    const numerator = bestAsk * bestBid * (1 - reductionTarget);
+    const denominator = bestBid - reductionTarget * (bestAsk - bestBid);
+    
+    if (denominator <= 0) {
+      // This would mean the reduction is impossible
+      return bestAsk * 0.99; // Just below ask
+    }
+    
+    return numerator / denominator;
+  };
+  
   const buyBonusTiers = bestAsk !== Infinity && bestBid > 0 ? [
-    { multiplier: '2.0x', reduction: '75%+', price: bestBid + currentSpread * 0.75 },
-    { multiplier: '1.5x', reduction: '50-74%', price: bestBid + currentSpread * 0.50 },
-    { multiplier: '1.3x', reduction: '25-49%', price: bestBid + currentSpread * 0.25 },
-    { multiplier: '1.1x', reduction: '5-24%', price: bestBid + currentSpread * 0.05 }
+    { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
+    { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
+    { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
+    { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
   ] : [];
   
   const sellBonusTiers = [
@@ -239,24 +269,30 @@ export const OrderPlacementGuide: React.FC = () => {
     { multiplier: '1.1x', above: '0%+', price: avgAsk * 1.00 }
   ];
 
-  // Helper function to get bonus multiplier
+  // Helper function to get bonus multiplier - matches blockchain logic exactly
   const getBonusMultiplier = (price: number, isBuy: boolean): string => {
     if (isBuy) {
       // Buy orders need to tighten spread
-      if (buyBonusTiers.length === 0) return '-';
+      if (bestAsk === Infinity || bestBid === 0) return '-';
       
-      // Only give bonus if price is better than current best bid
+      // Order must be better than current best bid
       if (price <= bestBid) return '-';
       
-      // Check which tier this price falls into by comparing with tier prices
-      // For buy orders: higher price = higher bonus
-      // Tiers are ordered from highest bonus to lowest, so check in order
-      for (let i = 0; i < buyBonusTiers.length; i++) {
-        const tier = buyBonusTiers[i];
-        if (price >= tier.price) {
-          return tier.multiplier;
-        }
-      }
+      // Calculate spread reduction using blockchain formula
+      const currentSpreadPct = (bestAsk - bestBid) / bestBid;
+      const newSpreadPct = (bestAsk - price) / price;
+      const spreadReduction = currentSpreadPct > 0 
+        ? (currentSpreadPct - newSpreadPct) / currentSpreadPct 
+        : 0;
+      
+      // Only apply bonus if reduction is at least 5%
+      if (spreadReduction < 0.05) return '-';
+      
+      // Apply multiplier based on reduction percentage - matches blockchain
+      if (spreadReduction >= 0.75) return '2.0x';
+      if (spreadReduction >= 0.50) return '1.5x';
+      if (spreadReduction >= 0.25) return '1.3x';
+      if (spreadReduction >= 0.05) return '1.1x';
       
       return '-';
     } else {
@@ -264,12 +300,14 @@ export const OrderPlacementGuide: React.FC = () => {
       if (price <= avgAsk) return '-';
       
       // Calculate percentage above average ask
-      const percentAbove = ((price - avgAsk) / avgAsk) * 100;
+      const percentAbove = (price - avgAsk) / avgAsk;
       
-      if (percentAbove >= 10) return '1.5x';
-      if (percentAbove >= 5) return '1.3x';
-      if (percentAbove >= 2) return '1.2x';
+      // Apply multiplier based on how much above average - matches blockchain
+      if (percentAbove >= 0.10) return '1.5x';
+      if (percentAbove >= 0.05) return '1.3x';
+      if (percentAbove >= 0.02) return '1.2x';
       if (percentAbove > 0) return '1.1x';
+      
       return '-';
     }
   };
