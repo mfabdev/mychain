@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { useKeplr } from '../hooks/useKeplr';
 import { DynamicRewardsInfo } from '../components/DynamicRewardsInfo';
+import { OrderPlacementGuide } from '../components/OrderPlacementGuide';
 import { LiquidityPositions } from '../components/LiquidityPositions';
 import { DEXTransactionHistory } from '../components/DEXTransactionHistory';
 import { LCPriceDisplay } from '../components/LCPriceDisplay';
@@ -509,8 +510,8 @@ export const DEXPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Rewards and Spread Incentives Information */}
-        <DynamicRewardsInfo />
+        {/* Order Placement Guide - Shows current APR, volume caps, and optimal placement */}
+        <OrderPlacementGuide />
 
         {/* Spread Incentives and Strategic Bonuses */}
         <SpreadIncentivesInfo />
