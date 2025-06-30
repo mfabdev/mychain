@@ -771,19 +771,37 @@ export const OrderPlacementGuide: React.FC = () => {
                           }
                         }
                         
-                        // Show top 3 orders above and below
-                        const ordersToShow = 3;
-                        const relevantOrders = orderType === 'buy'
-                          ? orders.filter((o: any) => Math.abs(o.price - price) / price < 0.1) // Within 10%
-                          : orders.filter((o: any) => Math.abs(o.price - price) / price < 0.1);
+                        // Show more orders for better context
+                        const ordersToShow = 5;
                         
-                        const aboveOrders = orderType === 'buy'
-                          ? relevantOrders.filter((o: any) => o.price > price).slice(0, ordersToShow)
-                          : relevantOrders.filter((o: any) => o.price < price).slice(0, ordersToShow);
+                        // Get all unique prices
+                        const priceSet = new Set(orders.map((o: any) => o.price));
+                        const uniquePrices = Array.from(priceSet).sort((a, b) => 
+                          orderType === 'buy' ? b - a : a - b
+                        );
                         
-                        const belowOrders = orderType === 'buy'
-                          ? relevantOrders.filter((o: any) => o.price < price).slice(0, ordersToShow).reverse()
-                          : relevantOrders.filter((o: any) => o.price > price).slice(0, ordersToShow).reverse();
+                        // Find where user's price would fit
+                        let userPriceIndex = uniquePrices.findIndex(p => 
+                          orderType === 'buy' ? p <= price : p >= price
+                        );
+                        if (userPriceIndex === -1) userPriceIndex = uniquePrices.length;
+                        
+                        // Get surrounding prices
+                        const startIndex = Math.max(0, userPriceIndex - ordersToShow);
+                        const endIndex = Math.min(uniquePrices.length, userPriceIndex + ordersToShow + 1);
+                        const pricesToShow = uniquePrices.slice(startIndex, endIndex);
+                        
+                        // Group orders by price
+                        const ordersByPrice = new Map();
+                        orders.forEach((o: any) => {
+                          if (!ordersByPrice.has(o.price)) {
+                            ordersByPrice.set(o.price, { count: 0, totalAmount: 0, totalValue: 0 });
+                          }
+                          const group = ordersByPrice.get(o.price);
+                          group.count += 1;
+                          group.totalAmount += o.amount;
+                          group.totalValue += o.value;
+                        });
                         
                         return (
                           <div className="space-y-2">
@@ -799,42 +817,66 @@ export const OrderPlacementGuide: React.FC = () => {
                               </div>
                             </div>
                             
-                            {/* Order visualization */}
-                            <div className="space-y-1 text-xs font-mono">
-                              {/* Orders above */}
-                              {aboveOrders.length > 0 && (
-                                <>
-                                  <div className="text-gray-500 text-center">↑ Higher Priority ↑</div>
-                                  {aboveOrders.map((o: any, i: number) => (
-                                    <div key={i} className="flex justify-between p-1 bg-gray-700/30 rounded">
-                                      <span>${o.price.toFixed(6)}</span>
-                                      <span className="text-gray-400">{o.amount.toFixed(2)} MC</span>
-                                      <span className="text-gray-500">${o.value.toFixed(2)}</span>
+                            {/* Price level visualization */}
+                            <div className="bg-gray-900/50 rounded p-2 mb-2">
+                              <div className="text-xs text-gray-400 mb-2">Price Levels & Order Distribution:</div>
+                              <div className="space-y-1 text-xs font-mono">
+                                {/* Header */}
+                                <div className="flex justify-between text-gray-500 border-b border-gray-700 pb-1">
+                                  <span className="w-24">Price</span>
+                                  <span className="w-16 text-center">Orders</span>
+                                  <span className="w-20 text-right">Total MC</span>
+                                  <span className="w-20 text-right">Value</span>
+                                </div>
+                                
+                                {/* Show prices above */}
+                                {pricesToShow.map((priceLevel: number, i: number) => {
+                                  const isUserPrice = (orderType === 'buy' && priceLevel <= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price)) ||
+                                                     (orderType === 'sell' && priceLevel >= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price));
+                                  const group = ordersByPrice.get(priceLevel);
+                                  
+                                  return (
+                                    <React.Fragment key={priceLevel}>
+                                      {/* Existing orders at this price */}
+                                      {group && (
+                                        <div className="flex justify-between p-1 bg-gray-700/30 rounded hover:bg-gray-700/50 transition-colors">
+                                          <span className="w-24">${priceLevel.toFixed(6)}</span>
+                                          <span className="w-16 text-center text-gray-400">{group.count}</span>
+                                          <span className="w-20 text-right text-gray-400">{group.totalAmount.toFixed(2)}</span>
+                                          <span className="w-20 text-right text-gray-500">${group.totalValue.toFixed(2)}</span>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Insert user's order in the right position */}
+                                      {isUserPrice && (
+                                        <div className="relative">
+                                          <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
+                                          <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
+                                            <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
+                                            <span className="w-16 text-center text-purple-400">NEW</span>
+                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
+                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                
+                                {/* If user price is beyond all shown prices */}
+                                {((orderType === 'buy' && price > Math.max(...pricesToShow, 0)) ||
+                                  (orderType === 'sell' && price < Math.min(...pricesToShow, Infinity))) && (
+                                  <div className="relative">
+                                    <div className="text-center text-gray-500 my-1">...</div>
+                                    <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded">
+                                      <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
+                                      <span className="w-16 text-center text-purple-400">NEW</span>
+                                      <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
+                                      <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
                                     </div>
-                                  ))}
-                                </>
-                              )}
-                              
-                              {/* Your order */}
-                              <div className="flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded">
-                                <span className="text-purple-400">→ ${price.toFixed(6)}</span>
-                                <span className="text-purple-400">{(amount / price).toFixed(2)} MC</span>
-                                <span className="text-purple-400 font-bold">${amount.toFixed(2)} (YOU)</span>
+                                  </div>
+                                )}
                               </div>
-                              
-                              {/* Orders below */}
-                              {belowOrders.length > 0 && (
-                                <>
-                                  {belowOrders.map((o: any, i: number) => (
-                                    <div key={i} className="flex justify-between p-1 bg-gray-700/30 rounded">
-                                      <span>${o.price.toFixed(6)}</span>
-                                      <span className="text-gray-400">{o.amount.toFixed(2)} MC</span>
-                                      <span className="text-gray-500">${o.value.toFixed(2)}</span>
-                                    </div>
-                                  ))}
-                                  <div className="text-gray-500 text-center">↓ Lower Priority ↓</div>
-                                </>
-                              )}
                             </div>
                             
                             {/* Position indicator */}
