@@ -722,6 +722,137 @@ export const OrderPlacementGuide: React.FC = () => {
                     })()}
                   </div>
                   
+                  {/* Order Book Position */}
+                  {amount > 0 && price > 0 && (
+                    <div className="mb-3 p-3 bg-gray-800/50 rounded">
+                      <h5 className="text-sm font-medium text-gray-300 mb-2">📍 Your Order Position in Book</h5>
+                      {(() => {
+                        const orders = orderType === 'buy' 
+                          ? (placementData.orderBook?.buy_orders || [])
+                              .map((o: OrderBookOrder) => ({
+                                price: parseFloat(o.price.amount) / 1000000,
+                                amount: (parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000,
+                                value: ((parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000) * (parseFloat(o.price.amount) / 1000000)
+                              }))
+                              .filter((o: any) => o.amount > 0)
+                              .sort((a: any, b: any) => b.price - a.price)
+                          : (placementData.orderBook?.sell_orders || [])
+                              .map((o: OrderBookOrder) => ({
+                                price: parseFloat(o.price.amount) / 1000000,
+                                amount: (parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000,
+                                value: ((parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000) * (parseFloat(o.price.amount) / 1000000)
+                              }))
+                              .filter((o: any) => o.amount > 0)
+                              .sort((a: any, b: any) => a.price - b.price);
+                        
+                        // Find position
+                        let ordersAbove = 0;
+                        let ordersBelow = 0;
+                        let volumeAbove = 0;
+                        let volumeBelow = 0;
+                        
+                        for (const order of orders) {
+                          if (orderType === 'buy') {
+                            if (order.price > price) {
+                              ordersAbove++;
+                              volumeAbove += order.value;
+                            } else if (order.price < price) {
+                              ordersBelow++;
+                              volumeBelow += order.value;
+                            }
+                          } else {
+                            if (order.price < price) {
+                              ordersAbove++;
+                              volumeAbove += order.value;
+                            } else if (order.price > price) {
+                              ordersBelow++;
+                              volumeBelow += order.value;
+                            }
+                          }
+                        }
+                        
+                        // Show top 3 orders above and below
+                        const ordersToShow = 3;
+                        const relevantOrders = orderType === 'buy'
+                          ? orders.filter((o: any) => Math.abs(o.price - price) / price < 0.1) // Within 10%
+                          : orders.filter((o: any) => Math.abs(o.price - price) / price < 0.1);
+                        
+                        const aboveOrders = orderType === 'buy'
+                          ? relevantOrders.filter((o: any) => o.price > price).slice(0, ordersToShow)
+                          : relevantOrders.filter((o: any) => o.price < price).slice(0, ordersToShow);
+                        
+                        const belowOrders = orderType === 'buy'
+                          ? relevantOrders.filter((o: any) => o.price < price).slice(0, ordersToShow).reverse()
+                          : relevantOrders.filter((o: any) => o.price > price).slice(0, ordersToShow).reverse();
+                        
+                        return (
+                          <div className="space-y-2">
+                            {/* Summary */}
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                              <div className="bg-gray-700/50 rounded p-2">
+                                <p className="text-gray-400">Orders above:</p>
+                                <p className="font-mono">{ordersAbove} orders (${volumeAbove.toFixed(2)})</p>
+                              </div>
+                              <div className="bg-gray-700/50 rounded p-2">
+                                <p className="text-gray-400">Orders below:</p>
+                                <p className="font-mono">{ordersBelow} orders (${volumeBelow.toFixed(2)})</p>
+                              </div>
+                            </div>
+                            
+                            {/* Order visualization */}
+                            <div className="space-y-1 text-xs font-mono">
+                              {/* Orders above */}
+                              {aboveOrders.length > 0 && (
+                                <>
+                                  <div className="text-gray-500 text-center">↑ Higher Priority ↑</div>
+                                  {aboveOrders.map((o: any, i: number) => (
+                                    <div key={i} className="flex justify-between p-1 bg-gray-700/30 rounded">
+                                      <span>${o.price.toFixed(6)}</span>
+                                      <span className="text-gray-400">{o.amount.toFixed(2)} MC</span>
+                                      <span className="text-gray-500">${o.value.toFixed(2)}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                              
+                              {/* Your order */}
+                              <div className="flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded">
+                                <span className="text-purple-400">→ ${price.toFixed(6)}</span>
+                                <span className="text-purple-400">{(amount / price).toFixed(2)} MC</span>
+                                <span className="text-purple-400 font-bold">${amount.toFixed(2)} (YOU)</span>
+                              </div>
+                              
+                              {/* Orders below */}
+                              {belowOrders.length > 0 && (
+                                <>
+                                  {belowOrders.map((o: any, i: number) => (
+                                    <div key={i} className="flex justify-between p-1 bg-gray-700/30 rounded">
+                                      <span>${o.price.toFixed(6)}</span>
+                                      <span className="text-gray-400">{o.amount.toFixed(2)} MC</span>
+                                      <span className="text-gray-500">${o.value.toFixed(2)}</span>
+                                    </div>
+                                  ))}
+                                  <div className="text-gray-500 text-center">↓ Lower Priority ↓</div>
+                                </>
+                              )}
+                            </div>
+                            
+                            {/* Position indicator */}
+                            <div className="mt-2 p-2 bg-blue-900/30 rounded text-xs">
+                              <p className="text-blue-400">
+                                {orderType === 'buy' ? (
+                                  <>Position #{ordersAbove + 1} in buy queue (higher price = better priority)</>
+                                ) : (
+                                  <>Position #{ordersAbove + 1} in sell queue (lower price = better priority)</>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                  
                   {/* Price Suggestions */}
                   <div className="space-y-2 mb-3">
                     <h5 className="text-sm font-medium text-gray-300">📊 Suggested Prices:</h5>
