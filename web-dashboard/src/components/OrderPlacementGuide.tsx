@@ -243,24 +243,20 @@ export const OrderPlacementGuide: React.FC = () => {
   const getBonusMultiplier = (price: number, isBuy: boolean): string => {
     if (isBuy) {
       // Buy orders need to tighten spread
-      if (bestAsk === Infinity || bestBid === 0 || buyBonusTiers.length === 0) return '-';
+      if (buyBonusTiers.length === 0) return '-';
       
-      // For buy orders, the spread improvement calculation is:
-      // If current spread is from bestBid to bestAsk, a new buy order at 'price' would:
-      // - Create new spread from 'price' to bestAsk
-      // - Improvement = (oldSpread - newSpread) / oldSpread
-      const oldSpread = bestAsk - bestBid;
-      const newSpread = bestAsk - price;
-      const improvement = oldSpread > 0 ? (oldSpread - newSpread) / oldSpread : 0;
+      // Only give bonus if price is better than current best bid
+      if (price <= bestBid) return '-';
       
-      // Only give bonus if price is better than current best bid and improves spread
-      if (price <= bestBid || improvement < 0.05) return '-';
+      // Check which tier this price falls into by comparing with tier prices
+      // Start from the highest multiplier (lowest price) and work up
+      for (let i = buyBonusTiers.length - 1; i >= 0; i--) {
+        const tier = buyBonusTiers[i];
+        if (price >= tier.price) {
+          return tier.multiplier;
+        }
+      }
       
-      // Check bonus tiers based on improvement percentage
-      if (improvement >= 0.05 && improvement < 0.25) return '1.1x';
-      if (improvement >= 0.25 && improvement < 0.50) return '1.3x';
-      if (improvement >= 0.50 && improvement < 0.75) return '1.5x';
-      if (improvement >= 0.75) return '2.0x';
       return '-';
     } else {
       // Sell orders need to be above average ask
