@@ -269,18 +269,19 @@ export const OrderPlacementGuide: React.FC = () => {
   
   const buyBonusTiers = bestBid > 0 ? (
     isLargeSpread ? [
-      // For large spreads, just show incremental improvements above best bid
-      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 },  // 10% above
-      { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.05 }, // 5% above
-      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 }, // 2% above
-      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 }   // 1% above
+      // For large spreads, show incremental improvements above best bid
+      // Order from lowest bonus to highest (ascending price order)
+      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 },   // 1% above
+      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 },  // 2% above
+      { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.05 },  // 5% above
+      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 }     // 10% above
     ] : [
       // Normal calculation when spread is reasonable
-      { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
-      { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
+      { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) },
       { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
-      { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
-    ]
+      { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
+      { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) }
+    ].sort((a, b) => a.price - b.price) // Ensure ascending price order
   ) : [];
   
   const sellBonusTiers = [
@@ -1131,19 +1132,6 @@ export const OrderPlacementGuide: React.FC = () => {
                                     <>
                                       {/* Show prices above */}
                                       {pricesToShow.map((priceLevel: number, i: number) => {
-                                  // For buy orders: insert before if user price > current price AND (first item OR previous price > user price)
-                                  // For sell orders: insert before if user price < current price AND (first item OR previous price < user price)
-                                  const shouldInsertBefore = orderType === 'buy' 
-                                    ? (price > priceLevel && (i === 0 || pricesToShow[i - 1] > price))
-                                    : (price < priceLevel && (i === 0 || pricesToShow[i - 1] < price));
-                                  
-                                  // For buy orders: insert after if user price < current price AND (last item OR next price < user price)
-                                  // For sell orders: insert after if user price > current price AND (last item OR next price > user price)
-                                  const shouldInsertAfter = orderType === 'buy'
-                                    ? (price < priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price))
-                                    : (price > priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price));
-                                  
-                                  
                                   const group = ordersByPrice.get(priceLevel);
                                   const isEligible = eligiblePrices.has(priceLevel);
                                   const eligibleVolume = volumeByPrice.get(priceLevel) || 0;
@@ -1161,6 +1149,22 @@ export const OrderPlacementGuide: React.FC = () => {
                                   
                                   // Check if user's price matches this level
                                   const isUserPrice = Math.abs(priceLevel - price) < 0.0000001;
+                                  
+                                  // For buy orders: insert before if user price > current price AND (first item OR previous price > user price)
+                                  // For sell orders: insert before if user price < current price AND (first item OR previous price < user price)
+                                  const shouldInsertBefore = orderType === 'buy' 
+                                    ? (price > priceLevel && (i === 0 || pricesToShow[i - 1] > price))
+                                    : (price < priceLevel && (i === 0 || pricesToShow[i - 1] < price));
+                                  
+                                  // For buy orders: insert after if user price < current price AND (last item OR next price < user price)
+                                  // For sell orders: insert after if user price > current price AND (last item OR next price > user price)
+                                  // BUT don't insert if we already showed the user's order at a bonus threshold
+                                  const alreadyShownAtThreshold = isBonusThreshold && isUserPrice;
+                                  const shouldInsertAfter = !alreadyShownAtThreshold && (
+                                    orderType === 'buy'
+                                      ? (price < priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price))
+                                      : (price > priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price))
+                                  );
                                   
                                   // Check if we should show cutoff line
                                   const shouldShowCutoff = !shownCutoffLine && (
