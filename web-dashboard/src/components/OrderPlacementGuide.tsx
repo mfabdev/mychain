@@ -920,6 +920,7 @@ export const OrderPlacementGuide: React.FC = () => {
                                     ? (price < priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price))
                                     : (price > priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price));
                                   
+                                  
                                   const group = ordersByPrice.get(priceLevel);
                                   const isEligible = eligiblePrices.has(priceLevel);
                                   const eligibleVolume = volumeByPrice.get(priceLevel) || 0;
@@ -995,6 +996,35 @@ export const OrderPlacementGuide: React.FC = () => {
                                               <span className="text-gray-500">-</span>
                                             )}
                                           </span>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Show user's order if it's at the same price as existing orders */}
+                                      {priceLevel === price && (
+                                        <div className="relative">
+                                          <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
+                                          <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
+                                            <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
+                                            <span className="w-16 text-center text-purple-400">NEW</span>
+                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
+                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-16 text-center">
+                                              {(() => {
+                                                const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                       (orderType === 'sell' && price <= eligibilityCutoff);
+                                                const availableSpace = volumeCap - cumulativeVolume;
+                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (userEligible === 0) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                } else if (userEligible < amount) {
+                                                  return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
+                                                } else {
+                                                  return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                                }
+                                              })()}
+                                            </span>
+                                          </div>
                                         </div>
                                       )}
                                       
