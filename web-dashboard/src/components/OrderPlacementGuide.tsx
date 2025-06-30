@@ -1049,6 +1049,7 @@ export const OrderPlacementGuide: React.FC = () => {
                                 {(() => {
                                   const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
                                   const currentUsed = orderType === 'buy' ? placementData.rewardedVolume.buy : placementData.rewardedVolume.sell;
+                                  const eligibilityCutoff = orderType === 'buy' ? buyCutoffPrice : sellCutoffPrice;
                                   const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
                                                          (orderType === 'sell' && price <= eligibilityCutoff);
                                   
