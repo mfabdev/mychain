@@ -880,19 +880,26 @@ export const OrderPlacementGuide: React.FC = () => {
                                 </div>
                                 
                                 {(() => {
-                                  // Calculate cumulative volume for eligibility
+                                  // Calculate cumulative volume for eligibility INCLUDING user's order
                                   let cumulativeVolume = 0;
                                   const volumeByPrice = new Map();
                                   const eligiblePrices = new Set();
                                   
-                                  // Calculate which prices are eligible
-                                  const sortedOrders = orderType === 'buy' 
-                                    ? [...orders].sort((a: any, b: any) => b.price - a.price)
-                                    : [...orders].sort((a: any, b: any) => a.price - b.price);
+                                  // Create a combined list including user's order if they entered price and amount
+                                  const ordersWithUser = [...orders];
+                                  if (amount > 0 && price > 0) {
+                                    ordersWithUser.push({ price, amount: amount / price, value: amount });
+                                  }
+                                  
+                                  // Sort with user's order included
+                                  const sortedOrdersWithUser = orderType === 'buy' 
+                                    ? ordersWithUser.sort((a: any, b: any) => b.price - a.price)
+                                    : ordersWithUser.sort((a: any, b: any) => a.price - b.price);
                                   
                                   const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
                                   
-                                  for (const order of sortedOrders) {
+                                  // Calculate eligibility with user's order included
+                                  for (const order of sortedOrdersWithUser) {
                                     if (cumulativeVolume < volumeCap) {
                                       eligiblePrices.add(order.price);
                                       const remaining = Math.min(order.value, volumeCap - cumulativeVolume);
@@ -900,6 +907,11 @@ export const OrderPlacementGuide: React.FC = () => {
                                       cumulativeVolume += order.value;
                                     }
                                   }
+                                  
+                                  // Keep original sorted orders for display
+                                  const sortedOrders = orderType === 'buy' 
+                                    ? [...orders].sort((a: any, b: any) => b.price - a.price)
+                                    : [...orders].sort((a: any, b: any) => a.price - b.price);
                                   
                                   const eligibilityCutoff = orderType === 'buy' ? buyCutoffPrice : sellCutoffPrice;
                                   let shownCutoffLine = false;
