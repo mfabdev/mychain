@@ -248,19 +248,40 @@ export const OrderPlacementGuide: React.FC = () => {
     const denominator = bestBid - reductionTarget * (bestAsk - bestBid);
     
     if (denominator <= 0) {
-      // This would mean the reduction is impossible
+      // This would mean the reduction is impossible or results in price >= bestAsk
       return bestAsk * 0.99; // Just below ask
     }
     
-    return numerator / denominator;
+    const calculatedPrice = numerator / denominator;
+    
+    // Ensure the price makes sense (should be between bestBid and bestAsk)
+    if (calculatedPrice <= bestBid) {
+      // This happens when spread is too large relative to the reduction target
+      // Use a simpler linear interpolation instead
+      return bestBid + (bestAsk - bestBid) * (1 - reductionTarget);
+    }
+    
+    return calculatedPrice;
   };
   
-  const buyBonusTiers = bestAsk !== Infinity && bestBid > 0 ? [
-    { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
-    { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
-    { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
-    { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
-  ] : [];
+  // When spread is extremely large or no ask exists, use simpler bonus tiers
+  const isLargeSpread = bestAsk === Infinity || (bestAsk - bestBid) / bestBid > 1; // >100% spread
+  
+  const buyBonusTiers = bestBid > 0 ? (
+    isLargeSpread ? [
+      // For large spreads, just show incremental improvements above best bid
+      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 },  // 10% above
+      { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.05 }, // 5% above
+      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 }, // 2% above
+      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 }   // 1% above
+    ] : [
+      // Normal calculation when spread is reasonable
+      { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
+      { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
+      { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
+      { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
+    ]
+  ) : [];
   
   const sellBonusTiers = [
     { multiplier: '1.5x', above: '10%+', price: avgAsk * 1.10 },
