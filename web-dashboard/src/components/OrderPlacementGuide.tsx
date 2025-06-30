@@ -827,23 +827,86 @@ export const OrderPlacementGuide: React.FC = () => {
                                   <span className="w-16 text-center">Orders</span>
                                   <span className="w-20 text-right">Total MC</span>
                                   <span className="w-20 text-right">Value</span>
+                                  <span className="w-16 text-center">Status</span>
                                 </div>
                                 
-                                {/* Show prices above */}
-                                {pricesToShow.map((priceLevel: number, i: number) => {
+                                {(() => {
+                                  // Calculate cumulative volume for eligibility
+                                  let cumulativeVolume = 0;
+                                  const volumeByPrice = new Map();
+                                  const eligiblePrices = new Set();
+                                  
+                                  // Calculate which prices are eligible
+                                  const sortedOrders = orderType === 'buy' 
+                                    ? [...orders].sort((a: any, b: any) => b.price - a.price)
+                                    : [...orders].sort((a: any, b: any) => a.price - b.price);
+                                  
+                                  const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
+                                  
+                                  for (const order of sortedOrders) {
+                                    if (cumulativeVolume < volumeCap) {
+                                      eligiblePrices.add(order.price);
+                                      const remaining = Math.min(order.value, volumeCap - cumulativeVolume);
+                                      volumeByPrice.set(order.price, (volumeByPrice.get(order.price) || 0) + remaining);
+                                      cumulativeVolume += order.value;
+                                    }
+                                  }
+                                  
+                                  const eligibilityCutoff = orderType === 'buy' ? buyCutoffPrice : sellCutoffPrice;
+                                  let shownCutoffLine = false;
+                                  
+                                  return (
+                                    <>
+                                      {/* Show prices above */}
+                                      {pricesToShow.map((priceLevel: number, i: number) => {
                                   const isUserPrice = (orderType === 'buy' && priceLevel <= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price)) ||
                                                      (orderType === 'sell' && priceLevel >= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price));
                                   const group = ordersByPrice.get(priceLevel);
+                                  const isEligible = eligiblePrices.has(priceLevel);
+                                  const eligibleVolume = volumeByPrice.get(priceLevel) || 0;
+                                  
+                                  // Check if we should show cutoff line
+                                  const shouldShowCutoff = !shownCutoffLine && (
+                                    (orderType === 'buy' && i > 0 && pricesToShow[i-1] >= eligibilityCutoff && priceLevel < eligibilityCutoff) ||
+                                    (orderType === 'sell' && i > 0 && pricesToShow[i-1] <= eligibilityCutoff && priceLevel > eligibilityCutoff)
+                                  );
+                                  
+                                  if (shouldShowCutoff) shownCutoffLine = true;
                                   
                                   return (
                                     <React.Fragment key={priceLevel}>
+                                      {/* Eligibility cutoff line */}
+                                      {shouldShowCutoff && (
+                                        <div className="relative my-2">
+                                          <div className="absolute inset-0 flex items-center">
+                                            <div className="w-full border-t border-red-500/50"></div>
+                                          </div>
+                                          <div className="relative flex justify-center">
+                                            <span className="bg-gray-900 px-2 text-xs text-red-400">
+                                              ← Eligibility Cutoff (${eligibilityCutoff.toFixed(6)}) →
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
                                       {/* Existing orders at this price */}
                                       {group && (
-                                        <div className="flex justify-between p-1 bg-gray-700/30 rounded hover:bg-gray-700/50 transition-colors">
+                                        <div className={`flex justify-between p-1 rounded hover:bg-gray-700/50 transition-colors ${
+                                          isEligible ? 'bg-green-900/20' : 'bg-gray-700/30'
+                                        }`}>
                                           <span className="w-24">${priceLevel.toFixed(6)}</span>
                                           <span className="w-16 text-center text-gray-400">{group.count}</span>
                                           <span className="w-20 text-right text-gray-400">{group.totalAmount.toFixed(2)}</span>
                                           <span className="w-20 text-right text-gray-500">${group.totalValue.toFixed(2)}</span>
+                                          <span className="w-16 text-center">
+                                            {isEligible ? (
+                                              <span className="text-green-400 text-xs">
+                                                ✓ ${eligibleVolume.toFixed(2)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-500">-</span>
+                                            )}
+                                          </span>
                                         </div>
                                       )}
                                       
@@ -856,6 +919,22 @@ export const OrderPlacementGuide: React.FC = () => {
                                             <span className="w-16 text-center text-purple-400">NEW</span>
                                             <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
                                             <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-16 text-center">
+                                              {(() => {
+                                                const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                       (orderType === 'sell' && price <= eligibilityCutoff);
+                                                const availableSpace = volumeCap - cumulativeVolume;
+                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (userEligible === 0) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                } else if (userEligible < amount) {
+                                                  return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
+                                                } else {
+                                                  return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                                }
+                                              })()}
+                                            </span>
                                           </div>
                                         </div>
                                       )}
@@ -873,9 +952,44 @@ export const OrderPlacementGuide: React.FC = () => {
                                       <span className="w-16 text-center text-purple-400">NEW</span>
                                       <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
                                       <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                      <span className="w-16 text-center">
+                                        {(() => {
+                                          const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                 (orderType === 'sell' && price <= eligibilityCutoff);
+                                          const availableSpace = volumeCap - cumulativeVolume;
+                                          const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                          
+                                          if (userEligible === 0) {
+                                            return <span className="text-red-400 text-xs">✗ None</span>;
+                                          } else if (userEligible < amount) {
+                                            return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
+                                          } else {
+                                            return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                          }
+                                        })()}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                            
+                            {/* Legend */}
+                            <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="text-green-400">✓</span>
+                                <span className="text-gray-400">Earning rewards</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-yellow-400">⚠</span>
+                                <span className="text-gray-400">Partially eligible</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-red-400">✗</span>
+                                <span className="text-gray-400">No rewards</span>
                               </div>
                             </div>
                             
