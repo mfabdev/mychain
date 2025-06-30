@@ -884,27 +884,66 @@ export const OrderPlacementGuide: React.FC = () => {
       {/* Tier-Based Volume Caps */}
       <div className="bg-gray-700/30 rounded-lg p-4">
         <h3 className="font-semibold mb-3">📊 Current Tier {placementData.tier} Volume Caps</h3>
-        <div className="text-sm text-gray-300 space-y-2">
-          <p>• MC Supply: {placementData.mcSupply.toFixed(2)} MC</p>
-          <p>• MC Price: ${placementData.mcPrice.toFixed(6)}</p>
-          <p>• Total MC Value: ${(placementData.mcSupply * placementData.mcPrice).toFixed(2)}</p>
-          <div className="mt-2 p-3 bg-gray-800/50 rounded">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-green-400 font-medium">Buy Side Cap:</p>
-                <p className="text-lg">${placementData.volumeCaps.buy.toFixed(2)}</p>
-                <p className="text-xs text-gray-400">
-                  {((placementData.volumeCaps.buy / (placementData.mcSupply * placementData.mcPrice)) * 100).toFixed(1)}% of MC value
-                </p>
+        <div className="space-y-3">
+          {/* Market Value Calculation */}
+          <div className="bg-gray-800/50 rounded p-3">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">MC Market Value Calculation</h4>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-400">MC Supply:</span>
+                <span className="font-mono">{placementData.mcSupply.toFixed(2)} MC</span>
               </div>
-              <div>
-                <p className="text-red-400 font-medium">Sell Side Cap:</p>
-                <p className="text-lg">${placementData.volumeCaps.sell.toFixed(2)}</p>
-                <p className="text-xs text-gray-400">
-                  {((placementData.volumeCaps.sell / (placementData.mcSupply * placementData.mcPrice)) * 100).toFixed(1)}% of MC value
-                </p>
+              <div className="flex justify-between">
+                <span className="text-gray-400">MC Price:</span>
+                <span className="font-mono">${placementData.mcPrice.toFixed(6)}</span>
+              </div>
+              <div className="border-t border-gray-600 pt-1 mt-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Total MC Market Value:</span>
+                  <span className="font-mono text-white">${(placementData.mcSupply * placementData.mcPrice).toFixed(2)}</span>
+                </div>
               </div>
             </div>
+          </div>
+          
+          {/* Tier Percentages */}
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded p-3">
+            <h4 className="text-sm font-medium text-blue-400 mb-2">Tier {placementData.tier} Percentages</h4>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Buy side percentage:</span>
+                <span className="font-mono">{(placementData.volumeCaps.buy / (placementData.mcSupply * placementData.mcPrice) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Sell side percentage:</span>
+                <span className="font-mono">{(placementData.volumeCaps.sell / (placementData.mcSupply * placementData.mcPrice) * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Resulting Caps */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+              <p className="text-green-400 font-medium mb-1">Buy Side Cap</p>
+              <p className="text-2xl font-bold">${placementData.volumeCaps.buy.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Max buy volume eligible for rewards
+              </p>
+            </div>
+            <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+              <p className="text-red-400 font-medium mb-1">Sell Side Cap</p>
+              <p className="text-2xl font-bold">${placementData.volumeCaps.sell.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Max sell volume eligible for rewards
+              </p>
+            </div>
+          </div>
+          
+          <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded text-xs">
+            <p className="text-yellow-400">
+              ⚠️ <strong>Note:</strong> Small caps are due to low MC price. As MC price increases, caps will grow proportionally. 
+              With current MC price of ${placementData.mcPrice.toFixed(6)}, the total market value is only ${(placementData.mcSupply * placementData.mcPrice).toFixed(2)}.
+            </p>
           </div>
         </div>
       </div>
