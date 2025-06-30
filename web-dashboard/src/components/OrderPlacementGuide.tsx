@@ -306,49 +306,155 @@ export const OrderPlacementGuide: React.FC = () => {
         </div>
 
         {amount > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-800/50 rounded p-3">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Expected LC Rewards</h4>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Per hour:</span>
-                  <span className={`font-mono ${amount < minimumOrder ? 'text-red-400' : 'text-green-400'}`}>
-                    {amount < minimumOrder ? '0.000000 LC' : hourlyReward.toFixed(6) + ' LC'}
-                  </span>
+          <div className="space-y-4">
+            {/* Placement Analysis */}
+            <div className="bg-gray-800/50 rounded p-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">📍 Where to Place Your ${amount.toFixed(2)} Order</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Buy Order Analysis */}
+                <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                  <h5 className="text-green-400 font-medium mb-2">Buy Order Analysis</h5>
+                  {(() => {
+                    const remainingBuyCap = placementData.volumeCaps.buy - placementData.rewardedVolume.buy;
+                    const canFitInBuyCap = amount <= remainingBuyCap;
+                    
+                    if (canFitInBuyCap) {
+                      return (
+                        <div className="space-y-2 text-xs">
+                          <div className="p-2 bg-green-900/30 rounded">
+                            <span className="text-green-400">✅ Will earn rewards at any price</span>
+                          </div>
+                          <p className="text-gray-300">
+                            Cap has ${remainingBuyCap.toFixed(2)} space available
+                          </p>
+                          <p className="text-gray-400">
+                            Place at market price (${placementData.mcPrice.toFixed(6)}) or higher
+                          </p>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="space-y-2 text-xs">
+                          <div className="p-2 bg-yellow-900/30 rounded">
+                            <span className="text-yellow-400">⚠️ Partially eligible</span>
+                          </div>
+                          <p className="text-gray-300">
+                            Only ${remainingBuyCap.toFixed(2)} will earn rewards
+                          </p>
+                          {placementData.optimalPrices.buy.length > 0 && (
+                            <p className="text-gray-400">
+                              Must bid above ${buyCutoffPrice.toFixed(6)} to earn any rewards
+                            </p>
+                          )}
+                          <div className="mt-2 p-2 bg-orange-900/30 rounded">
+                            <p className="text-orange-400 font-medium">💡 Recommendation:</p>
+                            <p className="text-xs">Split into smaller orders or wait for cap reset</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Per day:</span>
-                  <span className={`font-mono ${amount < minimumOrder ? 'text-red-400' : 'text-green-400'}`}>
-                    {amount < minimumOrder ? '0.000000 LC' : (estimatedReward).toFixed(6) + ' LC'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Per year:</span>
-                  <span className={`font-mono ${amount < minimumOrder ? 'text-red-400' : 'text-green-400'}`}>
-                    {amount < minimumOrder ? '0.000000 LC' : (estimatedReward * 365).toFixed(6) + ' LC'}
-                  </span>
+
+                {/* Sell Order Analysis */}
+                <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+                  <h5 className="text-red-400 font-medium mb-2">Sell Order Analysis</h5>
+                  {(() => {
+                    const remainingSellCap = placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
+                    const canFitInSellCap = amount <= remainingSellCap;
+                    
+                    if (canFitInSellCap) {
+                      return (
+                        <div className="space-y-2 text-xs">
+                          <div className="p-2 bg-green-900/30 rounded">
+                            <span className="text-green-400">✅ Will earn rewards at any price</span>
+                          </div>
+                          <p className="text-gray-300">
+                            Cap has ${remainingSellCap.toFixed(2)} space available
+                          </p>
+                          <p className="text-gray-400">
+                            Place at market price (${placementData.mcPrice.toFixed(6)}) or higher
+                          </p>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="space-y-2 text-xs">
+                          <div className="p-2 bg-yellow-900/30 rounded">
+                            <span className="text-yellow-400">⚠️ Partially eligible</span>
+                          </div>
+                          <p className="text-gray-300">
+                            Only ${remainingSellCap.toFixed(2)} will earn rewards
+                          </p>
+                          {placementData.optimalPrices.sell.length > 0 && (
+                            <p className="text-gray-400">
+                              Must ask above ${sellCutoffPrice.toFixed(6)} to earn any rewards
+                            </p>
+                          )}
+                          <div className="mt-2 p-2 bg-orange-900/30 rounded">
+                            <p className="text-orange-400 font-medium">💡 Recommendation:</p>
+                            <p className="text-xs">Split into smaller orders or wait for cap reset</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 rounded p-3">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Order Status</h4>
-              <div className="space-y-2 text-xs">
+            {/* Reward Estimates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-800/50 rounded p-3">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Expected LC Rewards</h4>
                 {amount < minimumOrder ? (
                   <div className="p-2 bg-red-900/30 rounded">
-                    <span className="text-red-400">❌ Too small - no rewards</span>
-                    <p className="text-xs mt-1">Need at least ${minimumOrder.toFixed(2)}</p>
+                    <span className="text-red-400">❌ Order too small - will earn 0 LC</span>
+                    <p className="text-xs mt-1">Minimum: ${minimumOrder.toFixed(2)}</p>
                   </div>
                 ) : (
-                  <div className="p-2 bg-green-900/30 rounded">
-                    <span className="text-green-400">✅ Eligible for rewards</span>
-                    <p className="text-xs mt-1">Will earn {placementData.currentAPR.toFixed(1)}% APR</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Per hour:</span>
+                      <span className="font-mono text-green-400">{hourlyReward.toFixed(6)} LC</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Per day:</span>
+                      <span className="font-mono text-green-400">{(estimatedReward).toFixed(6)} LC</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Per year:</span>
+                      <span className="font-mono text-green-400">{(estimatedReward * 365).toFixed(6)} LC</span>
+                    </div>
+                    <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                      <p className="text-yellow-400 text-xs">
+                        ⚠️ Actual rewards depend on cap availability
+                      </p>
+                    </div>
                   </div>
                 )}
-                
-                <div className="p-2 bg-blue-900/30 rounded">
-                  <p className="text-blue-400">At current market price:</p>
-                  <p className="text-xs">{(amount / placementData.mcPrice).toFixed(2)} MC</p>
+              </div>
+
+              <div className="bg-gray-800/50 rounded p-3">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Order Details</h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Order size:</span>
+                    <span>${amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">MC amount:</span>
+                    <span>{(amount / placementData.mcPrice).toFixed(2)} MC</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Current APR:</span>
+                    <span className="text-purple-400">{placementData.currentAPR.toFixed(1)}%</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-gray-700">
+                    <p className="text-gray-400">Minimum order for rewards:</p>
+                    <p className="font-mono">${minimumOrder.toFixed(2)}</p>
+                  </div>
                 </div>
               </div>
             </div>
