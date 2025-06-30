@@ -908,8 +908,18 @@ export const OrderPlacementGuide: React.FC = () => {
                                     <>
                                       {/* Show prices above */}
                                       {pricesToShow.map((priceLevel: number, i: number) => {
-                                  const isUserPrice = (orderType === 'buy' && priceLevel <= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price)) ||
-                                                     (orderType === 'sell' && priceLevel >= price && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price));
+                                  // For buy orders: insert before if user price > current price AND (first item OR previous price > user price)
+                                  // For sell orders: insert before if user price < current price AND (first item OR previous price < user price)
+                                  const shouldInsertBefore = orderType === 'buy' 
+                                    ? (price > priceLevel && (i === 0 || pricesToShow[i - 1] > price))
+                                    : (price < priceLevel && (i === 0 || pricesToShow[i - 1] < price));
+                                  
+                                  // For buy orders: insert after if user price < current price AND (last item OR next price < user price)
+                                  // For sell orders: insert after if user price > current price AND (last item OR next price > user price)
+                                  const shouldInsertAfter = orderType === 'buy'
+                                    ? (price < priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] < price))
+                                    : (price > priceLevel && (i === pricesToShow.length - 1 || pricesToShow[i + 1] > price));
+                                  
                                   const group = ordersByPrice.get(priceLevel);
                                   const isEligible = eligiblePrices.has(priceLevel);
                                   const eligibleVolume = volumeByPrice.get(priceLevel) || 0;
@@ -924,6 +934,35 @@ export const OrderPlacementGuide: React.FC = () => {
                                   
                                   return (
                                     <React.Fragment key={priceLevel}>
+                                      {/* Insert user's order BEFORE current price if needed */}
+                                      {shouldInsertBefore && (
+                                        <div className="relative">
+                                          <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
+                                          <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
+                                            <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
+                                            <span className="w-16 text-center text-purple-400">NEW</span>
+                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
+                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-16 text-center">
+                                              {(() => {
+                                                const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                       (orderType === 'sell' && price <= eligibilityCutoff);
+                                                const availableSpace = volumeCap - cumulativeVolume;
+                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (userEligible === 0) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                } else if (userEligible < amount) {
+                                                  return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
+                                                } else {
+                                                  return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                                }
+                                              })()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
                                       {/* Eligibility cutoff line */}
                                       {shouldShowCutoff && (
                                         <div className="relative my-2">
@@ -959,8 +998,8 @@ export const OrderPlacementGuide: React.FC = () => {
                                         </div>
                                       )}
                                       
-                                      {/* Insert user's order in the right position */}
-                                      {isUserPrice && (
+                                      {/* Insert user's order AFTER current price if needed */}
+                                      {shouldInsertAfter && (
                                         <div className="relative">
                                           <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
                                           <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
