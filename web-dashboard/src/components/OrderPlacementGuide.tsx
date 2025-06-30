@@ -270,18 +270,18 @@ export const OrderPlacementGuide: React.FC = () => {
   const buyBonusTiers = bestBid > 0 ? (
     isLargeSpread ? [
       // For large spreads, show incremental improvements above best bid
-      // Order from lowest bonus to highest (ascending price order)
-      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 },   // 1% above
-      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 },  // 2% above
+      // For buy orders: higher price = higher bonus (tightens spread more)
+      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 },     // 10% above (best)
       { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.05 },  // 5% above
-      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 }     // 10% above
+      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 },  // 2% above
+      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 }    // 1% above (worst)
     ] : [
       // Normal calculation when spread is reasonable
-      { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) },
-      { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
+      { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
       { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
-      { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) }
-    ].sort((a, b) => a.price - b.price) // Ensure ascending price order
+      { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
+      { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
+    ].sort((a, b) => b.price - a.price) // Ensure descending price order for buy orders
   ) : [];
   
   const sellBonusTiers = [
