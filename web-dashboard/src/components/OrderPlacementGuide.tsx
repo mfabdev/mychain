@@ -280,8 +280,8 @@ export const OrderPlacementGuide: React.FC = () => {
     
     // Add offset to avoid exact matches with existing orders
     // This prevents the calculated threshold from being exactly the same as common round numbers
-    // Use a larger offset for buy orders (add) and negative for sell orders (subtract)
-    const offset = calculatedPrice * 0.0001; // 0.01% offset
+    // Use a fixed offset of $0.0000001 (1/10 of the smallest common increment)
+    const offset = 0.0000001;
     const finalPrice = calculatedPrice + offset;
     
     console.log('📐 Price calculation for spread reduction:', {
@@ -401,6 +401,26 @@ export const OrderPlacementGuide: React.FC = () => {
     .sort((a, b) => b.price - a.price) // Sort by price descending (highest price = highest bonus for buy orders)
   ) : [];
   
+  // Debug: Show what tiers were calculated vs what passed the filter
+  const allCalculatedTiers = isLargeSpread ? calculateLargeSpreadTiers() : [
+    { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
+    { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
+    { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
+    { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
+  ];
+  
+  console.log('🔍 Tier filtering analysis:', {
+    allCalculatedTiers: allCalculatedTiers.map(t => ({
+      multiplier: t.multiplier,
+      price: t.price.toFixed(6),
+      'price > bestBid': t.price > bestBid,
+      'price < bestAsk': t.price < bestAsk,
+      wouldPass: t.price > bestBid && t.price < bestAsk
+    })),
+    filteredOut: allCalculatedTiers.filter(t => !(t.price > bestBid && t.price < bestAsk)).map(t => t.multiplier),
+    finalCount: buyBonusTiers.length
+  });
+  
   console.log('💰 Buy bonus tiers calculated:', {
     bestBid: bestBid.toFixed(6),
     bestAsk: bestAsk === Infinity ? 'Infinity' : bestAsk.toFixed(6),
@@ -409,11 +429,12 @@ export const OrderPlacementGuide: React.FC = () => {
     currentSpreadPct: bestBid > 0 && bestAsk !== Infinity ? (((bestAsk - bestBid) / bestBid) * 100).toFixed(1) + '%' : 'N/A',
     tiers: buyBonusTiers.map(t => ({
       multiplier: t.multiplier,
-      price: t.price.toFixed(6),
+      price: t.price.toFixed(8), // Show more decimal places
       reduction: t.reduction,
       'price > bestBid': t.price > bestBid,
       'price < bestAsk': bestAsk === Infinity ? 'true' : t.price < bestAsk
-    }))
+    })),
+    tierCount: buyBonusTiers.length
   });
   
   const sellBonusTiers = [
@@ -1183,16 +1204,30 @@ export const OrderPlacementGuide: React.FC = () => {
                         
                         // Add bonus threshold prices to the set ONLY if no order exists at that price
                         const bonusTiers = orderType === 'buy' ? buyBonusTiers : sellBonusTiers;
+                        const skippedTiers: any[] = [];
+                        
                         bonusTiers.forEach(tier => {
                           // Check if any order exists within a small tolerance of this price
-                          const hasOrderAtPrice = orders.some((o: any) => 
-                            Math.abs(o.price - tier.price) < 0.000001
+                          // Use a tighter tolerance to avoid false conflicts
+                          const conflictingOrder = orders.find((o: any) => 
+                            Math.abs(o.price - tier.price) < 0.00000001
                           );
                           
-                          if (!hasOrderAtPrice) {
+                          if (conflictingOrder) {
+                            skippedTiers.push({
+                              tier: tier.multiplier,
+                              tierPrice: tier.price.toFixed(6),
+                              conflictingPrice: conflictingOrder.price.toFixed(6),
+                              difference: Math.abs(conflictingOrder.price - tier.price).toFixed(9)
+                            });
+                          } else {
                             priceSet.add(tier.price);
                           }
                         });
+                        
+                        if (skippedTiers.length > 0) {
+                          console.log('⚠️ Skipped bonus tiers due to existing orders:', skippedTiers);
+                        }
                         
                         const uniquePrices = Array.from(priceSet).sort((a, b) => 
                           orderType === 'buy' ? b - a : a - b
