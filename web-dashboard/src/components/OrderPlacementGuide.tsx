@@ -1042,6 +1042,138 @@ export const OrderPlacementGuide: React.FC = () => {
                               </div>
                             </div>
                             
+                            {/* What your order does to the situation */}
+                            {amount > 0 && price > 0 && (
+                              <div className="mt-3 p-3 bg-purple-900/20 border border-purple-500/30 rounded">
+                                <h4 className="font-semibold text-purple-400 mb-2 text-sm">🎯 Impact of Your Order</h4>
+                                {(() => {
+                                  const volumeCap = orderType === 'buy' ? placementData.volumeCaps.buy : placementData.volumeCaps.sell;
+                                  const currentUsed = orderType === 'buy' ? placementData.rewardedVolume.buy : placementData.rewardedVolume.sell;
+                                  const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                         (orderType === 'sell' && price <= eligibilityCutoff);
+                                  
+                                  // Calculate what would be displaced
+                                  let displacedVolume = 0;
+                                  let displacedOrders = 0;
+                                  const sortedOrders = orderType === 'buy' 
+                                    ? [...orders].sort((a: any, b: any) => b.price - a.price)
+                                    : [...orders].sort((a: any, b: any) => a.price - b.price);
+                                  
+                                  if (wouldBeEligible && currentUsed + amount > volumeCap) {
+                                    // Need to displace some orders
+                                    const needToDisplace = (currentUsed + amount) - volumeCap;
+                                    let displaced = 0;
+                                    
+                                    // Find orders that would be displaced (from worst price)
+                                    const reverseOrders = [...sortedOrders].reverse();
+                                    for (const order of reverseOrders) {
+                                      if (displaced >= needToDisplace) break;
+                                      if ((orderType === 'buy' && order.price < price) || 
+                                          (orderType === 'sell' && order.price > price)) {
+                                        const orderDisplaced = Math.min(order.value, needToDisplace - displaced);
+                                        displaced += orderDisplaced;
+                                        displacedVolume += orderDisplaced;
+                                        if (orderDisplaced === order.value) displacedOrders++;
+                                      }
+                                    }
+                                  }
+                                  
+                                  const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, volumeCap - currentUsed + displacedVolume)) : 0;
+                                  const newCutoffPrice = (() => {
+                                    if (!wouldBeEligible) return eligibilityCutoff;
+                                    
+                                    // Simulate new state with user's order
+                                    const newOrders = [...sortedOrders, { price, value: amount }];
+                                    const sorted = orderType === 'buy'
+                                      ? newOrders.sort((a, b) => b.price - a.price)
+                                      : newOrders.sort((a, b) => a.price - b.price);
+                                    
+                                    let cumVol = 0;
+                                    let lastEligiblePrice = price;
+                                    
+                                    for (const o of sorted) {
+                                      if (cumVol + o.value <= volumeCap) {
+                                        cumVol += o.value;
+                                        lastEligiblePrice = o.price;
+                                      } else {
+                                        break;
+                                      }
+                                    }
+                                    
+                                    return lastEligiblePrice;
+                                  })();
+                                  
+                                  return (
+                                    <div className="space-y-2 text-xs">
+                                      {wouldBeEligible ? (
+                                        <>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-400">Your order eligibility:</span>
+                                            <span className={userEligible === amount ? "text-green-400 font-bold" : userEligible > 0 ? "text-yellow-400 font-bold" : "text-red-400 font-bold"}>
+                                              ${userEligible.toFixed(2)} of ${amount.toFixed(2)} ({((userEligible / amount) * 100).toFixed(0)}%)
+                                            </span>
+                                          </div>
+                                          
+                                          {displacedVolume > 0 && (
+                                            <>
+                                              <div className="flex justify-between">
+                                                <span className="text-gray-400">Orders you would displace:</span>
+                                                <span className="text-orange-400 font-bold">{displacedOrders} orders (${displacedVolume.toFixed(2)})</span>
+                                              </div>
+                                              <div className="text-orange-400 text-xs mt-1">
+                                                ⚡ Your higher price pushes out lower-priced orders
+                                              </div>
+                                            </>
+                                          )}
+                                          
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-400">New eligibility cutoff:</span>
+                                            <span className="text-purple-400 font-mono">
+                                              ${newCutoffPrice.toFixed(6)} {newCutoffPrice !== eligibilityCutoff && (
+                                                <span className="text-xs">
+                                                  ({orderType === 'buy' ? '+' : '-'}${Math.abs(newCutoffPrice - eligibilityCutoff).toFixed(6)})
+                                                </span>
+                                              )}
+                                            </span>
+                                          </div>
+                                          
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-400">New cap utilization:</span>
+                                            <span className="text-blue-400 font-bold">
+                                              {(((currentUsed - displacedVolume + userEligible) / volumeCap) * 100).toFixed(1)}%
+                                            </span>
+                                          </div>
+                                          
+                                          {userEligible === amount && (
+                                            <div className="mt-2 p-2 bg-green-900/30 rounded">
+                                              <p className="text-green-400">✅ Your entire order would earn rewards!</p>
+                                            </div>
+                                          )}
+                                          {userEligible > 0 && userEligible < amount && (
+                                            <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                                              <p className="text-yellow-400">⚠️ Only ${userEligible.toFixed(2)} of your order would earn rewards</p>
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-400">Your order eligibility:</span>
+                                            <span className="text-red-400 font-bold">$0.00 (price too low)</span>
+                                          </div>
+                                          <div className="mt-2 p-2 bg-red-900/30 rounded">
+                                            <p className="text-red-400">
+                                              ❌ Price must be at least ${eligibilityCutoff.toFixed(6)} to earn rewards
+                                            </p>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                            
                             {/* Position indicator */}
                             <div className="mt-2 p-2 bg-blue-900/30 rounded text-xs">
                               <p className="text-blue-400">
