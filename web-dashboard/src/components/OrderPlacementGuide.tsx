@@ -953,19 +953,20 @@ export const OrderPlacementGuide: React.FC = () => {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
                                                 }
                                                 
-                                                // Calculate displacement - your order can push out lower priority orders
-                                                let displaceable = 0;
+                                                // Calculate how much is already used by higher/equal priority orders
+                                                let usedByHigherPriority = 0;
                                                 for (const order of sortedOrders) {
-                                                  // For buy orders: can displace orders with lower prices
-                                                  // For sell orders: can displace orders with higher prices
-                                                  if ((orderType === 'buy' && order.price < price) || 
-                                                      (orderType === 'sell' && order.price > price)) {
-                                                    displaceable += order.value;
+                                                  // For buy orders: higher or equal price orders have priority
+                                                  // For sell orders: lower or equal price orders have priority
+                                                  if ((orderType === 'buy' && order.price >= price) || 
+                                                      (orderType === 'sell' && order.price <= price)) {
+                                                    usedByHigherPriority += order.value;
                                                   }
                                                 }
                                                 
-                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
-                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
+                                                // Calculate available space
+                                                const remainingCap = Math.max(0, volumeCap - usedByHigherPriority);
+                                                const userEligible = Math.min(amount, remainingCap);
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
@@ -1033,19 +1034,22 @@ export const OrderPlacementGuide: React.FC = () => {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
                                                 }
                                                 
-                                                // Calculate displacement - your order can push out lower priority orders
-                                                let displaceable = 0;
+                                                // Calculate how much volume is already committed by higher priority orders
+                                                let higherPriorityVolume = 0;
                                                 for (const order of sortedOrders) {
-                                                  // For buy orders: can displace orders with lower prices
-                                                  // For sell orders: can displace orders with higher prices
-                                                  if ((orderType === 'buy' && order.price < price) || 
-                                                      (orderType === 'sell' && order.price > price)) {
-                                                    displaceable += order.value;
+                                                  // For buy orders: higher prices have priority, same price = time priority (they go first)
+                                                  // For sell orders: lower prices have priority, same price = time priority (they go first)
+                                                  if ((orderType === 'buy' && order.price > price) || 
+                                                      (orderType === 'buy' && order.price === price) ||  // Same price, but existing order has time priority
+                                                      (orderType === 'sell' && order.price < price) ||
+                                                      (orderType === 'sell' && order.price === price)) { // Same price, but existing order has time priority
+                                                    higherPriorityVolume += order.value;
                                                   }
                                                 }
                                                 
-                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
-                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
+                                                // Calculate what's actually available after higher priority orders
+                                                const availableAfterHigherPriority = Math.max(0, volumeCap - higherPriorityVolume);
+                                                const userEligible = Math.min(amount, availableAfterHigherPriority);
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
@@ -1078,19 +1082,20 @@ export const OrderPlacementGuide: React.FC = () => {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
                                                 }
                                                 
-                                                // Calculate displacement - your order can push out lower priority orders
-                                                let displaceable = 0;
+                                                // Calculate how much is already used by higher/equal priority orders
+                                                let usedByHigherPriority = 0;
                                                 for (const order of sortedOrders) {
-                                                  // For buy orders: can displace orders with lower prices
-                                                  // For sell orders: can displace orders with higher prices
-                                                  if ((orderType === 'buy' && order.price < price) || 
-                                                      (orderType === 'sell' && order.price > price)) {
-                                                    displaceable += order.value;
+                                                  // For buy orders: higher or equal price orders have priority
+                                                  // For sell orders: lower or equal price orders have priority
+                                                  if ((orderType === 'buy' && order.price >= price) || 
+                                                      (orderType === 'sell' && order.price <= price)) {
+                                                    usedByHigherPriority += order.value;
                                                   }
                                                 }
                                                 
-                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
-                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
+                                                // Calculate available space
+                                                const remainingCap = Math.max(0, volumeCap - usedByHigherPriority);
+                                                const userEligible = Math.min(amount, remainingCap);
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
