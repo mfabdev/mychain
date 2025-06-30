@@ -193,17 +193,39 @@ export const OrderPlacementGuide: React.FC = () => {
         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4">
           <h3 className="text-sm text-green-400 mb-2">Buy Volume Earning Rewards</h3>
           <p className="text-xl font-bold text-green-300">${placementData.rewardedVolume.buy.toFixed(2)}</p>
-          <p className="text-xs text-gray-400 mt-1">
-            of ${placementData.volumeCaps.buy.toFixed(2)} cap ({((placementData.rewardedVolume.buy / placementData.volumeCaps.buy) * 100).toFixed(1)}%)
-          </p>
+          <div className="mt-1 space-y-1">
+            <p className="text-xs text-gray-400">
+              Total cap: ${placementData.volumeCaps.buy.toFixed(2)}
+            </p>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${placementData.rewardedVolume.buy >= placementData.volumeCaps.buy ? 'bg-red-500' : 'bg-green-500'}`}
+                style={{ width: `${Math.min((placementData.rewardedVolume.buy / placementData.volumeCaps.buy) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              {((placementData.rewardedVolume.buy / placementData.volumeCaps.buy) * 100).toFixed(1)}% used
+            </p>
+          </div>
         </div>
 
         <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-4">
           <h3 className="text-sm text-red-400 mb-2">Sell Volume Earning Rewards</h3>
           <p className="text-xl font-bold text-red-300">${placementData.rewardedVolume.sell.toFixed(2)}</p>
-          <p className="text-xs text-gray-400 mt-1">
-            of ${placementData.volumeCaps.sell.toFixed(2)} cap ({((placementData.rewardedVolume.sell / placementData.volumeCaps.sell) * 100).toFixed(1)}%)
-          </p>
+          <div className="mt-1 space-y-1">
+            <p className="text-xs text-gray-400">
+              Total cap: ${placementData.volumeCaps.sell.toFixed(2)}
+            </p>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${placementData.rewardedVolume.sell >= placementData.volumeCaps.sell ? 'bg-red-500' : 'bg-red-400'}`}
+                style={{ width: `${Math.min((placementData.rewardedVolume.sell / placementData.volumeCaps.sell) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              {((placementData.rewardedVolume.sell / placementData.volumeCaps.sell) * 100).toFixed(1)}% used
+            </p>
+          </div>
         </div>
       </div>
 
@@ -277,8 +299,12 @@ export const OrderPlacementGuide: React.FC = () => {
                     </div>
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Maximum eligible:</span>
-                        <span className="font-mono text-red-400">$0.00</span>
+                        <span className="text-gray-400">Total cap volume:</span>
+                        <span className="font-mono">${placementData.volumeCaps.buy.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Currently used:</span>
+                        <span className="font-mono text-red-400">${placementData.rewardedVolume.buy.toFixed(2)} (100%)</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Required price:</span>
@@ -365,8 +391,12 @@ export const OrderPlacementGuide: React.FC = () => {
                     </div>
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Maximum eligible:</span>
-                        <span className="font-mono text-red-400">$0.00</span>
+                        <span className="text-gray-400">Total cap volume:</span>
+                        <span className="font-mono">${placementData.volumeCaps.sell.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Currently used:</span>
+                        <span className="font-mono text-red-400">${placementData.rewardedVolume.sell.toFixed(2)} (100%)</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Required price:</span>
