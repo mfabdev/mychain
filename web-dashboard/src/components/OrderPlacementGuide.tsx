@@ -278,9 +278,10 @@ export const OrderPlacementGuide: React.FC = () => {
     
     const calculatedPrice = (bestAsk * bestBid) / denominator;
     
-    // Add small offset to avoid exact matches with existing orders
+    // Add offset to avoid exact matches with existing orders
     // This prevents the calculated threshold from being exactly the same as common round numbers
-    const offset = calculatedPrice * 0.00001; // 0.001% offset
+    // Use a larger offset for buy orders (add) and negative for sell orders (subtract)
+    const offset = calculatedPrice * 0.0001; // 0.01% offset
     const finalPrice = calculatedPrice + offset;
     
     console.log('📐 Price calculation for spread reduction:', {
@@ -1180,10 +1181,17 @@ export const OrderPlacementGuide: React.FC = () => {
                         // Get all unique prices including bonus thresholds
                         const priceSet = new Set(orders.map((o: any) => o.price));
                         
-                        // Add bonus threshold prices to the set
+                        // Add bonus threshold prices to the set ONLY if no order exists at that price
                         const bonusTiers = orderType === 'buy' ? buyBonusTiers : sellBonusTiers;
                         bonusTiers.forEach(tier => {
-                          priceSet.add(tier.price);
+                          // Check if any order exists within a small tolerance of this price
+                          const hasOrderAtPrice = orders.some((o: any) => 
+                            Math.abs(o.price - tier.price) < 0.000001
+                          );
+                          
+                          if (!hasOrderAtPrice) {
+                            priceSet.add(tier.price);
+                          }
                         });
                         
                         const uniquePrices = Array.from(priceSet).sort((a, b) => 
