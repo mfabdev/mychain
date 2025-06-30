@@ -1007,6 +1007,42 @@ export const OrderPlacementGuide: React.FC = () => {
                             {/* Price level visualization */}
                             <div className="bg-gray-900/50 rounded p-2 mb-2">
                               <div className="text-xs text-gray-400 mb-2">Price Levels & Order Distribution:</div>
+                              
+                              {/* Bonus Thresholds Section */}
+                              {orderType === 'buy' && buyBonusTiers.length > 0 && (
+                                <div className="bg-purple-900/20 border border-purple-500/30 rounded p-2 mb-2">
+                                  <div className="text-xs text-purple-400 mb-1">
+                                    <strong>💎 Bonus Thresholds</strong>
+                                    <span className="ml-2 text-gray-400">Effective APR = {placementData.currentAPR}% × Multiplier</span>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-2 text-xs">
+                                    {buyBonusTiers.map((tier, i) => (
+                                      <div key={i} className="flex items-center justify-between">
+                                        <span className="text-yellow-400 font-bold">{tier.multiplier}</span>
+                                        <span className="font-mono text-green-400">${tier.price.toFixed(6)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {orderType === 'sell' && (
+                                <div className="bg-purple-900/20 border border-purple-500/30 rounded p-2 mb-2">
+                                  <div className="text-xs text-purple-400 mb-1">
+                                    <strong>💎 Bonus Thresholds</strong>
+                                    <span className="ml-2 text-gray-400">Effective APR = {placementData.currentAPR}% × Multiplier</span>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-2 text-xs">
+                                    {sellBonusTiers.map((tier, i) => (
+                                      <div key={i} className="flex items-center justify-between">
+                                        <span className="text-yellow-400 font-bold">{tier.multiplier}</span>
+                                        <span className="font-mono text-red-400">${tier.price.toFixed(6)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               <div className="space-y-1 text-xs font-mono">
                                 {/* Header */}
                                 <div className="flex justify-between text-gray-500 border-b border-gray-700 pb-1">
@@ -1054,6 +1090,7 @@ export const OrderPlacementGuide: React.FC = () => {
                                   
                                   const eligibilityCutoff = orderType === 'buy' ? buyCutoffPrice : sellCutoffPrice;
                                   let shownCutoffLine = false;
+                                  let shownBonusLines = new Set<string>();
                                   
                                   return (
                                     <>
@@ -1084,8 +1121,53 @@ export const OrderPlacementGuide: React.FC = () => {
                                   
                                   if (shouldShowCutoff) shownCutoffLine = true;
                                   
+                                  // Check if we should show bonus threshold lines
+                                  const bonusLinesToShow: Array<{multiplier: string, price: number, color: string}> = [];
+                                  
+                                  if (orderType === 'buy') {
+                                    buyBonusTiers.forEach(tier => {
+                                      if (!shownBonusLines.has(tier.multiplier) && i > 0) {
+                                        if (pricesToShow[i-1] >= tier.price && priceLevel < tier.price) {
+                                          bonusLinesToShow.push({ 
+                                            multiplier: tier.multiplier, 
+                                            price: tier.price, 
+                                            color: 'yellow' 
+                                          });
+                                          shownBonusLines.add(tier.multiplier);
+                                        }
+                                      }
+                                    });
+                                  } else {
+                                    sellBonusTiers.forEach(tier => {
+                                      if (!shownBonusLines.has(tier.multiplier) && i > 0) {
+                                        if (pricesToShow[i-1] <= tier.price && priceLevel > tier.price) {
+                                          bonusLinesToShow.push({ 
+                                            multiplier: tier.multiplier, 
+                                            price: tier.price, 
+                                            color: 'yellow' 
+                                          });
+                                          shownBonusLines.add(tier.multiplier);
+                                        }
+                                      }
+                                    });
+                                  }
+                                  
                                   return (
                                     <React.Fragment key={priceLevel}>
+                                      {/* Show bonus threshold lines */}
+                                      {bonusLinesToShow.map((bonus, idx) => (
+                                        <div key={`${bonus.multiplier}-${idx}`} className="relative my-2">
+                                          <div className="absolute inset-0 flex items-center">
+                                            <div className="w-full border-t border-yellow-500/50 border-dashed"></div>
+                                          </div>
+                                          <div className="relative flex justify-center">
+                                            <span className="bg-gray-900 px-2 text-xs text-yellow-400">
+                                              💎 {bonus.multiplier} Bonus (${bonus.price.toFixed(6)})
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      
                                       {/* Insert user's order BEFORE current price if needed */}
                                       {shouldInsertBefore && (
                                         <div className="relative">
