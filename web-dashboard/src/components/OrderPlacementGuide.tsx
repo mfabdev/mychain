@@ -267,21 +267,55 @@ export const OrderPlacementGuide: React.FC = () => {
   // When spread is extremely large or no ask exists, use simpler bonus tiers
   const isLargeSpread = bestAsk === Infinity || (bestAsk - bestBid) / bestBid > 1; // >100% spread
   
+  // For buy orders with large spreads, we need to calculate prices that actually achieve the spread reductions
+  // The key insight: if spread is 1000%, a 5% reduction still means the new price is quite close to bestBid
+  const calculateLargeSpreadTiers = () => {
+    if (!isLargeSpread || bestBid === 0) return [];
+    
+    // If no ask exists, use simple percentages above bid
+    if (bestAsk === Infinity) {
+      return [
+        { multiplier: '2.0x', reduction: '75%+', price: bestBid * 2.0 },     // 100% above
+        { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.5 },  // 50% above
+        { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.2 },  // 20% above
+        { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.05 }   // 5% above
+      ];
+    }
+    
+    // For large but finite spreads, calculate actual prices needed
+    const tiers = [];
+    
+    // For each reduction target, solve for the price
+    const targets = [
+      { multiplier: '2.0x', reduction: 0.75 },
+      { multiplier: '1.5x', reduction: 0.50 },
+      { multiplier: '1.3x', reduction: 0.25 },
+      { multiplier: '1.1x', reduction: 0.05 }
+    ];
+    
+    for (const target of targets) {
+      const price = calculatePriceForReduction(target.reduction);
+      // Only include if price makes sense (above bestBid and below bestAsk)
+      if (price > bestBid && price < bestAsk) {
+        tiers.push({
+          multiplier: target.multiplier,
+          reduction: `${(target.reduction * 100).toFixed(0)}%+`,
+          price: price
+        });
+      }
+    }
+    
+    return tiers;
+  };
+  
   const buyBonusTiers = bestBid > 0 ? (
-    isLargeSpread ? [
-      // For large spreads, show incremental improvements above best bid
-      // For buy orders: higher price = higher bonus (tightens spread more)
-      { multiplier: '2.0x', reduction: '75%+', price: bestBid * 1.10 },     // 10% above (best)
-      { multiplier: '1.5x', reduction: '50-74%', price: bestBid * 1.05 },  // 5% above
-      { multiplier: '1.3x', reduction: '25-49%', price: bestBid * 1.02 },  // 2% above
-      { multiplier: '1.1x', reduction: '5-24%', price: bestBid * 1.01 }    // 1% above (worst)
-    ] : [
+    isLargeSpread ? calculateLargeSpreadTiers() : [
       // Normal calculation when spread is reasonable
       { multiplier: '2.0x', reduction: '75%+', price: calculatePriceForReduction(0.75) },
       { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
       { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
       { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
-    ].sort((a, b) => b.price - a.price) // Ensure descending price order for buy orders
+    ].filter(tier => tier.price > bestBid) // Only show tiers above best bid
   ) : [];
   
   const sellBonusTiers = [
