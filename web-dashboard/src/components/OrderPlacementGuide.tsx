@@ -226,10 +226,10 @@ export const OrderPlacementGuide: React.FC = () => {
   // Calculate bonus tier prices
   const currentSpread = bestAsk !== Infinity && bestBid > 0 ? bestAsk - bestBid : 0;
   const buyBonusTiers = bestAsk !== Infinity && bestBid > 0 ? [
-    { multiplier: '2.0x', reduction: '75%+', price: bestBid + currentSpread * 0.25 },
-    { multiplier: '1.5x', reduction: '50-74%', price: bestBid + currentSpread * 0.50 },
+    { multiplier: '1.1x', reduction: '5-24%', price: bestBid + currentSpread * 0.95 },
     { multiplier: '1.3x', reduction: '25-49%', price: bestBid + currentSpread * 0.75 },
-    { multiplier: '1.1x', reduction: '5-24%', price: bestBid + currentSpread * 0.95 }
+    { multiplier: '1.5x', reduction: '50-74%', price: bestBid + currentSpread * 0.50 },
+    { multiplier: '2.0x', reduction: '75%+', price: bestBid + currentSpread * 0.25 }
   ] : [];
   
   const sellBonusTiers = [
@@ -257,10 +257,10 @@ export const OrderPlacementGuide: React.FC = () => {
       if (price <= bestBid || improvement < 0.05) return '-';
       
       // Check bonus tiers based on improvement percentage
+      if (improvement >= 0.05 && improvement < 0.25) return '1.1x';
+      if (improvement >= 0.25 && improvement < 0.50) return '1.3x';
+      if (improvement >= 0.50 && improvement < 0.75) return '1.5x';
       if (improvement >= 0.75) return '2.0x';
-      if (improvement >= 0.50) return '1.5x';
-      if (improvement >= 0.25) return '1.3x';
-      if (improvement >= 0.05) return '1.1x';
       return '-';
     } else {
       // Sell orders need to be above average ask
@@ -1221,30 +1221,70 @@ export const OrderPlacementGuide: React.FC = () => {
                                           <span className="w-12 text-center text-gray-500">-</span>
                                           <span className="w-16 text-right text-gray-400 text-xs" title="Total MC at or above this price">
                                             {(() => {
-                                              // Calculate total MC up to this threshold
+                                              // For bonus thresholds, show cumulative totals of orders that would qualify
                                               let totalMC = 0;
+                                              let totalOrders = 0;
+                                              
                                               for (const order of sortedOrders) {
-                                                if (orderType === 'buy' && order.price >= priceLevel) {
-                                                  totalMC += order.amount;
-                                                } else if (orderType === 'sell' && order.price <= priceLevel) {
-                                                  totalMC += order.amount;
+                                                if (orderType === 'buy') {
+                                                  // For buy orders, count all orders at or above this threshold
+                                                  if (order.price >= priceLevel) {
+                                                    totalMC += order.amount;
+                                                    totalOrders++;
+                                                  }
+                                                } else {
+                                                  // For sell orders, count all orders at or below this threshold
+                                                  if (order.price <= priceLevel) {
+                                                    totalMC += order.amount;
+                                                    totalOrders++;
+                                                  }
                                                 }
                                               }
-                                              return totalMC > 0 ? `≤${totalMC.toFixed(0)}` : '-';
+                                              
+                                              // If no orders qualify yet, show the total that WOULD qualify at this price
+                                              if (totalOrders === 0) {
+                                                // Count all orders that would move to this price level for the bonus
+                                                for (const order of sortedOrders) {
+                                                  totalMC += order.amount;
+                                                }
+                                                return totalMC > 0 ? `(${totalMC.toFixed(0)})` : '-';
+                                              }
+                                              
+                                              return `≤${totalMC.toFixed(0)}`;
                                             })()}
                                           </span>
                                           <span className="w-16 text-right text-gray-400 text-xs" title="Total value at or above this price">
                                             {(() => {
-                                              // Calculate total value up to this threshold
+                                              // For bonus thresholds, show cumulative totals of orders that would qualify
                                               let totalValue = 0;
+                                              let totalOrders = 0;
+                                              
                                               for (const order of sortedOrders) {
-                                                if (orderType === 'buy' && order.price >= priceLevel) {
-                                                  totalValue += order.value;
-                                                } else if (orderType === 'sell' && order.price <= priceLevel) {
-                                                  totalValue += order.value;
+                                                if (orderType === 'buy') {
+                                                  // For buy orders, count all orders at or above this threshold
+                                                  if (order.price >= priceLevel) {
+                                                    totalValue += order.value;
+                                                    totalOrders++;
+                                                  }
+                                                } else {
+                                                  // For sell orders, count all orders at or below this threshold
+                                                  if (order.price <= priceLevel) {
+                                                    totalValue += order.value;
+                                                    totalOrders++;
+                                                  }
                                                 }
                                               }
-                                              return totalValue > 0 ? `≤$${totalValue.toFixed(2)}` : '-';
+                                              
+                                              // If no orders qualify yet, show the total that WOULD qualify at this price
+                                              if (totalOrders === 0) {
+                                                // Count all orders that would move to this price level for the bonus
+                                                for (const order of sortedOrders) {
+                                                  totalValue += order.value;
+                                                }
+                                                return totalValue > 0 ? `($${totalValue.toFixed(2)})` : '-';
+                                              }
+                                              
+                                              return `≤$${totalValue.toFixed(2)}`;
                                             })()}
                                           </span>
                                           <span className="w-16 text-center text-gray-500">-</span>
