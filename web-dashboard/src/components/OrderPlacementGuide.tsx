@@ -1103,6 +1103,9 @@ export const OrderPlacementGuide: React.FC = () => {
                                   }
                                   isBonusThreshold = !!bonusTier;
                                   
+                                  // Check if user's price matches this level
+                                  const isUserPrice = Math.abs(priceLevel - price) < 0.0000001;
+                                  
                                   // Check if we should show cutoff line
                                   const shouldShowCutoff = !shownCutoffLine && (
                                     (orderType === 'buy' && i > 0 && pricesToShow[i-1] >= eligibilityCutoff && priceLevel < eligibilityCutoff) ||
@@ -1213,8 +1216,62 @@ export const OrderPlacementGuide: React.FC = () => {
                                         </div>
                                       )}
                                       
-                                      {/* Show bonus threshold row OR existing orders at this price */}
-                                      {isBonusThreshold && !group && (
+                                      {/* Show user's order at bonus threshold */}
+                                      {isBonusThreshold && isUserPrice && !group && (
+                                        <div className="relative">
+                                          <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
+                                          <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
+                                            <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
+                                            <span className="w-12 text-center">
+                                              {(() => {
+                                                const multiplier = getBonusMultiplier(price, orderType === 'buy');
+                                                return multiplier !== '-' 
+                                                  ? <span className="text-yellow-400 font-bold">{multiplier}</span>
+                                                  : <span className="text-purple-400">NEW</span>;
+                                              })()}
+                                            </span>
+                                            <span className="w-12 text-center text-purple-400">1</span>
+                                            <span className="w-16 text-right text-purple-400">{(amount / price).toFixed(0)}</span>
+                                            <span className="w-16 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-16 text-center">
+                                              {(() => {
+                                                const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                       (orderType === 'sell' && price <= eligibilityCutoff);
+                                                
+                                                if (!wouldBeEligible) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                }
+                                                
+                                                // Calculate how much is already used by higher/equal priority orders
+                                                let usedByHigherPriority = 0;
+                                                for (const order of sortedOrders) {
+                                                  // For buy orders: higher or equal price orders have priority
+                                                  // For sell orders: lower or equal price orders have priority
+                                                  if ((orderType === 'buy' && order.price >= price) || 
+                                                      (orderType === 'sell' && order.price <= price)) {
+                                                    usedByHigherPriority += order.value;
+                                                  }
+                                                }
+                                                
+                                                // Calculate available space
+                                                const remainingCap = Math.max(0, volumeCap - usedByHigherPriority);
+                                                const userEligible = Math.min(amount, remainingCap);
+                                                
+                                                if (userEligible === 0) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                } else if (userEligible < amount) {
+                                                  return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
+                                                } else {
+                                                  return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                                }
+                                              })()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Show bonus threshold row if no user order at this price */}
+                                      {isBonusThreshold && !group && !isUserPrice && (
                                         <div className="flex justify-between p-1 rounded bg-yellow-900/20 border border-yellow-500/30">
                                           <span className="w-24 text-yellow-400 font-bold">${priceLevel.toFixed(6)}</span>
                                           <span className="w-12 text-center text-yellow-400 font-bold">{bonusTier.multiplier}</span>
@@ -1320,8 +1377,8 @@ export const OrderPlacementGuide: React.FC = () => {
                                         </div>
                                       )}
                                       
-                                      {/* Show user's order if it's at the same price as existing orders */}
-                                      {priceLevel === price && (
+                                      {/* Show user's order if it's at the same price as existing orders (but not already shown at bonus threshold) */}
+                                      {priceLevel === price && !shouldInsertBefore && !shouldInsertAfter && !isBonusThreshold && (
                                         <div className="relative">
                                           <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
                                           <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
