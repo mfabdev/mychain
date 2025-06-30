@@ -30,6 +30,8 @@ interface PlacementData {
 export const OrderPlacementGuide: React.FC = () => {
   const [placementData, setPlacementData] = useState<PlacementData | null>(null);
   const [userAmount, setUserAmount] = useState<string>('1000');
+  const [userPrice, setUserPrice] = useState<string>('');
+  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -292,115 +294,250 @@ export const OrderPlacementGuide: React.FC = () => {
       <div className="bg-gray-700/30 rounded-lg p-4 mb-6">
         <h3 className="font-semibold mb-3">🧮 Reward Calculator</h3>
         
-        <div className="mb-4">
-          <label className="block text-sm text-gray-400 mb-2">Order Amount ($)</label>
-          <input
-            type="number"
-            value={userAmount}
-            onChange={(e) => setUserAmount(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-            placeholder="Enter order amount"
-            min="0"
-            step="100"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Order Type</label>
+            <select
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value as 'buy' | 'sell')}
+              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+            >
+              <option value="buy">Buy Order</option>
+              <option value="sell">Sell Order</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Order Amount ($)</label>
+            <input
+              type="number"
+              value={userAmount}
+              onChange={(e) => setUserAmount(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+              placeholder="Enter order amount"
+              min="0"
+              step="100"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Price per MC ($)</label>
+            <input
+              type="number"
+              value={userPrice}
+              onChange={(e) => setUserPrice(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+              placeholder={placementData ? placementData.mcPrice.toFixed(6) : "Enter price"}
+              min="0"
+              step="0.000001"
+            />
+          </div>
         </div>
 
         {amount > 0 && (
           <div className="space-y-4">
+            {/* Price Analysis */}
+            {(() => {
+              const price = parseFloat(userPrice) || placementData.mcPrice;
+              const priceDeviation = ((price - placementData.mcPrice) / placementData.mcPrice) * 100;
+              
+              // Determine if price qualifies for rewards based on order type
+              const willEarnRewards = orderType === 'buy' 
+                ? (placementData.rewardedVolume.buy < placementData.volumeCaps.buy || price >= buyCutoffPrice)
+                : (placementData.rewardedVolume.sell < placementData.volumeCaps.sell || price >= sellCutoffPrice);
+              
+              // Calculate suggested prices
+              const suggestedPrices = orderType === 'buy' ? {
+                minimum: placementData.rewardedVolume.buy >= placementData.volumeCaps.buy ? buyCutoffPrice : placementData.mcPrice * 0.95,
+                optimal: placementData.mcPrice,
+                aggressive: placementData.mcPrice * 1.02
+              } : {
+                minimum: placementData.rewardedVolume.sell >= placementData.volumeCaps.sell ? sellCutoffPrice : placementData.mcPrice * 0.98,
+                optimal: placementData.mcPrice,
+                aggressive: placementData.mcPrice * 1.03
+              };
+              
+              return (
+                <div className="bg-gray-800/50 rounded p-4">
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">
+                    💰 Price Analysis for {orderType === 'buy' ? 'Buy' : 'Sell'} Order
+                  </h4>
+                  
+                  {/* Price Status */}
+                  <div className={`p-3 rounded mb-3 ${willEarnRewards ? 'bg-green-900/30 border border-green-500/30' : 'bg-red-900/30 border border-red-500/30'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">
+                        Price: ${price.toFixed(6)}
+                      </span>
+                      <span className={`text-sm ${willEarnRewards ? 'text-green-400' : 'text-red-400'}`}>
+                        {willEarnRewards ? '✅ Eligible for rewards' : '❌ No rewards at this price'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {priceDeviation > 0 ? '+' : ''}{priceDeviation.toFixed(2)}% from market (${placementData.mcPrice.toFixed(6)})
+                    </div>
+                  </div>
+                  
+                  {/* Price Suggestions */}
+                  <div className="space-y-2 mb-3">
+                    <h5 className="text-sm font-medium text-gray-300">📊 Suggested Prices:</h5>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <button
+                        onClick={() => setUserPrice(suggestedPrices.minimum.toFixed(6))}
+                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600 transition-colors"
+                      >
+                        <div className="font-medium">Minimum</div>
+                        <div className="text-gray-400">${suggestedPrices.minimum.toFixed(6)}</div>
+                        <div className="text-xs text-gray-500">Just qualifies</div>
+                      </button>
+                      <button
+                        onClick={() => setUserPrice(suggestedPrices.optimal.toFixed(6))}
+                        className="p-2 bg-blue-900/30 hover:bg-blue-900/50 rounded border border-blue-500/30 transition-colors"
+                      >
+                        <div className="font-medium text-blue-400">Market Price</div>
+                        <div className="text-gray-400">${suggestedPrices.optimal.toFixed(6)}</div>
+                        <div className="text-xs text-gray-500">Recommended</div>
+                      </button>
+                      <button
+                        onClick={() => setUserPrice(suggestedPrices.aggressive.toFixed(6))}
+                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded border border-gray-600 transition-colors"
+                      >
+                        <div className="font-medium">Aggressive</div>
+                        <div className="text-gray-400">${suggestedPrices.aggressive.toFixed(6)}</div>
+                        <div className="text-xs text-gray-500">Higher priority</div>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Detailed explanation */}
+                  {!willEarnRewards && (
+                    <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded text-xs">
+                      <p className="text-yellow-400 font-medium mb-1">Why this price won't earn rewards:</p>
+                      {orderType === 'buy' ? (
+                        <p>Buy orders must bid at least ${buyCutoffPrice.toFixed(6)} because the volume cap is full. Only the highest bids earn rewards.</p>
+                      ) : (
+                        <p>Sell orders must ask at least ${sellCutoffPrice.toFixed(6)} because the volume cap is full. Only the highest asks earn rewards.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Placement Analysis */}
             <div className="bg-gray-800/50 rounded p-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">📍 Where to Place Your ${amount.toFixed(2)} Order</h4>
+              <h4 className="text-sm font-medium text-gray-300 mb-3">📍 Order Placement Analysis</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Buy Order Analysis */}
-                <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
-                  <h5 className="text-green-400 font-medium mb-2">Buy Order Analysis</h5>
-                  {(() => {
-                    const remainingBuyCap = placementData.volumeCaps.buy - placementData.rewardedVolume.buy;
-                    const canFitInBuyCap = amount <= remainingBuyCap;
-                    
-                    if (canFitInBuyCap) {
-                      return (
-                        <div className="space-y-2 text-xs">
-                          <div className="p-2 bg-green-900/30 rounded">
-                            <span className="text-green-400">✅ Will earn rewards at any price</span>
-                          </div>
-                          <p className="text-gray-300">
-                            Cap has ${remainingBuyCap.toFixed(2)} space available
-                          </p>
-                          <p className="text-gray-400">
-                            Place at market price (${placementData.mcPrice.toFixed(6)}) or higher
-                          </p>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="space-y-2 text-xs">
-                          <div className="p-2 bg-yellow-900/30 rounded">
-                            <span className="text-yellow-400">⚠️ Partially eligible</span>
-                          </div>
-                          <p className="text-gray-300">
-                            Only ${remainingBuyCap.toFixed(2)} will earn rewards
-                          </p>
-                          {placementData.optimalPrices.buy.length > 0 && (
-                            <p className="text-gray-400">
-                              Must bid above ${buyCutoffPrice.toFixed(6)} to earn any rewards
+              <div className="space-y-3">
+                {orderType === 'buy' ? (
+                  <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+                    <h5 className="text-green-400 font-medium mb-2">Buy Order Details</h5>
+                    {(() => {
+                      const remainingBuyCap = placementData.volumeCaps.buy - placementData.rewardedVolume.buy;
+                      const canFitInBuyCap = amount <= remainingBuyCap;
+                      const orderPrice = parseFloat(userPrice) || placementData.mcPrice;
+                      const willGetRewards = remainingBuyCap > 0 || orderPrice >= buyCutoffPrice;
+                      
+                      if (canFitInBuyCap && willGetRewards) {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-green-900/30 rounded">
+                              <span className="text-green-400">✅ Full order will earn rewards</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Cap has ${remainingBuyCap.toFixed(2)} space available
                             </p>
-                          )}
-                          <div className="mt-2 p-2 bg-orange-900/30 rounded">
-                            <p className="text-orange-400 font-medium">💡 Recommendation:</p>
-                            <p className="text-xs">Split into smaller orders or wait for cap reset</p>
+                            {remainingBuyCap < amount * 2 && (
+                              <p className="text-yellow-400">
+                                ⚠️ Cap is {((placementData.rewardedVolume.buy / placementData.volumeCaps.buy) * 100).toFixed(0)}% full - place order soon
+                              </p>
+                            )}
                           </div>
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-
-                {/* Sell Order Analysis */}
-                <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
-                  <h5 className="text-red-400 font-medium mb-2">Sell Order Analysis</h5>
-                  {(() => {
-                    const remainingSellCap = placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
-                    const canFitInSellCap = amount <= remainingSellCap;
-                    
-                    if (canFitInSellCap) {
-                      return (
-                        <div className="space-y-2 text-xs">
-                          <div className="p-2 bg-green-900/30 rounded">
-                            <span className="text-green-400">✅ Will earn rewards at any price</span>
-                          </div>
-                          <p className="text-gray-300">
-                            Cap has ${remainingSellCap.toFixed(2)} space available
-                          </p>
-                          <p className="text-gray-400">
-                            Place at market price (${placementData.mcPrice.toFixed(6)}) or higher
-                          </p>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="space-y-2 text-xs">
-                          <div className="p-2 bg-yellow-900/30 rounded">
-                            <span className="text-yellow-400">⚠️ Partially eligible</span>
-                          </div>
-                          <p className="text-gray-300">
-                            Only ${remainingSellCap.toFixed(2)} will earn rewards
-                          </p>
-                          {placementData.optimalPrices.sell.length > 0 && (
-                            <p className="text-gray-400">
-                              Must ask above ${sellCutoffPrice.toFixed(6)} to earn any rewards
+                        );
+                      } else if (!willGetRewards) {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-red-900/30 rounded">
+                              <span className="text-red-400">❌ Price too low - no rewards</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Increase price to at least ${buyCutoffPrice.toFixed(6)}
                             </p>
-                          )}
-                          <div className="mt-2 p-2 bg-orange-900/30 rounded">
-                            <p className="text-orange-400 font-medium">💡 Recommendation:</p>
-                            <p className="text-xs">Split into smaller orders or wait for cap reset</p>
                           </div>
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
+                        );
+                      } else {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-yellow-900/30 rounded">
+                              <span className="text-yellow-400">⚠️ Partially eligible</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Only ${remainingBuyCap.toFixed(2)} will earn rewards
+                            </p>
+                            <div className="mt-2 p-2 bg-orange-900/30 rounded">
+                              <p className="text-orange-400 font-medium">💡 Recommendation:</p>
+                              <p className="text-xs">Split into smaller orders or wait for cap reset</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                ) : (
+                  <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
+                    <h5 className="text-red-400 font-medium mb-2">Sell Order Details</h5>
+                    {(() => {
+                      const remainingSellCap = placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
+                      const canFitInSellCap = amount <= remainingSellCap;
+                      const orderPrice = parseFloat(userPrice) || placementData.mcPrice;
+                      const willGetRewards = remainingSellCap > 0 || orderPrice >= sellCutoffPrice;
+                      
+                      if (canFitInSellCap && willGetRewards) {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-green-900/30 rounded">
+                              <span className="text-green-400">✅ Full order will earn rewards</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Cap has ${remainingSellCap.toFixed(2)} space available
+                            </p>
+                            {remainingSellCap < amount * 2 && (
+                              <p className="text-yellow-400">
+                                ⚠️ Cap is {((placementData.rewardedVolume.sell / placementData.volumeCaps.sell) * 100).toFixed(0)}% full - place order soon
+                              </p>
+                            )}
+                          </div>
+                        );
+                      } else if (!willGetRewards) {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-red-900/30 rounded">
+                              <span className="text-red-400">❌ Price too low - no rewards</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Increase price to at least ${sellCutoffPrice.toFixed(6)}
+                            </p>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="p-2 bg-yellow-900/30 rounded">
+                              <span className="text-yellow-400">⚠️ Partially eligible</span>
+                            </div>
+                            <p className="text-gray-300">
+                              Only ${remainingSellCap.toFixed(2)} will earn rewards
+                            </p>
+                            <div className="mt-2 p-2 bg-orange-900/30 rounded">
+                              <p className="text-orange-400 font-medium">💡 Recommendation:</p>
+                              <p className="text-xs">Split into smaller orders or wait for cap reset</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
