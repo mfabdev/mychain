@@ -43,6 +43,7 @@ export const OrderPlacementGuide: React.FC = () => {
   const [userPrice, setUserPrice] = useState<string>('');
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState(true);
+  const [hasRunTest, setHasRunTest] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -232,37 +233,80 @@ export const OrderPlacementGuide: React.FC = () => {
   // Function to calculate price needed for specific spread reduction
   const calculatePriceForReduction = (reductionTarget: number): number => {
     if (bestBid === 0) {
-      // If no bid exists, any price creates 100% reduction
-      return bestAsk * (1 - reductionTarget);
+      // If no bid exists, currentSpreadPct = 1 (100%)
+      // Any price > 0 will create spread reduction
+      // For a target reduction R, we need: newSpreadPct = (1 - R)
+      // newSpreadPct = (bestAsk - orderPrice) / orderPrice = 1 - R
+      // Solving: orderPrice = bestAsk / (2 - R)
+      
+      const price = bestAsk / (2 - reductionTarget);
+      console.log('📐 No bid case:', {
+        bestAsk,
+        reductionTarget: (reductionTarget * 100).toFixed(0) + '%',
+        calculatedPrice: price.toFixed(6),
+        formula: `price = ${bestAsk.toFixed(6)} / (2 - ${reductionTarget})`
+      });
+      return price;
     }
     
-    // We need to solve for orderPrice where:
-    // reduction = 1 - (newSpreadPct / currentSpreadPct)
-    // reduction = 1 - ((bestAsk - orderPrice) / orderPrice) / ((bestAsk - bestBid) / bestBid)
-    // reduction = 1 - ((bestAsk - orderPrice) * bestBid) / (orderPrice * (bestAsk - bestBid))
+    // When bid exists, we solve for orderPrice where:
+    // spreadReduction = (currentSpreadPct - newSpreadPct) / currentSpreadPct = reductionTarget
+    // where currentSpreadPct = (bestAsk - bestBid) / bestBid
+    // and newSpreadPct = (bestAsk - orderPrice) / orderPrice
     
-    // After algebraic manipulation:
-    // orderPrice = (bestAsk * bestBid * (1 - reduction)) / (bestBid - reduction * (bestAsk - bestBid))
+    // Derivation:
+    // reductionTarget = 1 - (newSpreadPct / currentSpreadPct)
+    // newSpreadPct = currentSpreadPct * (1 - reductionTarget)
+    // (bestAsk - orderPrice) / orderPrice = ((bestAsk - bestBid) / bestBid) * (1 - reductionTarget)
+    // 
+    // Solving for orderPrice:
+    // orderPrice = bestAsk * bestBid / (bestBid + (bestAsk - bestBid) * (1 - reductionTarget))
     
-    const numerator = bestAsk * bestBid * (1 - reductionTarget);
-    const denominator = bestBid - reductionTarget * (bestAsk - bestBid);
+    const currentSpread = bestAsk - bestBid;
+    const denominator = bestBid + currentSpread * (1 - reductionTarget);
     
     if (denominator <= 0) {
-      // This would mean the reduction is impossible or results in price >= bestAsk
-      return bestAsk * 0.99; // Just below ask
+      console.warn('⚠️ Invalid denominator in price calculation:', {
+        bestBid,
+        bestAsk,
+        currentSpread,
+        reductionTarget,
+        denominator
+      });
+      return bestAsk * 0.999; // Just below ask as fallback
     }
     
-    const calculatedPrice = numerator / denominator;
+    const calculatedPrice = (bestAsk * bestBid) / denominator;
     
-    // Ensure the price makes sense (should be between bestBid and bestAsk)
-    if (calculatedPrice <= bestBid) {
-      // This happens when spread is too large relative to the reduction target
-      // Use a simpler approach: for X% reduction, move X% of the way from bid to ask
-      // For 75% reduction, we want to be 75% of the way from bid to ask
-      return bestBid + (bestAsk - bestBid) * reductionTarget;
-    }
+    // Add small offset to avoid exact matches with existing orders
+    // This prevents the calculated threshold from being exactly the same as common round numbers
+    const offset = calculatedPrice * 0.00001; // 0.001% offset
+    const finalPrice = calculatedPrice + offset;
     
-    return calculatedPrice;
+    console.log('📐 Price calculation for spread reduction:', {
+      bestBid: bestBid.toFixed(6),
+      bestAsk: bestAsk.toFixed(6),
+      currentSpread: currentSpread.toFixed(6),
+      currentSpreadPct: ((currentSpread / bestBid) * 100).toFixed(2) + '%',
+      reductionTarget: (reductionTarget * 100).toFixed(0) + '%',
+      calculatedPrice: calculatedPrice.toFixed(6),
+      withOffset: finalPrice.toFixed(6),
+      formula: `price = (${bestAsk.toFixed(6)} * ${bestBid.toFixed(6)}) / (${bestBid.toFixed(6)} + (1 - ${reductionTarget}) * ${currentSpread.toFixed(6)})`
+    });
+    
+    // Verify the calculation
+    const newSpreadPct = (bestAsk - finalPrice) / finalPrice;
+    const currentSpreadPct = currentSpread / bestBid;
+    const actualReduction = currentSpreadPct > 0 ? (currentSpreadPct - newSpreadPct) / currentSpreadPct : 0;
+    
+    console.log('✅ Verification:', {
+      newSpreadPct: (newSpreadPct * 100).toFixed(2) + '%',
+      actualReduction: (actualReduction * 100).toFixed(2) + '%',
+      targetReduction: (reductionTarget * 100).toFixed(0) + '%',
+      difference: ((actualReduction - reductionTarget) * 100).toFixed(2) + '%'
+    });
+    
+    return finalPrice;
   };
   
   // When spread is extremely large or no ask exists, use simpler bonus tiers
@@ -309,6 +353,41 @@ export const OrderPlacementGuide: React.FC = () => {
     return tiers;
   };
   
+  // Run a test calculation example first time we have valid data
+  const runTestCalculation = () => {
+    console.log('\n🧪 SPREAD BONUS CALCULATION TEST');
+    console.log('Test case: bestBid=$0.000150, bestAsk=$0.001000');
+    
+    const testBid = 0.000150;
+    const testAsk = 0.001000;
+    const testSpread = testAsk - testBid;
+    const testSpreadPct = testSpread / testBid;
+    
+    console.log(`Current spread: $${testSpread.toFixed(6)} (${(testSpreadPct * 100).toFixed(1)}%)`);
+    
+    // Test each reduction target
+    [0.05, 0.25, 0.50, 0.75].forEach(reduction => {
+      // Calculate price using our formula
+      const price = (testAsk * testBid) / (testBid + reduction * testSpread);
+      
+      // Verify the reduction
+      const newSpreadPct = (testAsk - price) / price;
+      const actualReduction = (testSpreadPct - newSpreadPct) / testSpreadPct;
+      
+      console.log(`\nTarget ${(reduction * 100).toFixed(0)}% reduction:`);
+      console.log(`  Price: $${price.toFixed(6)}`);
+      console.log(`  New spread %: ${(newSpreadPct * 100).toFixed(1)}%`);
+      console.log(`  Actual reduction: ${(actualReduction * 100).toFixed(1)}%`);
+      console.log(`  ✅ Match: ${Math.abs(actualReduction - reduction) < 0.001}`);
+    });
+  };
+  
+  // Run test once when we have data
+  if (!hasRunTest && bestBid > 0 && bestAsk !== Infinity) {
+    runTestCalculation();
+    setHasRunTest(true);
+  }
+  
   const buyBonusTiers = bestBid > 0 ? (
     isLargeSpread ? calculateLargeSpreadTiers() : [
       // Normal calculation when spread is reasonable
@@ -317,20 +396,22 @@ export const OrderPlacementGuide: React.FC = () => {
       { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
       { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
     ]
-    .filter(tier => tier.price > bestBid) // Only show tiers above best bid
+    .filter(tier => tier.price > bestBid && tier.price < bestAsk) // Only show tiers above best bid and below best ask
     .sort((a, b) => b.price - a.price) // Sort by price descending (highest price = highest bonus for buy orders)
   ) : [];
   
-  console.log('💰 buyBonusTiers calculated:', {
-    bestBid,
-    bestAsk,
+  console.log('💰 Buy bonus tiers calculated:', {
+    bestBid: bestBid.toFixed(6),
+    bestAsk: bestAsk === Infinity ? 'Infinity' : bestAsk.toFixed(6),
     isLargeSpread,
-    currentSpread: bestAsk - bestBid,
+    currentSpread: bestAsk === Infinity ? 'Infinity' : (bestAsk - bestBid).toFixed(6),
+    currentSpreadPct: bestBid > 0 && bestAsk !== Infinity ? (((bestAsk - bestBid) / bestBid) * 100).toFixed(1) + '%' : 'N/A',
     tiers: buyBonusTiers.map(t => ({
       multiplier: t.multiplier,
-      price: t.price,
+      price: t.price.toFixed(6),
       reduction: t.reduction,
-      'price > bestBid': t.price > bestBid
+      'price > bestBid': t.price > bestBid,
+      'price < bestAsk': bestAsk === Infinity ? 'true' : t.price < bestAsk
     }))
   });
   
@@ -357,10 +438,10 @@ export const OrderPlacementGuide: React.FC = () => {
         ? (currentSpreadPct - newSpreadPct) / currentSpreadPct 
         : 0;
       
-      console.log('🔍 getBonusMultiplier Debug:', {
-        price,
-        bestBid,
-        bestAsk,
+      console.log('🔍 getBonusMultiplier calculation:', {
+        price: price.toFixed(6),
+        bestBid: bestBid.toFixed(6),
+        bestAsk: bestAsk === Infinity ? 'Infinity' : bestAsk.toFixed(6),
         currentSpreadPct: (currentSpreadPct * 100).toFixed(2) + '%',
         newSpreadPct: (newSpreadPct * 100).toFixed(2) + '%',
         spreadReduction: (spreadReduction * 100).toFixed(2) + '%',
@@ -370,7 +451,11 @@ export const OrderPlacementGuide: React.FC = () => {
           '0.50 (1.5x)': spreadReduction >= 0.50,
           '0.25 (1.3x)': spreadReduction >= 0.25,
           '0.05 (1.1x)': spreadReduction >= 0.05
-        }
+        },
+        resultingMultiplier: spreadReduction >= 0.75 ? '2.0x' : 
+                           spreadReduction >= 0.50 ? '1.5x' :
+                           spreadReduction >= 0.25 ? '1.3x' :
+                           spreadReduction >= 0.05 ? '1.1x' : '-'
       });
       
       // Only apply bonus if reduction is at least 5%
@@ -446,11 +531,15 @@ export const OrderPlacementGuide: React.FC = () => {
             {orderType === 'buy' ? (
               buyBonusTiers.map((tier, i) => {
                 const multiplierForPrice = getBonusMultiplier(tier.price, true);
-                console.log(`🎯 Tier ${i}: price=${tier.price.toFixed(6)}, expected=${tier.multiplier}, actual=${multiplierForPrice}`);
+                const isValidTier = multiplierForPrice === tier.multiplier;
+                if (!isValidTier) {
+                  console.warn(`⚠️ Tier ${i} mismatch: price=${tier.price.toFixed(6)}, expected=${tier.multiplier}, actual=${multiplierForPrice}`);
+                }
                 return (
                   <div key={i} className="bg-gray-800/50 rounded p-2">
                     <div className="text-yellow-400 font-bold">{tier.multiplier}</div>
                     <div className="font-mono text-green-400">${tier.price.toFixed(6)}</div>
+                    <div className="text-xs text-gray-500">({tier.reduction})</div>
                     {getBonusMultiplier(parseFloat(userPrice), true) === tier.multiplier && (
                       <div className="text-yellow-300 mt-1">✨ Active</div>
                     )}
