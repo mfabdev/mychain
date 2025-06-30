@@ -25,6 +25,10 @@ interface PlacementData {
   mcPrice: number;
   mcSupply: number;
   tier: number;
+  orderBook?: {
+    buy_orders: OrderBookOrder[];
+    sell_orders: OrderBookOrder[];
+  };
 }
 
 export const OrderPlacementGuide: React.FC = () => {
@@ -146,7 +150,8 @@ export const OrderPlacementGuide: React.FC = () => {
           },
           mcPrice,
           mcSupply,
-          tier: currentTier
+          tier: currentTier,
+          orderBook: orderBookRes
         });
 
       } catch (error) {
@@ -516,42 +521,142 @@ export const OrderPlacementGuide: React.FC = () => {
                   
                   {/* Maximum Eligible Volume */}
                   <div className="mb-3 p-3 bg-purple-900/20 border border-purple-500/30 rounded">
-                    <h5 className="text-sm font-medium text-purple-400 mb-2">💎 Maximum Eligible Volume</h5>
+                    <h5 className="text-sm font-medium text-purple-400 mb-2">💎 Maximum Eligible Volume Analysis</h5>
                     {(() => {
+                      const currentPrice = parseFloat(userPrice) || placementData.mcPrice;
                       const remainingCap = orderType === 'buy' 
                         ? placementData.volumeCaps.buy - placementData.rewardedVolume.buy
                         : placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
                       
-                      const priceRange = orderType === 'buy' 
-                        ? placementData.rewardedVolume.buy >= placementData.volumeCaps.buy 
-                          ? `$${buyCutoffPrice.toFixed(6)} or higher`
-                          : `Any price`
-                        : placementData.rewardedVolume.sell >= placementData.volumeCaps.sell
-                          ? `$${sellCutoffPrice.toFixed(6)} or higher`
-                          : `Any price`;
+                      // If cap has space, simple case
+                      if (remainingCap > 0) {
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Available cap space:</span>
+                              <span className="font-mono text-white">${remainingCap.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your max eligible:</span>
+                              <span className="font-mono text-green-400">${Math.min(amount, remainingCap).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Required price:</span>
+                              <span className="font-mono text-green-400">Any price</span>
+                            </div>
+                            {amount > remainingCap && (
+                              <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                                <p className="text-yellow-400">⚠️ Only ${remainingCap.toFixed(2)} of your ${amount.toFixed(2)} order will earn rewards</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
                       
-                      return (
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Max volume that earns rewards:</span>
-                            <span className="font-mono text-white">${remainingCap.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Required price range:</span>
-                            <span className="font-mono text-yellow-400">{priceRange}</span>
-                          </div>
-                          {remainingCap === 0 && (
-                            <div className="mt-2 p-2 bg-red-900/30 rounded">
-                              <p className="text-red-400">⚠️ Cap is full! You must outbid existing orders</p>
+                      // Cap is full - analyze what would be displaced
+                      if (orderType === 'buy') {
+                        // For buy orders, calculate volume that would be displaced at user's price
+                        let volumeAtOrBelowPrice = 0;
+                        
+                        // Get all buy orders sorted by price ascending (lowest first)
+                        const buyOrders = (placementData.orderBook?.buy_orders || [])
+                          .map((o: OrderBookOrder) => ({
+                            price: parseFloat(o.price.amount) / 1000000,
+                            remaining: (parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000,
+                            value: ((parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000) * (parseFloat(o.price.amount) / 1000000)
+                          }))
+                          .sort((a: any, b: any) => a.price - b.price);
+                        
+                        // Calculate how much volume would be displaced
+                        for (const order of buyOrders) {
+                          if (order.price < currentPrice) {
+                            volumeAtOrBelowPrice += order.value;
+                          }
+                        }
+                        
+                        const maxEligible = Math.min(amount, Math.min(volumeAtOrBelowPrice, placementData.volumeCaps.buy));
+                        
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Total cap:</span>
+                              <span className="font-mono">${placementData.volumeCaps.buy.toFixed(2)}</span>
                             </div>
-                          )}
-                          {remainingCap > 0 && remainingCap < 100 && (
-                            <div className="mt-2 p-2 bg-yellow-900/30 rounded">
-                              <p className="text-yellow-400">⚠️ Only ${remainingCap.toFixed(2)} left - hurry!</p>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your price:</span>
+                              <span className="font-mono">${currentPrice.toFixed(6)}</span>
                             </div>
-                          )}
-                        </div>
-                      );
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Volume you'd displace:</span>
+                              <span className="font-mono text-yellow-400">${volumeAtOrBelowPrice.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your max eligible:</span>
+                              <span className="font-mono text-green-400">${maxEligible.toFixed(2)}</span>
+                            </div>
+                            {currentPrice <= buyCutoffPrice && (
+                              <div className="mt-2 p-2 bg-red-900/30 rounded">
+                                <p className="text-red-400">❌ Price too low! Minimum: ${buyCutoffPrice.toFixed(6)}</p>
+                              </div>
+                            )}
+                            {currentPrice > buyCutoffPrice && maxEligible < amount && (
+                              <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                                <p className="text-yellow-400">💡 To get full ${amount.toFixed(2)}, increase price to displace more orders</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } else {
+                        // Similar logic for sell orders
+                        let volumeAtOrBelowPrice = 0;
+                        
+                        const sellOrders = (placementData.orderBook?.sell_orders || [])
+                          .map((o: OrderBookOrder) => ({
+                            price: parseFloat(o.price.amount) / 1000000,
+                            remaining: (parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000,
+                            value: ((parseFloat(o.amount.amount) - parseFloat(o.filled_amount.amount)) / 1000000) * (parseFloat(o.price.amount) / 1000000)
+                          }))
+                          .sort((a: any, b: any) => a.price - b.price);
+                        
+                        for (const order of sellOrders) {
+                          if (order.price < currentPrice) {
+                            volumeAtOrBelowPrice += order.value;
+                          }
+                        }
+                        
+                        const maxEligible = Math.min(amount, Math.min(volumeAtOrBelowPrice, placementData.volumeCaps.sell));
+                        
+                        return (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Total cap:</span>
+                              <span className="font-mono">${placementData.volumeCaps.sell.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your price:</span>
+                              <span className="font-mono">${currentPrice.toFixed(6)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Volume you'd displace:</span>
+                              <span className="font-mono text-yellow-400">${volumeAtOrBelowPrice.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your max eligible:</span>
+                              <span className="font-mono text-green-400">${maxEligible.toFixed(2)}</span>
+                            </div>
+                            {currentPrice <= sellCutoffPrice && (
+                              <div className="mt-2 p-2 bg-red-900/30 rounded">
+                                <p className="text-red-400">❌ Price too low! Minimum: ${sellCutoffPrice.toFixed(6)}</p>
+                              </div>
+                            )}
+                            {currentPrice > sellCutoffPrice && maxEligible < amount && (
+                              <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                                <p className="text-yellow-400">💡 To get full ${amount.toFixed(2)}, increase price to displace more orders</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
                     })()}
                   </div>
                   
