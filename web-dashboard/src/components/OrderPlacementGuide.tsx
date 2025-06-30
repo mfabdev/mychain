@@ -215,77 +215,183 @@ export const OrderPlacementGuide: React.FC = () => {
           {/* Buy Orders */}
           <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
             <h4 className="text-green-400 font-medium mb-3">Buy Orders</h4>
-            {placementData.rewardedVolume.buy < placementData.volumeCaps.buy ? (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">
-                  ✅ <strong>Any price will earn rewards</strong> - cap not reached
-                </p>
-                <p className="text-xs text-gray-400">
-                  ${(placementData.volumeCaps.buy - placementData.rewardedVolume.buy).toFixed(2)} of cap space available
-                </p>
-                <div className="mt-2 p-2 bg-green-900/30 rounded">
-                  <p className="text-xs">
-                    💡 Higher prices get priority when cap fills
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">
-                  ⚠️ <strong>Must bid above ${buyCutoffPrice.toFixed(6)}</strong>
-                </p>
-                <p className="text-xs text-gray-400">
-                  Cap is full - only higher prices earn rewards
-                </p>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs text-gray-400">Current rewarded range:</p>
-                  <p className="text-xs font-mono">
-                    ${Math.max(...placementData.optimalPrices.buy).toFixed(6)} - ${buyCutoffPrice.toFixed(6)}
-                  </p>
-                </div>
-              </div>
-            )}
+            {(() => {
+              const remainingBuyCap = placementData.volumeCaps.buy - placementData.rewardedVolume.buy;
+              const capPercentUsed = (placementData.rewardedVolume.buy / placementData.volumeCaps.buy) * 100;
+              
+              if (remainingBuyCap > 100) {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-green-900/30 rounded">
+                      <p className="text-sm font-medium text-green-400">✅ Cap has plenty of space</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-white">${remainingBuyCap.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Price requirement:</span>
+                        <span className="font-mono text-green-400">Any price</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Cap usage:</span>
+                        <span className="font-mono">{capPercentUsed.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-blue-900/30 rounded text-xs">
+                      <p>💡 Place at market price or higher for best priority</p>
+                    </div>
+                  </div>
+                );
+              } else if (remainingBuyCap > 0) {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-yellow-900/30 rounded">
+                      <p className="text-sm font-medium text-yellow-400">⚠️ Cap nearly full</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-yellow-400">${remainingBuyCap.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Price requirement:</span>
+                        <span className="font-mono text-green-400">Any price (for now)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Cap usage:</span>
+                        <span className="font-mono text-yellow-400">{capPercentUsed.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-orange-900/30 rounded text-xs">
+                      <p>⚡ Act fast! Only ${remainingBuyCap.toFixed(2)} left</p>
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-red-900/30 rounded">
+                      <p className="text-sm font-medium text-red-400">❌ Cap is full</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-red-400">$0.00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Required price:</span>
+                        <span className="font-mono text-yellow-400">≥ ${buyCutoffPrice.toFixed(6)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Current range:</span>
+                        <span className="font-mono text-xs">
+                          ${buyCutoffPrice.toFixed(6)} - ${placementData.optimalPrices.buy.length > 0 ? Math.max(...placementData.optimalPrices.buy).toFixed(6) : buyCutoffPrice.toFixed(6)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-red-900/30 rounded text-xs">
+                      <p>💰 Must outbid existing orders to earn rewards</p>
+                    </div>
+                  </div>
+                );
+              }
+            })()}
           </div>
 
           {/* Sell Orders */}
           <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
             <h4 className="text-red-400 font-medium mb-3">Sell Orders</h4>
-            {placementData.rewardedVolume.sell < placementData.volumeCaps.sell ? (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">
-                  ✅ <strong>Any price will earn rewards</strong> - cap not reached
-                </p>
-                <p className="text-xs text-gray-400">
-                  ${(placementData.volumeCaps.sell - placementData.rewardedVolume.sell).toFixed(2)} of cap space available
-                </p>
-                <div className="mt-2 p-2 bg-red-900/30 rounded">
-                  <p className="text-xs">
-                    💡 Higher asks get priority when cap fills
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">
-                  ⚠️ <strong>Must ask above ${sellCutoffPrice.toFixed(6)}</strong>
-                </p>
-                <p className="text-xs text-gray-400">
-                  Cap is full - only higher prices earn rewards
-                </p>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs text-gray-400">Current rewarded range:</p>
-                  <p className="text-xs font-mono">
-                    ${sellCutoffPrice.toFixed(6)} - ${Math.min(...placementData.optimalPrices.sell).toFixed(6)}
-                  </p>
-                </div>
-              </div>
-            )}
+            {(() => {
+              const remainingSellCap = placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
+              const capPercentUsed = (placementData.rewardedVolume.sell / placementData.volumeCaps.sell) * 100;
+              
+              if (remainingSellCap > 50) {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-green-900/30 rounded">
+                      <p className="text-sm font-medium text-green-400">✅ Cap has plenty of space</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-white">${remainingSellCap.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Price requirement:</span>
+                        <span className="font-mono text-green-400">Any price</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Cap usage:</span>
+                        <span className="font-mono">{capPercentUsed.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-blue-900/30 rounded text-xs">
+                      <p>💡 Place at market price or higher for best priority</p>
+                    </div>
+                  </div>
+                );
+              } else if (remainingSellCap > 0) {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-yellow-900/30 rounded">
+                      <p className="text-sm font-medium text-yellow-400">⚠️ Cap nearly full</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-yellow-400">${remainingSellCap.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Price requirement:</span>
+                        <span className="font-mono text-green-400">Any price (for now)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Cap usage:</span>
+                        <span className="font-mono text-yellow-400">{capPercentUsed.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-orange-900/30 rounded text-xs">
+                      <p>⚡ Act fast! Only ${remainingSellCap.toFixed(2)} left</p>
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="space-y-2">
+                    <div className="p-2 bg-red-900/30 rounded">
+                      <p className="text-sm font-medium text-red-400">❌ Cap is full</p>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Maximum eligible:</span>
+                        <span className="font-mono text-red-400">$0.00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Required price:</span>
+                        <span className="font-mono text-yellow-400">≥ ${sellCutoffPrice.toFixed(6)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Current range:</span>
+                        <span className="font-mono text-xs">
+                          ${sellCutoffPrice.toFixed(6)} - ${placementData.optimalPrices.sell.length > 0 ? Math.max(...placementData.optimalPrices.sell).toFixed(6) : sellCutoffPrice.toFixed(6)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-red-900/30 rounded text-xs">
+                      <p>💰 Must outbid existing orders to earn rewards</p>
+                    </div>
+                  </div>
+                );
+              }
+            })()}
           </div>
         </div>
 
         <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded">
           <p className="text-sm text-yellow-400">
-            💡 <strong>Key Insight:</strong> Orders are rewarded by price priority. Higher MC valuations (higher bids, higher asks) get rewarded first up to the volume cap.
+            💡 <strong>Key Insight:</strong> Maximum eligible volume depends on remaining cap space. When caps are full, you must outbid existing orders to push them out and earn rewards.
           </p>
         </div>
       </div>
@@ -376,6 +482,47 @@ export const OrderPlacementGuide: React.FC = () => {
                     <div className="text-xs text-gray-400">
                       {priceDeviation > 0 ? '+' : ''}{priceDeviation.toFixed(2)}% from market (${placementData.mcPrice.toFixed(6)})
                     </div>
+                  </div>
+                  
+                  {/* Maximum Eligible Volume */}
+                  <div className="mb-3 p-3 bg-purple-900/20 border border-purple-500/30 rounded">
+                    <h5 className="text-sm font-medium text-purple-400 mb-2">💎 Maximum Eligible Volume</h5>
+                    {(() => {
+                      const remainingCap = orderType === 'buy' 
+                        ? placementData.volumeCaps.buy - placementData.rewardedVolume.buy
+                        : placementData.volumeCaps.sell - placementData.rewardedVolume.sell;
+                      
+                      const priceRange = orderType === 'buy' 
+                        ? placementData.rewardedVolume.buy >= placementData.volumeCaps.buy 
+                          ? `$${buyCutoffPrice.toFixed(6)} or higher`
+                          : `Any price`
+                        : placementData.rewardedVolume.sell >= placementData.volumeCaps.sell
+                          ? `$${sellCutoffPrice.toFixed(6)} or higher`
+                          : `Any price`;
+                      
+                      return (
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Max volume that earns rewards:</span>
+                            <span className="font-mono text-white">${remainingCap.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Required price range:</span>
+                            <span className="font-mono text-yellow-400">{priceRange}</span>
+                          </div>
+                          {remainingCap === 0 && (
+                            <div className="mt-2 p-2 bg-red-900/30 rounded">
+                              <p className="text-red-400">⚠️ Cap is full! You must outbid existing orders</p>
+                            </div>
+                          )}
+                          {remainingCap > 0 && remainingCap < 100 && (
+                            <div className="mt-2 p-2 bg-yellow-900/30 rounded">
+                              <p className="text-yellow-400">⚠️ Only ${remainingCap.toFixed(2)} left - hurry!</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                   
                   {/* Price Suggestions */}
