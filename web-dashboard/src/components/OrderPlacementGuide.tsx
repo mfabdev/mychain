@@ -948,8 +948,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
                                                                        (orderType === 'sell' && price <= eligibilityCutoff);
-                                                const availableSpace = volumeCap - cumulativeVolume;
-                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (!wouldBeEligible) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                }
+                                                
+                                                // Calculate displacement - your order can push out lower priority orders
+                                                let displaceable = 0;
+                                                for (const order of sortedOrders) {
+                                                  // For buy orders: can displace orders with lower prices
+                                                  // For sell orders: can displace orders with higher prices
+                                                  if ((orderType === 'buy' && order.price < price) || 
+                                                      (orderType === 'sell' && order.price > price)) {
+                                                    displaceable += order.value;
+                                                  }
+                                                }
+                                                
+                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
+                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
@@ -1012,8 +1028,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
                                                                        (orderType === 'sell' && price <= eligibilityCutoff);
-                                                const availableSpace = volumeCap - cumulativeVolume;
-                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (!wouldBeEligible) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                }
+                                                
+                                                // Calculate displacement - your order can push out lower priority orders
+                                                let displaceable = 0;
+                                                for (const order of sortedOrders) {
+                                                  // For buy orders: can displace orders with lower prices
+                                                  // For sell orders: can displace orders with higher prices
+                                                  if ((orderType === 'buy' && order.price < price) || 
+                                                      (orderType === 'sell' && order.price > price)) {
+                                                    displaceable += order.value;
+                                                  }
+                                                }
+                                                
+                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
+                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
@@ -1041,8 +1073,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
                                                                        (orderType === 'sell' && price <= eligibilityCutoff);
-                                                const availableSpace = volumeCap - cumulativeVolume;
-                                                const userEligible = wouldBeEligible ? Math.min(amount, Math.max(0, availableSpace)) : 0;
+                                                
+                                                if (!wouldBeEligible) {
+                                                  return <span className="text-red-400 text-xs">✗ None</span>;
+                                                }
+                                                
+                                                // Calculate displacement - your order can push out lower priority orders
+                                                let displaceable = 0;
+                                                for (const order of sortedOrders) {
+                                                  // For buy orders: can displace orders with lower prices
+                                                  // For sell orders: can displace orders with higher prices
+                                                  if ((orderType === 'buy' && order.price < price) || 
+                                                      (orderType === 'sell' && order.price > price)) {
+                                                    displaceable += order.value;
+                                                  }
+                                                }
+                                                
+                                                const effectiveSpace = Math.min(volumeCap, volumeCap - cumulativeVolume + displaceable);
+                                                const userEligible = Math.min(amount, Math.max(0, effectiveSpace));
                                                 
                                                 if (userEligible === 0) {
                                                   return <span className="text-red-400 text-xs">✗ None</span>;
