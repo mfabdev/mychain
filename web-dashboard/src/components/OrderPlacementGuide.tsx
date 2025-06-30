@@ -25,6 +25,12 @@ interface PlacementData {
   mcPrice: number;
   mcSupply: number;
   tier: number;
+  tierInfo?: {
+    id: number;
+    bid_volume_cap: string;
+    ask_volume_cap: string;
+    price_deviation: string;
+  };
   orderBook?: {
     buy_orders: OrderBookOrder[];
     sell_orders: OrderBookOrder[];
@@ -56,16 +62,30 @@ export const OrderPlacementGuide: React.FC = () => {
 
         // Fetch tier info
         const tierRes = await fetchAPI('/mychain/dex/v1/tier_info/1');
+        console.log('Tier API response:', tierRes); // Debug logging
+        
         const currentTier = tierRes?.current_tier || 1;
-
-        // Determine volume caps based on tier
-        const tierCaps = [
-          { buy: 0.02, sell: 0.01 },  // Tier 1
-          { buy: 0.05, sell: 0.03 },  // Tier 2
-          { buy: 0.08, sell: 0.04 },  // Tier 3
-          { buy: 0.12, sell: 0.05 },  // Tier 4
-        ];
-        const caps = tierCaps[currentTier - 1] || tierCaps[0];
+        
+        // Use actual tier info from API if available
+        let caps;
+        let tierInfo;
+        if (tierRes?.tier_info) {
+          // Convert decimal string values to numbers
+          caps = {
+            buy: parseFloat(tierRes.tier_info.bid_volume_cap),
+            sell: parseFloat(tierRes.tier_info.ask_volume_cap)
+          };
+          tierInfo = tierRes.tier_info;
+        } else {
+          // Fallback to hardcoded values if API doesn't provide tier info
+          const tierCaps = [
+            { buy: 0.02, sell: 0.01 },  // Tier 1
+            { buy: 0.05, sell: 0.03 },  // Tier 2
+            { buy: 0.08, sell: 0.04 },  // Tier 3
+            { buy: 0.12, sell: 0.05 },  // Tier 4
+          ];
+          caps = tierCaps[currentTier - 1] || tierCaps[0];
+        }
 
         // Fetch order book
         const orderBookRes = await fetchAPI('/mychain/dex/v1/order_book/1');
@@ -151,6 +171,7 @@ export const OrderPlacementGuide: React.FC = () => {
           mcPrice,
           mcSupply,
           tier: currentTier,
+          tierInfo,
           orderBook: orderBookRes
         });
 
@@ -232,6 +253,34 @@ export const OrderPlacementGuide: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Current Tier Information */}
+      <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
+        <h3 className="font-semibold mb-3 text-yellow-400">🏆 Current Tier Status</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-sm text-gray-400">Active Tier</p>
+            <p className="text-xl font-bold">Tier {placementData.tier}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Buy Volume Cap</p>
+            <p className="text-xl font-bold">{(placementData.tierInfo ? parseFloat(placementData.tierInfo.bid_volume_cap) * 100 : placementData.volumeCaps.buy / (placementData.mcSupply * placementData.mcPrice) * 100).toFixed(1)}%</p>
+            <p className="text-xs text-gray-400">of MC supply value</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-400">Sell Volume Cap</p>
+            <p className="text-xl font-bold">{(placementData.tierInfo ? parseFloat(placementData.tierInfo.ask_volume_cap) * 100 : placementData.volumeCaps.sell / (placementData.mcSupply * placementData.mcPrice) * 100).toFixed(1)}%</p>
+            <p className="text-xs text-gray-400">of MC supply value</p>
+          </div>
+        </div>
+        {placementData.tierInfo && placementData.tierInfo.price_deviation && (
+          <div className="mt-3 p-2 bg-gray-700/30 rounded text-sm">
+            <p className="text-gray-400">
+              Price deviation for this tier: <span className="text-white font-mono">{(parseFloat(placementData.tierInfo.price_deviation) * 100).toFixed(1)}%</span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Optimal Price Ranges */}
