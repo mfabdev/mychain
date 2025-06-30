@@ -255,6 +255,142 @@ export const OrderPlacementGuide: React.FC = () => {
         </div>
       </div>
 
+      {/* Spread Bonus Opportunities */}
+      <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
+        <h3 className="font-semibold mb-3 text-purple-400">💎 Bonus Opportunities</h3>
+        {(() => {
+          // Get current best bid and ask
+          const buyOrders = placementData.orderBook?.buy_orders || [];
+          const sellOrders = placementData.orderBook?.sell_orders || [];
+          
+          let bestBid = 0;
+          let bestAsk = Infinity;
+          
+          if (buyOrders.length > 0) {
+            bestBid = Math.max(...buyOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
+          }
+          
+          if (sellOrders.length > 0) {
+            bestAsk = Math.min(...sellOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
+          }
+          
+          const currentSpread = bestAsk !== Infinity && bestBid > 0 
+            ? ((bestAsk - bestBid) / bestBid) * 100 
+            : 100;
+            
+          const avgAsk = sellOrders.length > 0
+            ? sellOrders.reduce((sum: number, o: OrderBookOrder) => sum + parseFloat(o.price.amount) / 1000000, 0) / sellOrders.length
+            : placementData.mcPrice;
+          
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Buy Order Bonuses */}
+              <div>
+                <h4 className="text-sm font-medium text-green-400 mb-2">Buy Order Bonuses (Tighten Spread)</h4>
+                <div className="space-y-2 text-xs">
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">2.0x Bonus</span>
+                      <span className="text-gray-400">75%+ spread reduction</span>
+                    </div>
+                    <div className="font-mono text-green-400">
+                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.25).toFixed(6) : '---'}
+                    </div>
+                    {bestAsk !== Infinity && orderType === 'buy' && price >= (bestAsk - (bestAsk - bestBid) * 0.25) && (
+                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.5x Bonus</span>
+                      <span className="text-gray-400">50-74% spread reduction</span>
+                    </div>
+                    <div className="font-mono text-green-400">
+                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.50).toFixed(6) : '---'}
+                    </div>
+                    {bestAsk !== Infinity && orderType === 'buy' && 
+                     price >= (bestAsk - (bestAsk - bestBid) * 0.50) && 
+                     price < (bestAsk - (bestAsk - bestBid) * 0.25) && (
+                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.3x Bonus</span>
+                      <span className="text-gray-400">25-49% spread reduction</span>
+                    </div>
+                    <div className="font-mono text-green-400">
+                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.75).toFixed(6) : '---'}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.1x Bonus</span>
+                      <span className="text-gray-400">5-24% spread reduction</span>
+                    </div>
+                    <div className="font-mono text-green-400">
+                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.95).toFixed(6) : '---'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Sell Order Bonuses */}
+              <div>
+                <h4 className="text-sm font-medium text-red-400 mb-2">Sell Order Bonuses (Above Average)</h4>
+                <div className="space-y-2 text-xs">
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.5x Bonus</span>
+                      <span className="text-gray-400">50%+ above avg ask</span>
+                    </div>
+                    <div className="font-mono text-red-400">
+                      Price needed: ${(avgAsk * 1.5).toFixed(6)}
+                    </div>
+                    {orderType === 'sell' && price >= avgAsk * 1.5 && (
+                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.3x Bonus</span>
+                      <span className="text-gray-400">20-49% above avg ask</span>
+                    </div>
+                    <div className="font-mono text-red-400">
+                      Price needed: ${(avgAsk * 1.2).toFixed(6)}
+                    </div>
+                    {orderType === 'sell' && price >= avgAsk * 1.2 && price < avgAsk * 1.5 && (
+                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-800/50 rounded p-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-yellow-400 font-bold">1.1x Bonus</span>
+                      <span className="text-gray-400">10-19% above avg ask</span>
+                    </div>
+                    <div className="font-mono text-red-400">
+                      Price needed: ${(avgAsk * 1.1).toFixed(6)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        
+        <div className="mt-3 p-2 bg-purple-900/30 rounded text-xs">
+          <p className="text-purple-400">
+            💡 <strong>Bonus Tips:</strong> First order at each tier gets the multiplier. Your effective APR = Base APR × Bonus.
+            {placementData.currentAPR === 100 && ' At 100% base rate, a 2x bonus gives you 200% APR!'}
+          </p>
+        </div>
+      </div>
+
       {/* Current Tier Information */}
       <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
         <h3 className="font-semibold mb-3 text-yellow-400">🏆 Current Tier Status</h3>
