@@ -204,9 +204,75 @@ export const OrderPlacementGuide: React.FC = () => {
     ? Math.max(...placementData.optimalPrices.sell) 
     : placementData.mcPrice;
 
+  // Calculate bonus tier prices
+  const buyOrders = placementData.orderBook?.buy_orders || [];
+  const sellOrders = placementData.orderBook?.sell_orders || [];
+  
+  let bestBid = 0;
+  let bestAsk = Infinity;
+  
+  if (buyOrders.length > 0) {
+    bestBid = Math.max(...buyOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
+  }
+  
+  if (sellOrders.length > 0) {
+    bestAsk = Math.min(...sellOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
+  }
+  
+  const avgAsk = sellOrders.length > 0
+    ? sellOrders.reduce((sum: number, o: OrderBookOrder) => sum + parseFloat(o.price.amount) / 1000000, 0) / sellOrders.length
+    : placementData.mcPrice;
+  
+  // Calculate bonus tier prices
+  const buyBonusTiers = bestAsk !== Infinity ? [
+    { multiplier: '2.0x', reduction: '75%+', price: bestAsk - (bestAsk - bestBid) * 0.25 },
+    { multiplier: '1.5x', reduction: '50-74%', price: bestAsk - (bestAsk - bestBid) * 0.50 },
+    { multiplier: '1.3x', reduction: '25-49%', price: bestAsk - (bestAsk - bestBid) * 0.75 },
+    { multiplier: '1.1x', reduction: '5-24%', price: bestAsk - (bestAsk - bestBid) * 0.95 }
+  ] : [];
+  
+  const sellBonusTiers = [
+    { multiplier: '1.5x', above: '50%+', price: avgAsk * 1.5 },
+    { multiplier: '1.3x', above: '20-49%', price: avgAsk * 1.2 },
+    { multiplier: '1.1x', above: '10-19%', price: avgAsk * 1.1 }
+  ];
+
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <h2 className="text-xl font-bold mb-4">📍 Order Placement Guide</h2>
+
+      {/* Bonus Price Thresholds - Compact Version */}
+      {(orderType === 'buy' ? buyBonusTiers.length > 0 : true) && (
+        <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-purple-400">💎 Bonus Thresholds</h3>
+            <span className="text-xs text-gray-400">Effective APR = {placementData.currentAPR}% × Multiplier</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            {orderType === 'buy' ? (
+              buyBonusTiers.map((tier, i) => (
+                <div key={i} className="bg-gray-800/50 rounded p-2">
+                  <div className="text-yellow-400 font-bold">{tier.multiplier}</div>
+                  <div className="font-mono text-green-400">${tier.price.toFixed(6)}</div>
+                  {parseFloat(userPrice) >= tier.price && (i === 0 || parseFloat(userPrice) < buyBonusTiers[i-1].price) && (
+                    <div className="text-yellow-300 mt-1">✨ Active</div>
+                  )}
+                </div>
+              ))
+            ) : (
+              sellBonusTiers.map((tier, i) => (
+                <div key={i} className="bg-gray-800/50 rounded p-2">
+                  <div className="text-yellow-400 font-bold">{tier.multiplier}</div>
+                  <div className="font-mono text-red-400">${tier.price.toFixed(6)}</div>
+                  {parseFloat(userPrice) >= tier.price && (i === 0 || parseFloat(userPrice) < sellBonusTiers[i-1].price) && (
+                    <div className="text-yellow-300 mt-1">✨ Active</div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Current Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -255,141 +321,6 @@ export const OrderPlacementGuide: React.FC = () => {
         </div>
       </div>
 
-      {/* Spread Bonus Opportunities */}
-      <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold mb-3 text-purple-400">💎 Bonus Opportunities</h3>
-        {(() => {
-          // Get current best bid and ask
-          const buyOrders = placementData.orderBook?.buy_orders || [];
-          const sellOrders = placementData.orderBook?.sell_orders || [];
-          
-          let bestBid = 0;
-          let bestAsk = Infinity;
-          
-          if (buyOrders.length > 0) {
-            bestBid = Math.max(...buyOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
-          }
-          
-          if (sellOrders.length > 0) {
-            bestAsk = Math.min(...sellOrders.map((o: OrderBookOrder) => parseFloat(o.price.amount) / 1000000));
-          }
-          
-          const currentSpread = bestAsk !== Infinity && bestBid > 0 
-            ? ((bestAsk - bestBid) / bestBid) * 100 
-            : 100;
-            
-          const avgAsk = sellOrders.length > 0
-            ? sellOrders.reduce((sum: number, o: OrderBookOrder) => sum + parseFloat(o.price.amount) / 1000000, 0) / sellOrders.length
-            : placementData.mcPrice;
-          
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Buy Order Bonuses */}
-              <div>
-                <h4 className="text-sm font-medium text-green-400 mb-2">Buy Order Bonuses (Tighten Spread)</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">2.0x Bonus</span>
-                      <span className="text-gray-400">75%+ spread reduction</span>
-                    </div>
-                    <div className="font-mono text-green-400">
-                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.25).toFixed(6) : '---'}
-                    </div>
-                    {bestAsk !== Infinity && orderType === 'buy' && parseFloat(userPrice) >= (bestAsk - (bestAsk - bestBid) * 0.25) && (
-                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
-                    )}
-                  </div>
-                  
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.5x Bonus</span>
-                      <span className="text-gray-400">50-74% spread reduction</span>
-                    </div>
-                    <div className="font-mono text-green-400">
-                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.50).toFixed(6) : '---'}
-                    </div>
-                    {bestAsk !== Infinity && orderType === 'buy' && 
-                     parseFloat(userPrice) >= (bestAsk - (bestAsk - bestBid) * 0.50) && 
-                     parseFloat(userPrice) < (bestAsk - (bestAsk - bestBid) * 0.25) && (
-                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
-                    )}
-                  </div>
-                  
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.3x Bonus</span>
-                      <span className="text-gray-400">25-49% spread reduction</span>
-                    </div>
-                    <div className="font-mono text-green-400">
-                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.75).toFixed(6) : '---'}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.1x Bonus</span>
-                      <span className="text-gray-400">5-24% spread reduction</span>
-                    </div>
-                    <div className="font-mono text-green-400">
-                      Price needed: ${bestAsk !== Infinity ? (bestAsk - (bestAsk - bestBid) * 0.95).toFixed(6) : '---'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Sell Order Bonuses */}
-              <div>
-                <h4 className="text-sm font-medium text-red-400 mb-2">Sell Order Bonuses (Above Average)</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.5x Bonus</span>
-                      <span className="text-gray-400">50%+ above avg ask</span>
-                    </div>
-                    <div className="font-mono text-red-400">
-                      Price needed: ${(avgAsk * 1.5).toFixed(6)}
-                    </div>
-                    {orderType === 'sell' && parseFloat(userPrice) >= avgAsk * 1.5 && (
-                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
-                    )}
-                  </div>
-                  
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.3x Bonus</span>
-                      <span className="text-gray-400">20-49% above avg ask</span>
-                    </div>
-                    <div className="font-mono text-red-400">
-                      Price needed: ${(avgAsk * 1.2).toFixed(6)}
-                    </div>
-                    {orderType === 'sell' && parseFloat(userPrice) >= avgAsk * 1.2 && parseFloat(userPrice) < avgAsk * 1.5 && (
-                      <div className="text-yellow-400 mt-1">✨ Your order qualifies!</div>
-                    )}
-                  </div>
-                  
-                  <div className="bg-gray-800/50 rounded p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-yellow-400 font-bold">1.1x Bonus</span>
-                      <span className="text-gray-400">10-19% above avg ask</span>
-                    </div>
-                    <div className="font-mono text-red-400">
-                      Price needed: ${(avgAsk * 1.1).toFixed(6)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-        
-        <div className="mt-3 p-2 bg-purple-900/30 rounded text-xs">
-          <p className="text-purple-400">
-            💡 <strong>Bonus Tips:</strong> First order at each tier gets the multiplier. Your effective APR = Base APR × Bonus.
-            {placementData.currentAPR === 100 && ' At 100% base rate, a 2x bonus gives you 200% APR!'}
-          </p>
-        </div>
-      </div>
 
       {/* Current Tier Information */}
       <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
@@ -1009,10 +940,11 @@ export const OrderPlacementGuide: React.FC = () => {
                                 {/* Header */}
                                 <div className="flex justify-between text-gray-500 border-b border-gray-700 pb-1">
                                   <span className="w-24">Price</span>
-                                  <span className="w-16 text-center">Orders</span>
-                                  <span className="w-20 text-right">Total MC</span>
-                                  <span className="w-20 text-right">Value</span>
-                                  <span className="w-16 text-center">Status</span>
+                                  <span className="w-12 text-center">Bonus</span>
+                                  <span className="w-12 text-center">Orders</span>
+                                  <span className="w-16 text-right">MC</span>
+                                  <span className="w-16 text-right">Value</span>
+                                  <span className="w-16 text-center">Eligible</span>
                                 </div>
                                 
                                 {(() => {
@@ -1089,9 +1021,27 @@ export const OrderPlacementGuide: React.FC = () => {
                                           <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
                                           <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
                                             <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
-                                            <span className="w-16 text-center text-purple-400">NEW</span>
-                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
-                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-12 text-center">
+                                              {(() => {
+                                                if (orderType === 'buy') {
+                                                  for (let i = 0; i < buyBonusTiers.length; i++) {
+                                                    if (price >= buyBonusTiers[i].price && (i === 0 || price < buyBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{buyBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                } else {
+                                                  for (let i = 0; i < sellBonusTiers.length; i++) {
+                                                    if (price >= sellBonusTiers[i].price && (i === 0 || price < sellBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{sellBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                }
+                                                return <span className="text-purple-400">NEW</span>;
+                                              })()}
+                                            </span>
+                                            <span className="w-12 text-center text-purple-400">1</span>
+                                            <span className="w-16 text-right text-purple-400">{(amount / price).toFixed(0)}</span>
+                                            <span className="w-16 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
                                             <span className="w-16 text-center">
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
@@ -1149,9 +1099,27 @@ export const OrderPlacementGuide: React.FC = () => {
                                           isEligible ? 'bg-green-900/20' : 'bg-gray-700/30'
                                         }`}>
                                           <span className="w-24">${priceLevel.toFixed(6)}</span>
-                                          <span className="w-16 text-center text-gray-400">{group.count}</span>
-                                          <span className="w-20 text-right text-gray-400">{group.totalAmount.toFixed(2)}</span>
-                                          <span className="w-20 text-right text-gray-500">${group.totalValue.toFixed(2)}</span>
+                                          <span className="w-12 text-center">
+                                            {(() => {
+                                              if (orderType === 'buy') {
+                                                for (let i = 0; i < buyBonusTiers.length; i++) {
+                                                  if (priceLevel >= buyBonusTiers[i].price && (i === 0 || priceLevel < buyBonusTiers[i-1].price)) {
+                                                    return <span className="text-yellow-400 font-bold">{buyBonusTiers[i].multiplier}</span>;
+                                                  }
+                                                }
+                                              } else {
+                                                for (let i = 0; i < sellBonusTiers.length; i++) {
+                                                  if (priceLevel >= sellBonusTiers[i].price && (i === 0 || priceLevel < sellBonusTiers[i-1].price)) {
+                                                    return <span className="text-yellow-400 font-bold">{sellBonusTiers[i].multiplier}</span>;
+                                                  }
+                                                }
+                                              }
+                                              return <span className="text-gray-500">-</span>;
+                                            })()}
+                                          </span>
+                                          <span className="w-12 text-center text-gray-400">{group.count}</span>
+                                          <span className="w-16 text-right text-gray-400">{group.totalAmount.toFixed(0)}</span>
+                                          <span className="w-16 text-right text-gray-500">${group.totalValue.toFixed(2)}</span>
                                           <span className="w-16 text-center">
                                             {isEligible ? (
                                               <span className="text-green-400 text-xs">
@@ -1170,9 +1138,27 @@ export const OrderPlacementGuide: React.FC = () => {
                                           <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
                                           <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
                                             <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
-                                            <span className="w-16 text-center text-purple-400">NEW</span>
-                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
-                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-12 text-center">
+                                              {(() => {
+                                                if (orderType === 'buy') {
+                                                  for (let i = 0; i < buyBonusTiers.length; i++) {
+                                                    if (price >= buyBonusTiers[i].price && (i === 0 || price < buyBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{buyBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                } else {
+                                                  for (let i = 0; i < sellBonusTiers.length; i++) {
+                                                    if (price >= sellBonusTiers[i].price && (i === 0 || price < sellBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{sellBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                }
+                                                return <span className="text-purple-400">NEW</span>;
+                                              })()}
+                                            </span>
+                                            <span className="w-12 text-center text-purple-400">1</span>
+                                            <span className="w-16 text-right text-purple-400">{(amount / price).toFixed(0)}</span>
+                                            <span className="w-16 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
                                             <span className="w-16 text-center">
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
@@ -1218,9 +1204,27 @@ export const OrderPlacementGuide: React.FC = () => {
                                           <div className="absolute inset-x-0 top-1/2 border-t border-purple-500/50"></div>
                                           <div className="relative flex justify-between p-2 bg-purple-900/50 border border-purple-500/50 rounded my-1">
                                             <span className="w-24 text-purple-400 font-bold">→ ${price.toFixed(6)}</span>
-                                            <span className="w-16 text-center text-purple-400">NEW</span>
-                                            <span className="w-20 text-right text-purple-400">{(amount / price).toFixed(2)}</span>
-                                            <span className="w-20 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
+                                            <span className="w-12 text-center">
+                                              {(() => {
+                                                if (orderType === 'buy') {
+                                                  for (let i = 0; i < buyBonusTiers.length; i++) {
+                                                    if (price >= buyBonusTiers[i].price && (i === 0 || price < buyBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{buyBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                } else {
+                                                  for (let i = 0; i < sellBonusTiers.length; i++) {
+                                                    if (price >= sellBonusTiers[i].price && (i === 0 || price < sellBonusTiers[i-1].price)) {
+                                                      return <span className="text-yellow-400 font-bold">{sellBonusTiers[i].multiplier}</span>;
+                                                    }
+                                                  }
+                                                }
+                                                return <span className="text-purple-400">NEW</span>;
+                                              })()}
+                                            </span>
+                                            <span className="w-12 text-center text-purple-400">1</span>
+                                            <span className="w-16 text-right text-purple-400">{(amount / price).toFixed(0)}</span>
+                                            <span className="w-16 text-right text-purple-400 font-bold">${amount.toFixed(2)}</span>
                                             <span className="w-16 text-center">
                                               {(() => {
                                                 const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
