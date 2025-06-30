@@ -280,8 +280,8 @@ export const OrderPlacementGuide: React.FC = () => {
     
     // Add offset to avoid exact matches with existing orders
     // This prevents the calculated threshold from being exactly the same as common round numbers
-    // Use a fixed offset of $0.0000001 (1/10 of the smallest common increment)
-    const offset = 0.0000001;
+    // Use a larger fixed offset of $0.000001 to ensure visible separation
+    const offset = 0.000001;
     const finalPrice = calculatedPrice + offset;
     
     console.log('📐 Price calculation for spread reduction:', {
