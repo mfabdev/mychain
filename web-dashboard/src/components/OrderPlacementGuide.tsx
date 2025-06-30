@@ -576,11 +576,28 @@ export const OrderPlacementGuide: React.FC = () => {
                         
                         const maxEligible = Math.min(amount, Math.min(volumeAtOrBelowPrice, placementData.volumeCaps.buy));
                         
+                        // Calculate price needed for full amount
+                        let priceNeededForFullAmount = buyCutoffPrice;
+                        let cumulativeVolume = 0;
+                        const sortedBuyOrders = [...buyOrders].sort((a: any, b: any) => a.price - b.price);
+                        
+                        for (let i = 0; i < sortedBuyOrders.length; i++) {
+                          cumulativeVolume += sortedBuyOrders[i].value;
+                          if (cumulativeVolume >= Math.min(amount, placementData.volumeCaps.buy)) {
+                            priceNeededForFullAmount = sortedBuyOrders[i].price + 0.000001;
+                            break;
+                          }
+                        }
+                        
                         return (
                           <div className="space-y-2 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-400">Total cap:</span>
                               <span className="font-mono">${placementData.volumeCaps.buy.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your amount:</span>
+                              <span className="font-mono">${amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Your price:</span>
@@ -594,6 +611,20 @@ export const OrderPlacementGuide: React.FC = () => {
                               <span className="text-gray-400">Your max eligible:</span>
                               <span className="font-mono text-green-400">${maxEligible.toFixed(2)}</span>
                             </div>
+                            
+                            {/* Price recommendation */}
+                            {amount > 0 && (
+                              <div className="mt-2 p-2 bg-purple-900/30 border border-purple-500/30 rounded">
+                                <p className="text-purple-400 font-medium mb-1">💎 Price needed for ${Math.min(amount, placementData.volumeCaps.buy).toFixed(2)}:</p>
+                                <p className="font-mono text-lg text-white">${priceNeededForFullAmount.toFixed(6)}</p>
+                                {amount > placementData.volumeCaps.buy && (
+                                  <p className="text-xs text-yellow-400 mt-1">
+                                    ⚠️ Cap is ${placementData.volumeCaps.buy.toFixed(2)}, so max possible is capped
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            
                             {currentPrice <= buyCutoffPrice && (
                               <div className="mt-2 p-2 bg-red-900/30 rounded">
                                 <p className="text-red-400">❌ Price too low! Minimum: ${buyCutoffPrice.toFixed(6)}</p>
@@ -601,7 +632,7 @@ export const OrderPlacementGuide: React.FC = () => {
                             )}
                             {currentPrice > buyCutoffPrice && maxEligible < amount && (
                               <div className="mt-2 p-2 bg-yellow-900/30 rounded">
-                                <p className="text-yellow-400">💡 To get full ${amount.toFixed(2)}, increase price to displace more orders</p>
+                                <p className="text-yellow-400">💡 Increase to ${priceNeededForFullAmount.toFixed(6)} for full amount</p>
                               </div>
                             )}
                           </div>
@@ -626,11 +657,28 @@ export const OrderPlacementGuide: React.FC = () => {
                         
                         const maxEligible = Math.min(amount, Math.min(volumeAtOrBelowPrice, placementData.volumeCaps.sell));
                         
+                        // Calculate price needed for full amount
+                        let priceNeededForFullAmount = sellCutoffPrice;
+                        let cumulativeVolume = 0;
+                        const sortedSellOrders = [...sellOrders].sort((a: any, b: any) => a.price - b.price);
+                        
+                        for (let i = 0; i < sortedSellOrders.length; i++) {
+                          cumulativeVolume += sortedSellOrders[i].value;
+                          if (cumulativeVolume >= Math.min(amount, placementData.volumeCaps.sell)) {
+                            priceNeededForFullAmount = sortedSellOrders[i].price + 0.000001;
+                            break;
+                          }
+                        }
+                        
                         return (
                           <div className="space-y-2 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-400">Total cap:</span>
                               <span className="font-mono">${placementData.volumeCaps.sell.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Your amount:</span>
+                              <span className="font-mono">${amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Your price:</span>
@@ -644,6 +692,20 @@ export const OrderPlacementGuide: React.FC = () => {
                               <span className="text-gray-400">Your max eligible:</span>
                               <span className="font-mono text-green-400">${maxEligible.toFixed(2)}</span>
                             </div>
+                            
+                            {/* Price recommendation */}
+                            {amount > 0 && (
+                              <div className="mt-2 p-2 bg-purple-900/30 border border-purple-500/30 rounded">
+                                <p className="text-purple-400 font-medium mb-1">💎 Price needed for ${Math.min(amount, placementData.volumeCaps.sell).toFixed(2)}:</p>
+                                <p className="font-mono text-lg text-white">${priceNeededForFullAmount.toFixed(6)}</p>
+                                {amount > placementData.volumeCaps.sell && (
+                                  <p className="text-xs text-yellow-400 mt-1">
+                                    ⚠️ Cap is ${placementData.volumeCaps.sell.toFixed(2)}, so max possible is capped
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            
                             {currentPrice <= sellCutoffPrice && (
                               <div className="mt-2 p-2 bg-red-900/30 rounded">
                                 <p className="text-red-400">❌ Price too low! Minimum: ${sellCutoffPrice.toFixed(6)}</p>
@@ -651,7 +713,7 @@ export const OrderPlacementGuide: React.FC = () => {
                             )}
                             {currentPrice > sellCutoffPrice && maxEligible < amount && (
                               <div className="mt-2 p-2 bg-yellow-900/30 rounded">
-                                <p className="text-yellow-400">💡 To get full ${amount.toFixed(2)}, increase price to displace more orders</p>
+                                <p className="text-yellow-400">💡 Increase to ${priceNeededForFullAmount.toFixed(6)} for full amount</p>
                               </div>
                             )}
                           </div>
