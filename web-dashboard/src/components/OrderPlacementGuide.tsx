@@ -257,8 +257,9 @@ export const OrderPlacementGuide: React.FC = () => {
     // Ensure the price makes sense (should be between bestBid and bestAsk)
     if (calculatedPrice <= bestBid) {
       // This happens when spread is too large relative to the reduction target
-      // Use a simpler linear interpolation instead
-      return bestBid + (bestAsk - bestBid) * (1 - reductionTarget);
+      // Use a simpler approach: for X% reduction, move X% of the way from bid to ask
+      // For 75% reduction, we want to be 75% of the way from bid to ask
+      return bestBid + (bestAsk - bestBid) * reductionTarget;
     }
     
     return calculatedPrice;
@@ -315,8 +316,23 @@ export const OrderPlacementGuide: React.FC = () => {
       { multiplier: '1.5x', reduction: '50-74%', price: calculatePriceForReduction(0.50) },
       { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
       { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
-    ].filter(tier => tier.price > bestBid) // Only show tiers above best bid
+    ]
+    .filter(tier => tier.price > bestBid) // Only show tiers above best bid
+    .sort((a, b) => b.price - a.price) // Sort by price descending (highest price = highest bonus for buy orders)
   ) : [];
+  
+  console.log('💰 buyBonusTiers calculated:', {
+    bestBid,
+    bestAsk,
+    isLargeSpread,
+    currentSpread: bestAsk - bestBid,
+    tiers: buyBonusTiers.map(t => ({
+      multiplier: t.multiplier,
+      price: t.price,
+      reduction: t.reduction,
+      'price > bestBid': t.price > bestBid
+    }))
+  });
   
   const sellBonusTiers = [
     { multiplier: '1.5x', above: '10%+', price: avgAsk * 1.10 },
@@ -340,6 +356,22 @@ export const OrderPlacementGuide: React.FC = () => {
       const spreadReduction = currentSpreadPct > 0 
         ? (currentSpreadPct - newSpreadPct) / currentSpreadPct 
         : 0;
+      
+      console.log('🔍 getBonusMultiplier Debug:', {
+        price,
+        bestBid,
+        bestAsk,
+        currentSpreadPct: (currentSpreadPct * 100).toFixed(2) + '%',
+        newSpreadPct: (newSpreadPct * 100).toFixed(2) + '%',
+        spreadReduction: (spreadReduction * 100).toFixed(2) + '%',
+        'price > bestBid': price > bestBid,
+        'spreadReduction >= thresholds': {
+          '0.75 (2.0x)': spreadReduction >= 0.75,
+          '0.50 (1.5x)': spreadReduction >= 0.50,
+          '0.25 (1.3x)': spreadReduction >= 0.25,
+          '0.05 (1.1x)': spreadReduction >= 0.05
+        }
+      });
       
       // Only apply bonus if reduction is at least 5%
       if (spreadReduction < 0.05) return '-';
@@ -412,15 +444,19 @@ export const OrderPlacementGuide: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             {orderType === 'buy' ? (
-              buyBonusTiers.map((tier, i) => (
-                <div key={i} className="bg-gray-800/50 rounded p-2">
-                  <div className="text-yellow-400 font-bold">{tier.multiplier}</div>
-                  <div className="font-mono text-green-400">${tier.price.toFixed(6)}</div>
-                  {getBonusMultiplier(parseFloat(userPrice), true) === tier.multiplier && (
-                    <div className="text-yellow-300 mt-1">✨ Active</div>
-                  )}
-                </div>
-              ))
+              buyBonusTiers.map((tier, i) => {
+                const multiplierForPrice = getBonusMultiplier(tier.price, true);
+                console.log(`🎯 Tier ${i}: price=${tier.price.toFixed(6)}, expected=${tier.multiplier}, actual=${multiplierForPrice}`);
+                return (
+                  <div key={i} className="bg-gray-800/50 rounded p-2">
+                    <div className="text-yellow-400 font-bold">{tier.multiplier}</div>
+                    <div className="font-mono text-green-400">${tier.price.toFixed(6)}</div>
+                    {getBonusMultiplier(parseFloat(userPrice), true) === tier.multiplier && (
+                      <div className="text-yellow-300 mt-1">✨ Active</div>
+                    )}
+                  </div>
+                );
+              })
             ) : (
               sellBonusTiers.map((tier, i) => (
                 <div key={i} className="bg-gray-800/50 rounded p-2">
@@ -1368,7 +1404,18 @@ export const OrderPlacementGuide: React.FC = () => {
                                       {isBonusThreshold && !group && !isUserPrice && (
                                         <div className="flex justify-between p-1 rounded bg-yellow-900/20 border border-yellow-500/30">
                                           <span className="w-24 text-yellow-400 font-bold">${priceLevel.toFixed(6)}</span>
-                                          <span className="w-12 text-center text-yellow-400 font-bold">{bonusTier.multiplier}</span>
+                                          <span className="w-12 text-center text-yellow-400 font-bold">
+                                            {(() => {
+                                              const actualMultiplier = getBonusMultiplier(priceLevel, orderType === 'buy');
+                                              console.log('🎯 Bonus tier display:', {
+                                                priceLevel: priceLevel.toFixed(6),
+                                                intendedMultiplier: bonusTier.multiplier,
+                                                actualMultiplier,
+                                                matches: actualMultiplier === bonusTier.multiplier
+                                              });
+                                              return bonusTier.multiplier;
+                                            })()}
+                                          </span>
                                           <span className="w-12 text-center text-gray-500">-</span>
                                           <span className="w-16 text-right text-gray-400 text-xs" title="Total MC at or above this price">
                                             {(() => {
