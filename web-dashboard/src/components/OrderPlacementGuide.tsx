@@ -397,7 +397,23 @@ export const OrderPlacementGuide: React.FC = () => {
       { multiplier: '1.3x', reduction: '25-49%', price: calculatePriceForReduction(0.25) },
       { multiplier: '1.1x', reduction: '5-24%', price: calculatePriceForReduction(0.05) }
     ]
-    .filter(tier => tier.price > bestBid && tier.price < bestAsk) // Only show tiers above best bid and below best ask
+    .filter(tier => {
+      // Only show tiers above best bid and below best ask
+      if (!(tier.price > bestBid && tier.price < bestAsk)) return false;
+      
+      // For the 2.0x tier (75% reduction), check if it would match with best ask
+      // A buy order at or above the best ask would execute immediately
+      if (tier.multiplier === '2.0x' && tier.price >= bestAsk - 0.000001) {
+        console.log('🚫 Filtering out 2.0x tier - too close to best ask:', {
+          tierPrice: tier.price.toFixed(6),
+          bestAsk: bestAsk.toFixed(6),
+          difference: (bestAsk - tier.price).toFixed(6)
+        });
+        return false;
+      }
+      
+      return true;
+    })
     .sort((a, b) => b.price - a.price) // Sort by price descending (highest price = highest bonus for buy orders)
   ) : [];
   
@@ -1640,13 +1656,29 @@ export const OrderPlacementGuide: React.FC = () => {
                                             )}
                                           </span>
                                           <span className="w-20 text-center">
-                                            {isEligible ? (
-                                              <span className="text-green-400">
-                                                {placementData.currentAPR}%
-                                              </span>
-                                            ) : (
-                                              <span className="text-gray-500">-</span>
-                                            )}
+                                            {(() => {
+                                              const multiplier = getBonusMultiplier(priceLevel, orderType === 'buy');
+                                              
+                                              if (!isEligible) {
+                                                // Show APR even for ineligible orders, but in gray
+                                                if (multiplier !== '-') {
+                                                  const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                  const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                  return <span className="text-gray-500">{effectiveAPR.toFixed(0)}%</span>;
+                                                } else {
+                                                  return <span className="text-gray-500">{placementData.currentAPR}%</span>;
+                                                }
+                                              }
+                                              
+                                              // For eligible orders, show in color
+                                              if (multiplier !== '-') {
+                                                const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                return <span className="text-yellow-400 font-bold">{effectiveAPR.toFixed(0)}%</span>;
+                                              } else {
+                                                return <span className="text-green-400">{placementData.currentAPR}%</span>;
+                                              }
+                                            })()}
                                           </span>
                                         </div>
                                       )}
