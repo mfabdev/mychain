@@ -132,19 +132,14 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
             coinDenom: 'LC',
             coinMinimalDenom: 'ulc',
             coinDecimals: 6,
-          },
-          gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
-          },
+          }
         });
         
         // Try enabling again after adding the chain
         await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
+      const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner
@@ -228,19 +223,14 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
             coinDenom: 'LC',
             coinMinimalDenom: 'ulc',
             coinDecimals: 6,
-          },
-          gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
-          },
+          }
         });
         
         // Try enabling again after adding the chain
         await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
+      const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner
@@ -327,19 +317,14 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
             coinDenom: 'LC',
             coinMinimalDenom: 'ulc',
             coinDecimals: 6,
-          },
-          gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
-          },
+          }
         });
         
         // Try enabling again after adding the chain
         await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
+      const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner

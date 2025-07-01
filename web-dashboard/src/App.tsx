@@ -16,7 +16,7 @@ import { useKeplr } from './hooks/useKeplr';
 import './App.css';
 
 function App() {
-  const { address, isConnected, connectWallet, disconnect, error, client } = useKeplr();
+  const { address, isConnected, connectWallet, disconnect, error, client, buyMainCoin, sellMainCoin } = useKeplr();
 
   return (
     <Router>
@@ -43,7 +43,7 @@ function App() {
             <Routes>
               <Route path="/" element={<OverviewPage />} />
               <Route path="/dashboard" element={<PersonalDashboardPage />} />
-              <Route path="/maincoin" element={<MainCoinPage address={address} isConnected={isConnected} client={client} />} />
+              <Route path="/maincoin" element={<MainCoinPage address={address} isConnected={isConnected} client={client} buyMainCoin={buyMainCoin} sellMainCoin={sellMainCoin} />} />
               <Route path="/maincoin/history" element={<MainCoinSegmentHistoryPage />} />
               <Route path="/maincoin/purchase/:startSegment/:endSegment" element={<SegmentPurchaseDetailsPage />} />
               <Route path="/liquiditycoin" element={<LiquidityCoinPage />} />

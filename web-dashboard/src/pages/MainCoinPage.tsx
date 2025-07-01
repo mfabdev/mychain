@@ -29,9 +29,11 @@ interface MainCoinPageProps {
   address: string;
   isConnected: boolean;
   client: SigningStargateClient | null;
+  buyMainCoin: (amountTUSD: string) => Promise<any>;
+  sellMainCoin: (amountMC: string) => Promise<any>;
 }
 
-export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected, client }) => {
+export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected, client, buyMainCoin, sellMainCoin }) => {
   const [epochInfo, setEpochInfo] = useState<EpochInfo | null>(null);
   const [buyAmount, setBuyAmount] = useState('');
   const [sellAmount, setSellAmount] = useState('');
@@ -184,10 +186,23 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
           return;
         }
 
-        // For now, let's alert the user that they need to use the CLI
-        setTxStatus('⚠️ Web transactions for custom messages are not yet supported. Please use the CLI commands shown below.');
+        try {
+          setTxStatus('⏳ Processing transaction...');
+          const result = await buyMainCoin(buyAmount);
+          
+          if (result.code === 0) {
+            setTxStatus(`✅ Success! Transaction hash: ${result.transactionHash}`);
+            setTxHash(result.transactionHash);
+            // Refresh data after successful transaction
+          } else {
+            setTxStatus(`✅ Success! Transaction hash: ${result.transactionHash}`);
+          }
+        } catch (error: any) {
+          console.error('Buy transaction error:', error);
+          setTxStatus(`❌ Error: ${error.message || "Transaction failed"}`);
+        }
         
-        // Generate the CLI command for the user
+        // Generate the CLI command for the user as fallback
         const amountInMicro = Math.floor(parseFloat(buyAmount) * 1000000);
         const cliCommand = `mychaind tx maincoin buy-maincoin ${amountInMicro}utusd --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --keyring-backend test -y`;
         

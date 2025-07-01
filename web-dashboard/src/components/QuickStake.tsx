@@ -63,19 +63,14 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
             coinMinimalDenom: 'ulc',
             coinDecimals: 6,
             coinGeckoId: 'cosmos',
-          },
-          gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
-          },
+          }
         });
         
         // Try enabling again after adding the chain
         await window.keplr.enable('mychain');
       }
       
-      const offlineSigner = await window.keplr.getOfflineSignerAuto('mychain');
+      const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
         'http://localhost:26657',
         offlineSigner

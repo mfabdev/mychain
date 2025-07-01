@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SigningStargateClient, defaultRegistryTypes } from '@cosmjs/stargate';
-import { Registry } from '@cosmjs/proto-signing';
-import { AminoTypes } from '@cosmjs/stargate';
+import { SigningStargateClient, AminoTypes } from '@cosmjs/stargate';
 import { CHAIN_INFO } from '../utils/config';
 
 // MainCoin message types
@@ -119,23 +117,13 @@ export const useKeplr = () => {
       // Only create signing client if we don't have one
       if (!client) {
         // Create custom amino types with MainCoin messages
-        const aminoTypes = new AminoTypes({
-          ...AminoTypes.defaultAminoTypes,
-          ...maincoinAminoConverters,
-        });
-
-        // Create custom registry with MainCoin types
-        const registry = new Registry(defaultRegistryTypes);
-        maincoinTypes.forEach(([typeUrl, type]) => {
-          registry.register(typeUrl, type);
-        });
+        const aminoTypes = new AminoTypes(maincoinAminoConverters);
 
         const signingClient = await SigningStargateClient.connectWithSigner(
           CHAIN_INFO.rpc,
           offlineSigner,
           {
             aminoTypes,
-            registry,
           }
         );
         setClient(signingClient);
