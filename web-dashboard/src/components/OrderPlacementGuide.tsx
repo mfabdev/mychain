@@ -1290,6 +1290,7 @@ export const OrderPlacementGuide: React.FC = () => {
                                   <span className="w-16 text-right">MC</span>
                                   <span className="w-16 text-right">Value</span>
                                   <span className="w-16 text-center">Eligible</span>
+                                  <span className="w-20 text-center">Eff. APR</span>
                                 </div>
                                 
                                 {(() => {
@@ -1460,6 +1461,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                                 }
                                               })()}
                                             </span>
+                                            <span className="w-20 text-center">
+                                              {(() => {
+                                                const multiplier = getBonusMultiplier(price, orderType === 'buy');
+                                                if (multiplier !== '-') {
+                                                  const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                  const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                  return <span className="text-yellow-400 font-bold">{effectiveAPR.toFixed(0)}%</span>;
+                                                } else {
+                                                  const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                         (orderType === 'sell' && price <= eligibilityCutoff);
+                                                  if (wouldBeEligible) {
+                                                    return <span className="text-purple-400">{placementData.currentAPR}%</span>;
+                                                  } else {
+                                                    return <span className="text-gray-500">-</span>;
+                                                  }
+                                                }
+                                              })()}
+                                            </span>
                                           </div>
                                         </div>
                                       )}
@@ -1528,6 +1547,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                                 }
                                               })()}
                                             </span>
+                                            <span className="w-20 text-center">
+                                              {(() => {
+                                                const multiplier = getBonusMultiplier(price, orderType === 'buy');
+                                                if (multiplier !== '-') {
+                                                  const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                  const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                  return <span className="text-yellow-400 font-bold">{effectiveAPR.toFixed(0)}%</span>;
+                                                } else {
+                                                  const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                         (orderType === 'sell' && price <= eligibilityCutoff);
+                                                  if (wouldBeEligible) {
+                                                    return <span className="text-purple-400">{placementData.currentAPR}%</span>;
+                                                  } else {
+                                                    return <span className="text-gray-500">-</span>;
+                                                  }
+                                                }
+                                              })()}
+                                            </span>
                                           </div>
                                         </div>
                                       )}
@@ -1565,6 +1602,14 @@ export const OrderPlacementGuide: React.FC = () => {
                                             })()}
                                           </span>
                                           <span className="w-16 text-center text-gray-500">-</span>
+                                          <span className="w-20 text-center text-yellow-400 font-bold">
+                                            {(() => {
+                                              // Calculate effective APR based on multiplier
+                                              const multiplierValue = parseFloat(bonusTier.multiplier.replace('x', ''));
+                                              const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                              return `${effectiveAPR.toFixed(0)}%`;
+                                            })()}
+                                          </span>
                                         </div>
                                       )}
                                       
@@ -1589,6 +1634,15 @@ export const OrderPlacementGuide: React.FC = () => {
                                             {isEligible ? (
                                               <span className="text-green-400 text-xs">
                                                 ✓ ${eligibleVolume.toFixed(2)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-500">-</span>
+                                            )}
+                                          </span>
+                                          <span className="w-20 text-center">
+                                            {isEligible ? (
+                                              <span className="text-green-400">
+                                                {placementData.currentAPR}%
                                               </span>
                                             ) : (
                                               <span className="text-gray-500">-</span>
@@ -1649,6 +1703,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                                 }
                                               })()}
                                             </span>
+                                            <span className="w-20 text-center">
+                                              {(() => {
+                                                const multiplier = getBonusMultiplier(price, orderType === 'buy');
+                                                if (multiplier !== '-') {
+                                                  const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                  const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                  return <span className="text-yellow-400 font-bold">{effectiveAPR.toFixed(0)}%</span>;
+                                                } else {
+                                                  const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                         (orderType === 'sell' && price <= eligibilityCutoff);
+                                                  if (wouldBeEligible) {
+                                                    return <span className="text-purple-400">{placementData.currentAPR}%</span>;
+                                                  } else {
+                                                    return <span className="text-gray-500">-</span>;
+                                                  }
+                                                }
+                                              })()}
+                                            </span>
                                           </div>
                                         </div>
                                       )}
@@ -1700,6 +1772,24 @@ export const OrderPlacementGuide: React.FC = () => {
                                                   return <span className="text-yellow-400 text-xs">⚠ ${userEligible.toFixed(2)}</span>;
                                                 } else {
                                                   return <span className="text-green-400 text-xs">✓ ${userEligible.toFixed(2)}</span>;
+                                                }
+                                              })()}
+                                            </span>
+                                            <span className="w-20 text-center">
+                                              {(() => {
+                                                const multiplier = getBonusMultiplier(price, orderType === 'buy');
+                                                if (multiplier !== '-') {
+                                                  const multiplierValue = parseFloat(multiplier.replace('x', ''));
+                                                  const effectiveAPR = placementData.currentAPR * multiplierValue;
+                                                  return <span className="text-yellow-400 font-bold">{effectiveAPR.toFixed(0)}%</span>;
+                                                } else {
+                                                  const wouldBeEligible = (orderType === 'buy' && price >= eligibilityCutoff) || 
+                                                                         (orderType === 'sell' && price <= eligibilityCutoff);
+                                                  if (wouldBeEligible) {
+                                                    return <span className="text-purple-400">{placementData.currentAPR}%</span>;
+                                                  } else {
+                                                    return <span className="text-gray-500">-</span>;
+                                                  }
                                                 }
                                               })()}
                                             </span>
