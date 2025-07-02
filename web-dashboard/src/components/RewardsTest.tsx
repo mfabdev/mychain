@@ -1,3 +1,4 @@
+import { getRestEndpoint, getRpcEndpoint } from '../utils/endpoints';
 import React, { useEffect, useState } from 'react';
 
 export const RewardsTest: React.FC = () => {
@@ -8,7 +9,7 @@ export const RewardsTest: React.FC = () => {
     const testRewards = async () => {
       try {
         // Direct fetch to rewards endpoint
-        const response = await fetch('http://localhost:1317/cosmos/distribution/v1beta1/delegators/cosmos1phaxpevm5wecex2jyaqty2a4v02qj7qmhq3xz0/rewards');
+        const response = await fetch('' + getRestEndpoint() + '/cosmos/distribution/v1beta1/delegators/cosmos1phaxpevm5wecex2jyaqty2a4v02qj7qmhq3xz0/rewards');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

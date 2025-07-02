@@ -1,3 +1,4 @@
+import { getRestEndpoint, getRpcEndpoint } from '../utils/endpoints';
 import React, { useState, useEffect } from 'react';
 import { fetchAPI } from '../utils/api';
 import { SigningStargateClient } from '@cosmjs/stargate';
@@ -102,7 +103,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
-          rest: 'http://localhost:1317',
+          rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
           },
@@ -193,7 +194,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
-          rest: 'http://localhost:1317',
+          rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
           },
@@ -287,7 +288,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
           chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
-          rest: 'http://localhost:1317',
+          rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
           },

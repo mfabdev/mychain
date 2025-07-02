@@ -1,3 +1,4 @@
+import { getRestEndpoint, getRpcEndpoint } from '../utils/endpoints';
 import React, { useState } from 'react';
 import { SigningStargateClient } from '@cosmjs/stargate';
 
@@ -30,7 +31,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
           chainId: 'mychain',
           chainName: 'MyChain',
           rpc: 'http://localhost:26657',
-          rest: 'http://localhost:1317',
+          rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
           },

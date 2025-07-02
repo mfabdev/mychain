@@ -1,56 +1,8 @@
 import { useState, useEffect } from 'react';
-import { SigningStargateClient, AminoTypes } from '@cosmjs/stargate';
+import { SigningStargateClient } from '@cosmjs/stargate';
+import { Registry } from '@cosmjs/proto-signing';
 import { CHAIN_INFO } from '../utils/config';
-
-// MainCoin message types
-const maincoinTypes = [
-  [
-    "/mychain.maincoin.v1.MsgBuyMaincoin",
-    {
-      typeUrl: "/mychain.maincoin.v1.MsgBuyMaincoin",
-      encode: (message: any) => ({
-        buyer: message.buyer,
-        amount: message.amount,
-      }),
-    },
-  ],
-  [
-    "/mychain.maincoin.v1.MsgSellMaincoin",
-    {
-      typeUrl: "/mychain.maincoin.v1.MsgSellMaincoin",
-      encode: (message: any) => ({
-        seller: message.seller,
-        amount: message.amount,
-      }),
-    },
-  ],
-];
-
-// Amino converters for MainCoin messages
-const maincoinAminoConverters = {
-  "/mychain.maincoin.v1.MsgBuyMaincoin": {
-    aminoType: "mychain/MsgBuyMaincoin",
-    toAmino: (message: any) => ({
-      buyer: message.buyer,
-      amount: message.amount,
-    }),
-    fromAmino: (message: any) => ({
-      buyer: message.buyer,
-      amount: message.amount,
-    }),
-  },
-  "/mychain.maincoin.v1.MsgSellMaincoin": {
-    aminoType: "mychain/MsgSellMaincoin",
-    toAmino: (message: any) => ({
-      seller: message.seller,
-      amount: message.amount,
-    }),
-    fromAmino: (message: any) => ({
-      seller: message.seller,
-      amount: message.amount,
-    }),
-  },
-};
+import { MsgBuyMaincoinProtoType, MsgSellMaincoinProtoType } from '../codegen/mychain/maincoin/v1/tx';
 
 export const useKeplr = () => {
   const [address, setAddress] = useState<string>(() => {
@@ -90,7 +42,6 @@ export const useKeplr = () => {
     try {
       const wallet = walletType === 'keplr' ? window.keplr : window.leap;
 
-      // Add chain to wallet if needed
       try {
         await wallet.enable(CHAIN_INFO.chainId);
       } catch {
@@ -98,7 +49,7 @@ export const useKeplr = () => {
         await wallet.enable(CHAIN_INFO.chainId);
       }
 
-      const offlineSigner = wallet.getOfflineSignerOnlyAmino(CHAIN_INFO.chainId);
+      const offlineSigner = wallet.getOfflineSigner(CHAIN_INFO.chainId);
       const accounts = await offlineSigner.getAccounts();
       
       if (accounts.length === 0) {
@@ -110,21 +61,19 @@ export const useKeplr = () => {
       setIsConnected(true);
       setError('');
       
-      // Save to localStorage
       localStorage.setItem('mychain_wallet_address', accountAddress);
       localStorage.setItem('mychain_wallet_type', walletType);
 
-      // Only create signing client if we don't have one
       if (!client) {
-        // Create custom amino types with MainCoin messages
-        const aminoTypes = new AminoTypes(maincoinAminoConverters);
+        // Create custom registry with MainCoin types
+        const registry = new Registry();
+        registry.register('/mychain.maincoin.v1.MsgBuyMaincoin', MsgBuyMaincoinProtoType);
+        registry.register('/mychain.maincoin.v1.MsgSellMaincoin', MsgSellMaincoinProtoType);
 
         const signingClient = await SigningStargateClient.connectWithSigner(
           CHAIN_INFO.rpc,
           offlineSigner,
-          {
-            aminoTypes,
-          }
+          { registry }
         );
         setClient(signingClient);
       }
@@ -143,12 +92,13 @@ export const useKeplr = () => {
     localStorage.removeItem('mychain_wallet_type');
   };
 
-  // Helper function to buy MainCoin
   const buyMainCoin = async (amountTUSD: string) => {
+    console.log('buyMainCoin called with:', { address, hasClient: !!client, amountTUSD });
     if (!client || !address) {
       throw new Error('Wallet not connected');
     }
 
+    console.log('buyMainCoin address:', address);
     const msg = {
       typeUrl: '/mychain.maincoin.v1.MsgBuyMaincoin',
       value: {
@@ -165,15 +115,23 @@ export const useKeplr = () => {
       gas: '500000',
     };
 
-    return await client.signAndBroadcast(address, [msg], fee, 'Buying MainCoin');
+    try {
+      const result = await client.signAndBroadcast(address, [msg], fee, 'Buying MainCoin');
+      return result;
+    } catch (error: any) {
+      console.error('Transaction failed with msg:', msg);
+      console.error('Address at time of error:', address);
+      throw error;
+    }
   };
 
-  // Helper function to sell MainCoin
   const sellMainCoin = async (amountMC: string) => {
+    console.log('sellMainCoin called with:', { address, hasClient: !!client, amountMC });
     if (!client || !address) {
       throw new Error('Wallet not connected');
     }
 
+    console.log('sellMainCoin address:', address);
     const msg = {
       typeUrl: '/mychain.maincoin.v1.MsgSellMaincoin',
       value: {
@@ -190,7 +148,14 @@ export const useKeplr = () => {
       gas: '500000',
     };
 
-    return await client.signAndBroadcast(address, [msg], fee, 'Selling MainCoin');
+    try {
+      const result = await client.signAndBroadcast(address, [msg], fee, 'Selling MainCoin');
+      return result;
+    } catch (error: any) {
+      console.error('Transaction failed with msg:', msg);
+      console.error('Address at time of error:', address);
+      throw error;
+    }
   };
 
   return {

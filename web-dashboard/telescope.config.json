@@ -1,0 +1,38 @@
+{
+  "protoDirs": ["../proto"],
+  "outPath": "src/codegen",
+  "options": {
+    "removeUnusedImports": true,
+    "interfaces": {
+      "enabled": true,
+      "useUnionTypes": false
+    },
+    "prototypes": {
+      "enabled": true,
+      "parser": {
+        "keepCase": false
+      },
+      "methods": {
+        "encode": true,
+        "decode": true,
+        "fromPartial": true
+      },
+      "includePackageVar": false,
+      "typingsFormat": {
+        "useExact": false,
+        "timestamp": "date",
+        "duration": "duration"
+      }
+    },
+    "aminoEncoding": {
+      "enabled": true,
+      "exceptions": {}
+    },
+    "lcdClients": {
+      "enabled": false
+    },
+    "rpcClients": {
+      "enabled": false
+    }
+  }
+}

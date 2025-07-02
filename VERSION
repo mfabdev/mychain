@@ -1,0 +1,8 @@
+Version: 1.0.0
+Commit: 06a10a00e3c66c28f3d5bc20cb3796dc3b93bbfe
+Date: 2025-07-02 05:04:10 UTC
+Features:
+- Keplr wallet integration for MainCoin
+- DEX with liquidity rewards
+- Web dashboard with transaction history
+- Automated deployment scripts

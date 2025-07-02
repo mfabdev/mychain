@@ -29,7 +29,8 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
 
     const fetchTxDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:1317/cosmos/tx/v1beta1/txs/${txHash}`);
+        const restEndpoint = process.env.REACT_APP_REST_ENDPOINT || 'http://localhost:1317';
+        const response = await fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs/${txHash}`);
         
         if (response.status === 404 && retryCount < maxRetries) {
           // Transaction not indexed yet, retry
@@ -39,30 +40,35 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
           timeoutId = setTimeout(fetchTxDetails, retryDelay);
           return;
         }
-        
-        if (!response.ok) throw new Error('Failed to fetch transaction');
-        
-        const data = await response.json();
-        setDetails(data.tx_response);
-        setLoading(false);
-      } catch (err) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setRetryingCount(retryCount);
-          console.log(`Error fetching transaction, retrying... (${retryCount}/${maxRetries})`);
-          timeoutId = setTimeout(fetchTxDetails, retryDelay);
-        } else {
-          setError(err instanceof Error ? err.message : 'Failed to load transaction');
-          setLoading(false);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch transaction: ${response.status}`);
         }
+
+        const data = await response.json();
+        const tx = data.tx_response || data;
+        
+        setDetails({
+          height: tx.height,
+          timestamp: tx.timestamp,
+          code: tx.code || 0,
+          gasUsed: tx.gas_used || '0',
+          gasWanted: tx.gas_wanted || '0',
+          events: tx.events || [],
+          memo: tx.tx?.body?.memo,
+          messages: tx.tx?.body?.messages || []
+        });
+        setRetryingCount(0);
+      } catch (err: any) {
+        console.error('Error fetching transaction details:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (txHash) {
-      fetchTxDetails();
-    }
+    fetchTxDetails();
 
-    // Cleanup function to clear timeout on unmount
     return () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -70,98 +76,54 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
     };
   }, [txHash]);
 
-  if (loading) return (
-    <div className="animate-pulse">
-      Loading transaction details...
-      {retryingCount > 0 && (
-        <span className="text-sm text-gray-400 ml-2">
-          (Waiting for indexing... retry {retryingCount}/5)
-        </span>
-      )}
-    </div>
-  );
-  if (error) return <div className="text-red-500">Error: {error}</div>;
-  if (!details) return null;
+  if (loading && retryingCount === 0) {
+    return <div className="text-gray-500">Loading transaction details...</div>;
+  }
 
-  // Extract MainCoin transaction details from events
-  const buyMaincoinEvent = details.events?.find((e: any) => e.type === 'buy_maincoin');
-  const transferEvents = details.events?.filter((e: any) => e.type === 'transfer') || [];
-  const refundTransfer = transferEvents.find((t: any) => 
-    t.attributes?.some((a: any) => a.key === 'sender' && a.value.includes('maincoin')) &&
-    t.attributes?.some((a: any) => a.key === 'amount' && a.value.includes('utestusd'))
-  );
+  if (retryingCount > 0) {
+    return (
+      <div className="text-yellow-600">
+        Waiting for transaction to be indexed... (Attempt {retryingCount}/5)
+      </div>
+    );
+  }
 
-  const getEventAttribute = (event: any, key: string) => {
-    return event?.attributes?.find((a: any) => a.key === key)?.value || '';
-  };
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+
+  if (!details) {
+    return <div className="text-gray-500">No transaction details available</div>;
+  }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 mt-4">
-      <h3 className="text-xl font-bold mb-4">Transaction Details</h3>
-      
-      <div className="space-y-3">
+    <div className="space-y-2 text-sm">
+      <div className="flex justify-between">
+        <span className="text-gray-600">Block Height:</span>
+        <span className="font-mono">{details.height}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600">Status:</span>
+        <span className={details.code === 0 ? 'text-green-600' : 'text-red-600'}>
+          {details.code === 0 ? 'Success' : `Failed (${details.code})`}
+        </span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-gray-600">Gas Used:</span>
+        <span className="font-mono">{details.gasUsed} / {details.gasWanted}</span>
+      </div>
+      {details.timestamp && (
         <div className="flex justify-between">
-          <span className="text-gray-400">Status:</span>
-          <span className={details.code === 0 ? 'text-green-500' : 'text-red-500'}>
-            {details.code === 0 ? '✅ Success' : '❌ Failed'}
-          </span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-gray-400">Block Height:</span>
-          <span>{details.height}</span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-gray-400">Timestamp:</span>
+          <span className="text-gray-600">Time:</span>
           <span>{new Date(details.timestamp).toLocaleString()}</span>
         </div>
-        
+      )}
+      {details.memo && (
         <div className="flex justify-between">
-          <span className="text-gray-400">Gas Used / Wanted:</span>
-          <span>{details.gasUsed} / {details.gasWanted}</span>
+          <span className="text-gray-600">Memo:</span>
+          <span className="text-xs">{details.memo}</span>
         </div>
-
-        {buyMaincoinEvent && (
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <h4 className="text-lg font-semibold mb-3">MainCoin Purchase Details</h4>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Amount Spent:</span>
-                <span>{parseInt(getEventAttribute(buyMaincoinEvent, 'amount_spent')) / 1000000} TESTUSD</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">MainCoin Received:</span>
-                <span>{parseInt(getEventAttribute(buyMaincoinEvent, 'maincoin_received')) / 1000000} MAINCOIN</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Segments Processed:</span>
-                <span>{getEventAttribute(buyMaincoinEvent, 'segments_processed')}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Average Price:</span>
-                <span>{parseFloat(getEventAttribute(buyMaincoinEvent, 'average_price')).toFixed(8)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {refundTransfer && (
-          <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded">
-            <p className="text-yellow-400 font-semibold">⚠️ Partial Purchase - Funds Returned</p>
-            <p className="text-sm text-gray-300 mt-2">
-              Amount returned: {getEventAttribute(refundTransfer, 'amount')}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Purchase hit 25-segment limit. Make additional purchases to buy more MainCoin.
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

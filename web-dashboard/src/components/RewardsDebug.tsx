@@ -1,3 +1,4 @@
+import { getRestEndpoint, getRpcEndpoint } from '../utils/endpoints';
 import React, { useEffect, useState } from 'react';
 import { fetchAPI } from '../utils/api';
 
@@ -31,7 +32,7 @@ export const RewardsDebug: React.FC = () => {
           } catch (err) {
             console.log('fetchAPI failed, trying direct fetch...');
             // Try direct fetch as fallback
-            const response = await fetch(`http://localhost:1317/cosmos/distribution/v1beta1/delegators/${delegatorAddr}/rewards`);
+            const response = await fetch(`${getRestEndpoint()}/cosmos/distribution/v1beta1/delegators/${delegatorAddr}/rewards`);
             rewards = await response.json();
           }
           setDebugInfo((prev: any) => ({ ...prev, rewards }));

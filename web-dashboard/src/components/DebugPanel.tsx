@@ -1,3 +1,4 @@
+import { getRestEndpoint, getRpcEndpoint } from '../utils/endpoints';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -7,9 +8,9 @@ export const DebugPanel: React.FC = () => {
   useEffect(() => {
     const checkEndpoints = async () => {
       const endpoints = [
-        { name: 'Node Info', url: 'http://localhost:1317/cosmos/base/tendermint/v1beta1/node_info' },
-        { name: 'Latest Block', url: 'http://localhost:1317/cosmos/base/tendermint/v1beta1/blocks/latest' },
-        { name: 'Total Supply', url: 'http://localhost:1317/cosmos/bank/v1beta1/supply' },
+        { name: 'Node Info', url: '' + getRestEndpoint() + '/cosmos/base/tendermint/v1beta1/node_info' },
+        { name: 'Latest Block', url: '' + getRestEndpoint() + '/cosmos/base/tendermint/v1beta1/blocks/latest' },
+        { name: 'Total Supply', url: '' + getRestEndpoint() + '/cosmos/bank/v1beta1/supply' },
       ];
       
       const results: any = {};

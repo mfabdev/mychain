@@ -42,7 +42,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
   const [commandType, setCommandType] = useState('');
   const [txStatus, setTxStatus] = useState<string>('');
   const [txHash, setTxHash] = useState<string>('');
-  const [useDirectExecution, setUseDirectExecution] = useState(true); // Default to direct execution
+  const [useDirectExecution, setUseDirectExecution] = useState(false); // Default to Keplr wallet
   const [lastPurchaseDetails, setLastPurchaseDetails] = useState<any>(null);
 
   useEffect(() => {
@@ -496,6 +496,12 @@ Alternative commands to open terminal:
                 <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4 mb-4">
                   <p className="text-yellow-400 font-semibold">⚠️ Wallet Not Connected</p>
                   <p className="text-sm text-gray-300">Please connect your Keplr wallet to trade MainCoin.</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  >
+                    Refresh Page
+                  </button>
                 </div>
               )}
               
