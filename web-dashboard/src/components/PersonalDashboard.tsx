@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useKeplr } from '../hooks/useKeplr';
 import { fetchAPI } from '../utils/api';
 import { formatCoin } from '../utils/formatters';
+import { getTerminalServerEndpoint } from '../utils/endpoints';
 
 interface Balance {
   denom: string;
@@ -125,7 +126,7 @@ export const PersonalDashboard: React.FC = () => {
   const handleCancelOrder = async (orderId: string) => {
     setCancellingOrder(orderId);
     try {
-      const response = await fetch('http://localhost:3003/execute-tx', {
+      const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

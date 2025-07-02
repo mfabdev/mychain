@@ -102,7 +102,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         await window.keplr.experimentalSuggestChain({
           chainId: 'mychain',
           chainName: 'MyChain',
-          rpc: 'http://localhost:26657',
+          rpc: getRpcEndpoint(),
           rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
@@ -142,7 +142,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       
       const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
-        'http://localhost:26657',
+        getRpcEndpoint(),
         offlineSigner
       );
 
@@ -193,7 +193,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         await window.keplr.experimentalSuggestChain({
           chainId: 'mychain',
           chainName: 'MyChain',
-          rpc: 'http://localhost:26657',
+          rpc: getRpcEndpoint(),
           rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
@@ -233,7 +233,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       
       const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
-        'http://localhost:26657',
+        getRpcEndpoint(),
         offlineSigner
       );
 
@@ -287,7 +287,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
         await window.keplr.experimentalSuggestChain({
           chainId: 'mychain',
           chainName: 'MyChain',
-          rpc: 'http://localhost:26657',
+          rpc: getRpcEndpoint(),
           rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
@@ -327,7 +327,7 @@ export const StakingManager: React.FC<StakingManagerProps> = ({ address }) => {
       
       const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
-        'http://localhost:26657',
+        getRpcEndpoint(),
         offlineSigner
       );
 

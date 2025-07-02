@@ -9,6 +9,7 @@ import { SegmentHistoryViewer } from '../components/SegmentHistoryViewer';
 import { UserPurchaseHistory } from '../components/UserPurchaseHistory';
 import { fetchAPI } from '../utils/api';
 import { SigningStargateClient } from '@cosmjs/stargate';
+import { getTerminalServerEndpoint } from '../utils/endpoints';
 
 interface EpochInfo {
   currentEpoch: number;
@@ -143,7 +144,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
     try {
       if (useDirectExecution) {
         // Direct execution through terminal server
-        const response = await fetch('http://localhost:3003/execute-tx', {
+        const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -234,7 +235,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
     try {
       if (useDirectExecution) {
         // Direct execution through terminal server
-        const response = await fetch('http://localhost:3003/execute-tx', {
+        const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -309,7 +310,7 @@ export const MainCoinPage: React.FC<MainCoinPageProps> = ({ address, isConnected
       const blockchainPath = '/home/dk/go/src/myrollapps/mychain';
       
       // Make a request to our local server to execute the command
-      const response = await fetch('http://localhost:3003/open-terminal', {
+      const response = await fetch(`${getTerminalServerEndpoint()}/open-terminal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatNumber, formatUSD, truncateAddress, formatTimestamp } from '../utils/formatters';
+import { getRpcEndpoint } from '../utils/endpoints';
 
 interface LiveUpdate {
   id: string;
@@ -27,7 +28,9 @@ export const LiveSegmentUpdates: React.FC<LiveSegmentUpdatesProps> = ({ maxItems
   useEffect(() => {
     if (isPaused) return;
 
-    const ws = new WebSocket('ws://localhost:26657/websocket');
+    const rpcEndpoint = getRpcEndpoint();
+    const wsEndpoint = rpcEndpoint.replace('http://', 'ws://').replace('https://', 'wss://') + '/websocket';
+    const ws = new WebSocket(wsEndpoint);
     
     const subscribe = () => {
       // Subscribe to buy_maincoin events

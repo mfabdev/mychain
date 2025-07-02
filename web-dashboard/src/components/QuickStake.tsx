@@ -30,7 +30,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
         await window.keplr.experimentalSuggestChain({
           chainId: 'mychain',
           chainName: 'MyChain',
-          rpc: 'http://localhost:26657',
+          rpc: getRpcEndpoint(),
           rest: getRestEndpoint(),
           bip44: {
             coinType: 118,
@@ -73,7 +73,7 @@ export const QuickStake: React.FC<QuickStakeProps> = ({ address, balance }) => {
       
       const offlineSigner = await window.keplr.getOfflineSignerOnlyAmino('mychain');
       const client = await SigningStargateClient.connectWithSigner(
-        'http://localhost:26657',
+        getRpcEndpoint(),
         offlineSigner
       );
 

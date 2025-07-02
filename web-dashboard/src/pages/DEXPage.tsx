@@ -8,6 +8,7 @@ import { DEXTransactionHistory } from '../components/DEXTransactionHistory';
 import { LCPriceDisplay } from '../components/LCPriceDisplay';
 import { SpreadIncentivesInfo } from '../components/SpreadIncentivesInfo';
 import { formatUnixTimestamp } from '../utils/formatters';
+import { getTerminalServerEndpoint } from '../utils/endpoints';
 
 interface OrderBookEntry {
   price: string;
@@ -82,7 +83,7 @@ export const DEXPage: React.FC = () => {
     setCancelStatus('');
     
     try {
-      const response = await fetch('http://localhost:3003/execute-tx', {
+      const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,7 +118,7 @@ export const DEXPage: React.FC = () => {
     setCancelStatus('');
     
     try {
-      const response = await fetch('http://localhost:3003/execute-tx', {
+      const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -371,7 +372,7 @@ export const DEXPage: React.FC = () => {
     try {
       if (useDirectExecution) {
         // Direct execution through terminal server
-        const response = await fetch('http://localhost:3003/execute-tx', {
+        const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

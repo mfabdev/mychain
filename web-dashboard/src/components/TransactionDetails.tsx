@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getRestEndpoint } from '../utils/endpoints';
 
 interface TransactionDetailsProps {
   txHash: string;
@@ -29,7 +30,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ txHash }
 
     const fetchTxDetails = async () => {
       try {
-        const restEndpoint = process.env.REACT_APP_REST_ENDPOINT || 'http://localhost:1317';
+        const restEndpoint = getRestEndpoint();
         const response = await fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs/${txHash}`);
         
         if (response.status === 404 && retryCount < maxRetries) {

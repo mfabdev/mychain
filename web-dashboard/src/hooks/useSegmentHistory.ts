@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchAPI } from '../utils/api';
+import { getRpcEndpoint } from '../utils/endpoints';
 
 export interface SegmentData {
   segmentNumber: number;
@@ -209,7 +210,9 @@ export const useSegmentHistory = (options: UseSegmentHistoryOptions = {}) => {
 
   // WebSocket subscription for real-time updates
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:26657/websocket');
+    const rpcEndpoint = getRpcEndpoint();
+    const wsEndpoint = rpcEndpoint.replace('http://', 'ws://').replace('https://', 'wss://') + '/websocket';
+    const ws = new WebSocket(wsEndpoint);
     
     const subscribeToEvents = () => {
       ws.send(JSON.stringify({
