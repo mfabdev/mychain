@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { API_ENDPOINTS, BLOCKCHAIN_CONFIG } from '../utils/config';
+import { getRestEndpoint } from '../utils/endpoints';
 
 interface NavItemProps {
   to: string;
@@ -40,7 +41,7 @@ export const Navigation: React.FC = () => {
 
   const fetchBlockHeight = async () => {
     try {
-      const response = await fetch(`${BLOCKCHAIN_CONFIG.restEndpoint}${API_ENDPOINTS.latestBlock}`);
+      const response = await fetch(`${getRestEndpoint()}${API_ENDPOINTS.latestBlock}`);
       if (response.ok) {
         const data = await response.json();
         const height = data.block?.header?.height || 'N/A';

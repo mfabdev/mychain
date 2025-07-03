@@ -1,4 +1,5 @@
 import { ChainInfo } from '../types';
+import { getRpcEndpoint, getRestEndpoint } from './endpoints';
 
 // Permanent blockchain configuration
 export const BLOCKCHAIN_CONFIG = {
@@ -73,8 +74,8 @@ export const BLOCKCHAIN_CONFIG = {
 export const CHAIN_INFO: ChainInfo = {
   chainId: BLOCKCHAIN_CONFIG.chainId,
   chainName: BLOCKCHAIN_CONFIG.chainName,
-  rpc: BLOCKCHAIN_CONFIG.rpcEndpoint,
-  rest: BLOCKCHAIN_CONFIG.restEndpoint,
+  rpc: getRpcEndpoint(),
+  rest: getRestEndpoint(),
   bip44: {
     coinType: 118,
   },
