@@ -899,6 +899,25 @@ export const DEXPage: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                
+                {/* Current Prices */}
+                <div className="mt-3 pt-3 border-t border-gray-600">
+                  <h4 className="text-xs font-semibold text-gray-400 mb-2">Current Prices</h4>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">MC Price:</span>
+                      <span className="font-mono text-yellow-400">
+                        ${mcMarketPrice ? mcMarketPrice.toFixed(6) : '0.000000'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">LC Price:</span>
+                      <span className="font-mono text-blue-400">
+                        ${dexParams?.lc_exchange_rate ? parseFloat(dexParams.lc_exchange_rate).toFixed(6) : '0.000100'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Order Type */}
