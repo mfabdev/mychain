@@ -705,34 +705,83 @@ start_terminal_server() {
         log_section "Starting Terminal Server"
         
         # Stop any existing terminal server
+        if systemctl is-active --quiet mychain-terminal 2>/dev/null; then
+            log_info "Stopping mychain-terminal systemd service..."
+            sudo systemctl stop mychain-terminal
+        fi
+        
         if pgrep -f "terminal-server.js" > /dev/null; then
             log_info "Stopping existing terminal server..."
             pkill -f "terminal-server.js" || true
             sleep 2
         fi
         
-        # Start terminal server
-        cd $PROJECT_ROOT/web-dashboard
-        nohup node terminal-server.js > $HOME_DIR/terminal-server.log 2>&1 &
-        echo $! > $HOME_DIR/terminal-server.pid
-        
-        # Wait for terminal server to be ready
-        local retries=10
-        while [ $retries -gt 0 ]; do
-            if lsof -i:3003 >/dev/null 2>&1; then
-                log_info "Terminal server started successfully (PID: $(cat $HOME_DIR/terminal-server.pid))"
-                break
+        if [ "$USE_SYSTEMD" = true ] && [ -d "/etc/systemd/system" ]; then
+            log_info "Creating terminal server systemd service..."
+            
+            sudo tee /etc/systemd/system/mychain-terminal.service > /dev/null << EOF
+[Unit]
+Description=MyChain Terminal Server
+After=network.target mychain.service
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$PROJECT_ROOT/web-dashboard
+ExecStart=/usr/bin/node terminal-server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment="NODE_ENV=production"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+            
+            sudo systemctl daemon-reload
+            sudo systemctl enable mychain-terminal
+            sudo systemctl start mychain-terminal
+            
+            # Wait for service to be active
+            local retries=10
+            while [ $retries -gt 0 ]; do
+                if systemctl is-active --quiet mychain-terminal && lsof -i:3003 >/dev/null 2>&1; then
+                    log_info "Terminal server systemd service started successfully"
+                    break
+                fi
+                retries=$((retries - 1))
+                sleep 1
+            done
+            
+            if [ $retries -eq 0 ]; then
+                log_warn "Terminal server systemd service may not have started properly"
+                log_info "Check logs: sudo journalctl -u mychain-terminal -f"
             fi
-            retries=$((retries - 1))
-            sleep 1
-        done
-        
-        if [ $retries -eq 0 ]; then
-            log_warn "Terminal server may not have started properly"
-            log_info "Check logs: tail -f $HOME_DIR/terminal-server.log"
+        else
+            # Start terminal server normally (non-systemd)
+            cd $PROJECT_ROOT/web-dashboard
+            nohup node terminal-server.js > $HOME_DIR/terminal-server.log 2>&1 &
+            echo $! > $HOME_DIR/terminal-server.pid
+            
+            # Wait for terminal server to be ready
+            local retries=10
+            while [ $retries -gt 0 ]; do
+                if lsof -i:3003 >/dev/null 2>&1; then
+                    log_info "Terminal server started successfully (PID: $(cat $HOME_DIR/terminal-server.pid))"
+                    break
+                fi
+                retries=$((retries - 1))
+                sleep 1
+            done
+            
+            if [ $retries -eq 0 ]; then
+                log_warn "Terminal server may not have started properly"
+                log_info "Check logs: tail -f $HOME_DIR/terminal-server.log"
+            fi
+            
+            cd $PROJECT_ROOT
         fi
-        
-        cd $PROJECT_ROOT
     fi
 }
 
@@ -740,7 +789,12 @@ start_web_dashboard() {
     if [ "$SKIP_DASHBOARD" = false ] && [ -d "$PROJECT_ROOT/web-dashboard" ]; then
         log_section "Starting Web Dashboard"
         
-        # Stop any existing web dashboard on port 3000
+        # Stop any existing web dashboard
+        if systemctl is-active --quiet mychain-dashboard 2>/dev/null; then
+            log_info "Stopping mychain-dashboard systemd service..."
+            sudo systemctl stop mychain-dashboard
+        fi
+        
         if lsof -i:3000 >/dev/null 2>&1; then
             log_info "Stopping existing web dashboard..."
             # Find and kill process on port 3000
@@ -751,31 +805,82 @@ start_web_dashboard() {
             fi
         fi
         
-        # Start web dashboard
-        cd $PROJECT_ROOT/web-dashboard
-        nohup npm start > $HOME_DIR/web-dashboard.log 2>&1 &
-        echo $! > $HOME_DIR/web-dashboard.pid
-        
-        # Wait for web dashboard to be ready
-        log_info "Waiting for web dashboard to start..."
-        local retries=30
-        while [ $retries -gt 0 ]; do
-            if lsof -i:3000 >/dev/null 2>&1; then
-                log_info "Web dashboard started successfully (PID: $(cat $HOME_DIR/web-dashboard.pid))"
-                log_info "Access the dashboard at: http://localhost:3000"
-                break
+        if [ "$USE_SYSTEMD" = true ] && [ -d "/etc/systemd/system" ]; then
+            log_info "Creating web dashboard systemd service..."
+            
+            # Ensure build exists
+            if [ ! -d "$PROJECT_ROOT/web-dashboard/build" ]; then
+                log_warn "Build directory not found. Building dashboard first..."
+                build_dashboard
             fi
-            retries=$((retries - 1))
-            sleep 1
-        done
-        
-        if [ $retries -eq 0 ]; then
-            log_warn "Web dashboard may not have started properly"
-            log_info "Check logs: tail -f $HOME_DIR/web-dashboard.log"
-            log_info "Start manually: cd $PROJECT_ROOT/web-dashboard && npm start"
+            
+            sudo tee /etc/systemd/system/mychain-dashboard.service > /dev/null << EOF
+[Unit]
+Description=MyChain Web Dashboard
+After=network.target mychain.service mychain-terminal.service
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$PROJECT_ROOT/web-dashboard
+ExecStart=/usr/bin/npx serve -s build -l 3000
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment="NODE_ENV=production"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+            
+            sudo systemctl daemon-reload
+            sudo systemctl enable mychain-dashboard
+            sudo systemctl start mychain-dashboard
+            
+            # Wait for service to be active
+            local retries=30
+            while [ $retries -gt 0 ]; do
+                if systemctl is-active --quiet mychain-dashboard && lsof -i:3000 >/dev/null 2>&1; then
+                    log_info "Web dashboard systemd service started successfully"
+                    log_info "Access the dashboard at: http://localhost:3000"
+                    break
+                fi
+                retries=$((retries - 1))
+                sleep 1
+            done
+            
+            if [ $retries -eq 0 ]; then
+                log_warn "Web dashboard systemd service may not have started properly"
+                log_info "Check logs: sudo journalctl -u mychain-dashboard -f"
+            fi
+        else
+            # Start web dashboard normally (non-systemd)
+            cd $PROJECT_ROOT/web-dashboard
+            nohup npm start > $HOME_DIR/web-dashboard.log 2>&1 &
+            echo $! > $HOME_DIR/web-dashboard.pid
+            
+            # Wait for web dashboard to be ready
+            log_info "Waiting for web dashboard to start..."
+            local retries=30
+            while [ $retries -gt 0 ]; do
+                if lsof -i:3000 >/dev/null 2>&1; then
+                    log_info "Web dashboard started successfully (PID: $(cat $HOME_DIR/web-dashboard.pid))"
+                    log_info "Access the dashboard at: http://localhost:3000"
+                    break
+                fi
+                retries=$((retries - 1))
+                sleep 1
+            done
+            
+            if [ $retries -eq 0 ]; then
+                log_warn "Web dashboard may not have started properly"
+                log_info "Check logs: tail -f $HOME_DIR/web-dashboard.log"
+                log_info "Start manually: cd $PROJECT_ROOT/web-dashboard && npm start"
+            fi
+            
+            cd $PROJECT_ROOT
         fi
-        
-        cd $PROJECT_ROOT
     fi
 }
 
@@ -893,10 +998,12 @@ print_summary() {
         echo "  RPC: http://$PUBLIC_IP:26657"
         echo "  API: http://$PUBLIC_IP:1317"
         echo "  gRPC: $PUBLIC_IP:9090"
+        echo "  Terminal Server: http://$PUBLIC_IP:3003"
     else
         echo "  RPC: http://localhost:26657"
         echo "  API: http://localhost:1317"
         echo "  gRPC: localhost:9090"
+        echo "  Terminal Server: http://localhost:3003"
     fi
     echo
     echo "Useful Commands:"
