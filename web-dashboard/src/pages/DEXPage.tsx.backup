@@ -28,14 +28,8 @@ interface Order {
   updated_at: string;
 }
 
-interface DEXPageProps {
-  address: string;
-  isConnected: boolean;
-  createDexOrder?: (pairId: string, isBuy: boolean, price: string, amount: string, priceDenom: string, amountDenom: string, orderBook?: { buy_orders?: any[], sell_orders?: any[] }) => Promise<any>;
-  cancelDexOrder?: (orderId: string) => Promise<any>;
-}
-
-export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDexOrder, cancelDexOrder }) => {
+export const DEXPage: React.FC = () => {
+  const { address, isConnected } = useKeplr();
   const [orderBook, setOrderBook] = useState<{buy: OrderBookEntry[], sell: OrderBookEntry[]} | null>(null);
   const [allOrders, setAllOrders] = useState<{buy: Order[], sell: Order[]}>({buy: [], sell: []});
   const [myOrders, setMyOrders] = useState<Order[]>([]);
@@ -48,7 +42,7 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderStatus, setOrderStatus] = useState<string>('');
   const [generatedCommand, setGeneratedCommand] = useState<string>('');
-  const [useDirectExecution, setUseDirectExecution] = useState(false); // Default to Keplr
+  const [useDirectExecution, setUseDirectExecution] = useState(true); // Default to direct execution
   const [userRewards, setUserRewards] = useState<any>(null);
   const [isClaimingRewards, setIsClaimingRewards] = useState(false);
   const [claimStatus, setClaimStatus] = useState<string>('');
@@ -129,8 +123,7 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'cancel-order',
-          orderId: orderId,
-          pair: selectedPair
+          orderId: orderId
         })
       });
       
@@ -377,49 +370,7 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
     setGeneratedCommand('');
 
     try {
-      // Check if using direct execution or Keplr
-      if (!useDirectExecution) {
-        // Execute through Keplr
-        if (!isConnected || !createDexOrder) {
-          setOrderStatus('❌ Please connect your wallet first');
-          setIsPlacingOrder(false);
-          return;
-        }
-
-        try {
-          setOrderStatus('⏳ Processing transaction...');
-          const priceDenom = selectedPair === '1' ? 'utusd' : 'ulc';
-          const amountDenom = 'umc';
-          
-          // Convert orderBook format for gas estimation
-          const orderBookForGas = orderBook ? {
-            buy_orders: allOrders.buy.filter(o => o.pair_id === selectedPair),
-            sell_orders: allOrders.sell.filter(o => o.pair_id === selectedPair)
-          } : undefined;
-          
-          const result = await createDexOrder(
-            selectedPair,
-            orderType === 'buy',
-            price,
-            amount,
-            priceDenom,
-            amountDenom,
-            orderBookForGas
-          );
-          
-          if (result.code === 0) {
-            setOrderStatus(`✅ Success! Transaction hash: ${result.transactionHash}`);
-            setPrice('');
-            setAmount('');
-            setTotal('');
-          } else {
-            setOrderStatus(`❌ Transaction failed with code: ${result.code}`);
-          }
-        } catch (error: any) {
-          console.error('DEX order error:', error);
-          setOrderStatus(`❌ Error: ${error.message || "Transaction failed"}`);
-        }
-      } else if (useDirectExecution) {
+      if (useDirectExecution) {
         // Direct execution through terminal server
         const response = await fetch(`${getTerminalServerEndpoint()}/execute-tx`, {
           method: 'POST',
@@ -462,6 +413,17 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
           
           setOrderStatus(`❌ Error: ${errorMessage}`);
         }
+      } else {
+        // Generate CLI command for manual execution
+        const priceInMicro = Math.floor(parseFloat(price) * 1000000);
+        const amountInMicro = Math.floor(parseFloat(amount) * 1000000);
+        const priceDenom = selectedPair === '1' ? 'utusd' : 'ulc';
+        const amountDenom = 'umc';
+        
+        const cliCommand = `mychaind tx dex create-order ${selectedPair} ${orderType === 'buy' ? '--is-buy' : ''} --amount ${amountInMicro}${amountDenom} --price ${priceInMicro}${priceDenom} --from [YOUR_KEY_NAME] --chain-id mychain --fees 50000ulc --gas 300000 --keyring-backend test -y`;
+        
+        setGeneratedCommand(cliCommand);
+        setOrderStatus('⚠️ Please run the generated command in your terminal');
       }
     } catch (error) {
       // Terminal server not available - generate CLI command directly
@@ -602,8 +564,277 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
               <p className="text-xs text-gray-400 mt-1">Used for volume cap calculations</p>
             </div>
           </div>
-        </div>
           
+          {/* Tier Information */}
+          <div className="bg-gray-700/30 rounded-lg p-4 mb-4">
+            <h3 className="font-semibold mb-3">🎯 Liquidity Reward Tiers</h3>
+            
+            {/* Market Price Display */}
+            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 mb-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-yellow-400">Current MC Market Price:</span>
+                  <span className="text-lg font-bold text-yellow-300">${mcMarketPrice.toFixed(6)}</span>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Actual market price from MainCoin module (Segment based pricing)
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Buy Side Tiers */}
+              <div>
+                <h4 className="text-sm font-medium text-green-400 mb-2">Buy Orders (Bid Side)</h4>
+                <div className="space-y-2 text-sm">
+                  {(() => {
+                    const marketPrice = mcMarketPrice;
+                    const mcSupplyValue = parseInt(mcSupply) / 1000000;
+                    
+                    // Calculate tier thresholds and volumes
+                    const buyTiers = [
+                      { tier: 1, desc: "At market price", threshold: marketPrice, cap: 0.02, discount: 0 },
+                      { tier: 2, desc: "3% below market", threshold: marketPrice * 0.97, cap: 0.05, discount: 3 },
+                      { tier: 3, desc: "8% below market", threshold: marketPrice * 0.92, cap: 0.08, discount: 8 },
+                      { tier: 4, desc: "12% below market", threshold: marketPrice * 0.88, cap: 0.12, discount: 12 }
+                    ];
+                    
+                    return buyTiers.map(tier => {
+                      // Calculate volume in this tier
+                      const tierVolume = allOrders.buy.reduce((sum, order) => {
+                        const orderPrice = parseFloat(order.price.amount) / 1000000;
+                        const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                        
+                        // Check if order falls in this tier's price range
+                        const prevTier = tier.tier > 1 ? buyTiers[tier.tier - 2] : null;
+                        const minPrice = prevTier ? prevTier.threshold : 0;
+                        const maxPrice = tier.threshold;
+                        
+                        if (orderPrice >= minPrice && orderPrice <= maxPrice) {
+                          return sum + (remaining / 1000000);
+                        }
+                        return sum;
+                      }, 0);
+                      
+                      const tierCap = mcSupplyValue * tier.cap;
+                      const tierUsage = tierCap > 0 ? (tierVolume / tierCap * 100) : 0;
+                      const isFull = tierUsage >= 100;
+                      
+                      return (
+                        <div key={tier.tier} className={`p-2 rounded border ${isFull ? 'bg-red-900/20 border-red-500/30' : 'bg-gray-800/50 border-gray-700'}`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <div>
+                              <span className="font-medium">Tier {tier.tier}</span>
+                              <span className="text-xs text-gray-400 ml-2">({tier.desc})</span>
+                            </div>
+                            {isFull && <span className="text-xs bg-red-600/30 text-red-400 px-2 py-0.5 rounded">FULL</span>}
+                          </div>
+                          <div className="text-xs text-gray-400 mb-2">
+                            Orders ≥ ${tier.threshold.toFixed(6)}
+                          </div>
+                          <div className="mb-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Volume: {tierVolume.toFixed(6)} MC</span>
+                              <span>Cap: {tierCap.toFixed(6)} MC</span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`}
+                                style={{ width: `${Math.min(tierUsage, 100)}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {tierUsage.toFixed(1)}% used
+                            </div>
+                          </div>
+                          {tierVolume > 0 && (
+                            <div className="text-xs text-gray-400">
+                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(6)} MC
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+              
+              {/* Sell Side Tiers */}
+              <div>
+                <h4 className="text-sm font-medium text-red-400 mb-2">Sell Orders (Ask Side)</h4>
+                <div className="space-y-2 text-sm">
+                  {(() => {
+                    const marketPrice = mcMarketPrice;
+                    const mcSupplyValue = parseInt(mcSupply) / 1000000;
+                    
+                    // Calculate tier thresholds and volumes
+                    const sellTiers = [
+                      { tier: 1, desc: "At market price", threshold: marketPrice, cap: 0.01, discount: 0 },
+                      { tier: 2, desc: "3% below market", threshold: marketPrice * 0.97, cap: 0.03, discount: 3 },
+                      { tier: 3, desc: "8% below market", threshold: marketPrice * 0.92, cap: 0.04, discount: 8 },
+                      { tier: 4, desc: "12% below market", threshold: marketPrice * 0.88, cap: 0.05, discount: 12 }
+                    ];
+                    
+                    return sellTiers.map(tier => {
+                      // Calculate volume in this tier
+                      const tierVolume = allOrders.sell.reduce((sum, order) => {
+                        const orderPrice = parseFloat(order.price.amount) / 1000000;
+                        const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                        
+                        // Check if order falls in this tier's price range
+                        // For sell orders with negative deviation, check if price is at or below threshold
+                        const maxPrice = tier.threshold;
+                        const prevTier = tier.tier > 1 ? sellTiers[tier.tier - 2] : null;
+                        const minPrice = prevTier ? prevTier.threshold : 0;
+                        
+                        if (orderPrice <= maxPrice && orderPrice > minPrice) {
+                          return sum + (remaining / 1000000);
+                        }
+                        return sum;
+                      }, 0);
+                      
+                      const tierCap = mcSupplyValue * tier.cap;
+                      const tierUsage = tierCap > 0 ? (tierVolume / tierCap * 100) : 0;
+                      const isFull = tierUsage >= 100;
+                      
+                      return (
+                        <div key={tier.tier} className={`p-2 rounded border ${isFull ? 'bg-red-900/20 border-red-500/30' : 'bg-gray-800/50 border-gray-700'}`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <div>
+                              <span className="font-medium">Tier {tier.tier}</span>
+                              <span className="text-xs text-gray-400 ml-2">({tier.desc})</span>
+                            </div>
+                            {isFull && <span className="text-xs bg-red-600/30 text-red-400 px-2 py-0.5 rounded">FULL</span>}
+                          </div>
+                          <div className="text-xs text-gray-400 mb-2">
+                            Orders ≤ ${tier.threshold.toFixed(6)}
+                          </div>
+                          <div className="mb-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Volume: {tierVolume.toFixed(6)} MC</span>
+                              <span>Cap: {tierCap.toFixed(6)} MC</span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-red-400'}`}
+                                style={{ width: `${Math.min(tierUsage, 100)}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {tierUsage.toFixed(1)}% used
+                            </div>
+                          </div>
+                          {tierVolume > 0 && (
+                            <div className="text-xs text-gray-400">
+                              Reward eligible: {Math.min(tierVolume, tierCap).toFixed(6)} MC
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Active Tiers Summary */}
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-400 mb-2">📊 Active Tiers Summary</h4>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-gray-400">Buy side active tiers:</span>
+                  <span className="ml-2 text-green-400">
+                    {(() => {
+                      const activeBuyTiers = allOrders.buy.filter(order => {
+                        const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                        return remaining > 0;
+                      }).length > 0 ? 'Active' : 'None';
+                      return activeBuyTiers;
+                    })()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Sell side active tiers:</span>
+                  <span className="ml-2 text-red-400">
+                    {(() => {
+                      const activeSellTiers = allOrders.sell.filter(order => {
+                        const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                        return remaining > 0;
+                      }).length > 0 ? 'Active' : 'None';
+                      return activeSellTiers;
+                    })()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Current Volume Analysis */}
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-400 mb-2">📈 Current Liquidity Analysis</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400 mb-1">Total Buy Order Volume:</p>
+                <p className="font-bold">
+                  {(() => {
+                    const totalBuyVolume = allOrders.buy.reduce((sum, order) => {
+                      const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                      const price = parseFloat(order.price.amount) / 1000000;
+                      return sum + (remaining * price / 1000000);
+                    }, 0);
+                    return `$${totalBuyVolume.toFixed(2)}`;
+                  })()}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(() => {
+                    const mcSupplyValue = parseInt(mcSupply) / 1000000;
+                    const totalBuyVolume = allOrders.buy.reduce((sum, order) => {
+                      const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                      const price = parseFloat(order.price.amount) / 1000000;
+                      return sum + (remaining * price / 1000000);
+                    }, 0);
+                    const percentage = mcSupplyValue > 0 ? (totalBuyVolume / (mcSupplyValue * 0.0001) * 100).toFixed(2) : '0';
+                    return `${percentage}% of MC market cap`;
+                  })()}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-gray-400 mb-1">Total Sell Order Volume:</p>
+                <p className="font-bold">
+                  {(() => {
+                    const totalSellVolume = allOrders.sell.reduce((sum, order) => {
+                      const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                      const price = parseFloat(order.price.amount) / 1000000;
+                      return sum + (remaining * price / 1000000);
+                    }, 0);
+                    return `$${totalSellVolume.toFixed(2)}`;
+                  })()}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(() => {
+                    const mcSupplyValue = parseInt(mcSupply) / 1000000;
+                    const totalSellVolume = allOrders.sell.reduce((sum, order) => {
+                      const remaining = parseFloat(order.amount.amount) - parseFloat(order.filled_amount.amount);
+                      const price = parseFloat(order.price.amount) / 1000000;
+                      return sum + (remaining * price / 1000000);
+                    }, 0);
+                    const percentage = mcSupplyValue > 0 ? (totalSellVolume / (mcSupplyValue * 0.0001) * 100).toFixed(2) : '0';
+                    return `${percentage}% of MC market cap`;
+                  })()}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-3 p-3 bg-gray-800/50 rounded">
+              <p className="text-xs text-gray-400 mb-1">⚠️ Volume Cap Status:</p>
+              <p className="text-sm">
+                Orders are eligible for rewards based on their tier and total volume. Once a tier's volume cap is reached, additional orders in that tier won't earn rewards. Orders are processed by price priority (best prices first).
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Trading Interface */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Order Form */}
@@ -682,7 +913,7 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
                     <div className="flex justify-between">
                       <span className="text-gray-500">LC Price:</span>
                       <span className="font-mono text-blue-400">
-                        {dexParams?.lc_exchange_rate ? parseFloat(dexParams.lc_exchange_rate).toFixed(6) : '0.000100'} MC
+                        ${dexParams?.lc_exchange_rate ? parseFloat(dexParams.lc_exchange_rate).toFixed(6) : '0.000100'}
                       </span>
                     </div>
                   </div>
@@ -968,6 +1199,116 @@ export const DEXPage: React.FC<DEXPageProps> = ({ address, isConnected, createDe
           </div>
         </div>
 
+        {/* Rewards Section */}
+        <div className="bg-gray-800 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">Liquidity Rewards</h2>
+          
+          <div className="space-y-4">
+            {/* Rewards Summary */}
+            <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Total Unclaimed Rewards</p>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {userRewards && userRewards.unclaimed_amount ? 
+                      `${(parseFloat(userRewards.unclaimed_amount.amount) / 1000000).toFixed(6)} LC` : 
+                      '0.000000 LC'
+                    }
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Total Earned (All Time)</p>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {userRewards && userRewards.total_earned ? 
+                      `${(parseFloat(userRewards.total_earned.amount) / 1000000).toFixed(6)} LC` : 
+                      '0.000000 LC'
+                    }
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Annual Reward Rate</p>
+                  <p className="text-2xl font-bold text-green-400">~7%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Claim Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleClaimRewards}
+                disabled={isClaimingRewards || !userRewards || !userRewards.unclaimed_amount || parseFloat(userRewards.unclaimed_amount.amount) === 0}
+                className={`px-6 py-3 rounded-lg font-semibold ${
+                  isClaimingRewards || !userRewards || !userRewards.unclaimed_amount || parseFloat(userRewards.unclaimed_amount.amount) === 0
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700'
+                }`}
+              >
+                {isClaimingRewards ? 'Processing...' : 'Claim Rewards'}
+              </button>
+            </div>
+
+            {/* Claim Status */}
+            {claimStatus && (
+              <div className={`text-center text-sm ${
+                claimStatus.includes('✅') ? 'text-green-400' : 
+                claimStatus.includes('❌') ? 'text-red-400' : 'text-yellow-400'
+              }`}>
+                {claimStatus}
+              </div>
+            )}
+
+            {/* Rewards by Order */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Rewards by Order</h3>
+              {userRewards && userRewards.order_rewards && userRewards.order_rewards.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left p-2">Order ID</th>
+                        <th className="text-left p-2">Pair</th>
+                        <th className="text-right p-2">Order Size</th>
+                        <th className="text-right p-2">Rewards Earned</th>
+                        <th className="text-right p-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userRewards.order_rewards.map((reward: any, index: number) => (
+                        <tr key={index} className="border-b border-gray-700">
+                          <td className="p-2">#{reward.order_id}</td>
+                          <td className="p-2">MC/{reward.pair_id === '1' ? 'TestUSD' : 'LC'}</td>
+                          <td className="p-2 text-right">{(parseFloat(reward.order_amount.amount) / 1000000).toFixed(6)} MC</td>
+                          <td className="p-2 text-right text-purple-400">{(parseFloat(reward.reward_amount.amount) / 1000000).toFixed(6)} LC</td>
+                          <td className="p-2 text-right">
+                            <span className="text-xs bg-purple-600/20 text-purple-400 px-2 py-1 rounded">Unclaimed</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-gray-700/30 rounded-lg p-4 text-center text-gray-400">
+                  <p>No rewards earned yet</p>
+                  <p className="text-sm">Place orders to earn liquidity rewards</p>
+                </div>
+              )}
+            </div>
+
+            {/* Rewards Info */}
+            <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-400 mb-2">💎 How to Earn LC Rewards</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Place limit orders on any trading pair (MC/TUSD or MC/LC)</li>
+                <li>• <strong>All rewards are paid in LC tokens</strong> regardless of trading pair</li>
+                <li>• Rewards accumulate based on order size and time</li>
+                <li>• Dynamic rate: 7-100% APR (currently {currentAPR.toFixed(1)}%)</li>
+                <li>• LC starts at 0.0001 MC and can appreciate in value</li>
+                <li>• Auto-distributed every 100 blocks (~8.3 minutes)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
         {/* Liquidity Positions Tracker */}
         <LiquidityPositions 

@@ -8,8 +8,8 @@ export const BLOCKCHAIN_CONFIG = {
   chainName: 'MyChain',
   
   // API Endpoints
-  rpcEndpoint: process.env.REACT_APP_RPC_ENDPOINT || 'http://localhost:26657',
-  restEndpoint: process.env.REACT_APP_REST_ENDPOINT || 'http://localhost:1317',
+  rpcEndpoint: getRpcEndpoint(),
+  restEndpoint: getRestEndpoint(),
   
   // Token Configuration
   tokens: {
@@ -74,8 +74,8 @@ export const BLOCKCHAIN_CONFIG = {
 export const CHAIN_INFO: ChainInfo = {
   chainId: BLOCKCHAIN_CONFIG.chainId,
   chainName: BLOCKCHAIN_CONFIG.chainName,
-  rpc: getRpcEndpoint(),
-  rest: getRestEndpoint(),
+  rpc: window.location.hostname === '18.226.214.89' ? 'http://18.226.214.89:26657' : getRpcEndpoint(),
+  rest: window.location.hostname === '18.226.214.89' ? 'http://18.226.214.89:1317' : getRestEndpoint(),
   bip44: {
     coinType: 118,
   },

@@ -3,6 +3,8 @@ import { SigningStargateClient } from '@cosmjs/stargate';
 import { Registry } from '@cosmjs/proto-signing';
 import { CHAIN_INFO } from '../utils/config';
 import { MsgBuyMaincoinProtoType, MsgSellMaincoinProtoType } from '../codegen/mychain/maincoin/v1/tx';
+import { MsgCreateOrderProtoType, MsgCancelOrderProtoType } from '../codegen/mychain/dex/v1/tx';
+import Long from 'long';
 
 export const useKeplr = () => {
   const [address, setAddress] = useState<string>(() => {
@@ -65,10 +67,12 @@ export const useKeplr = () => {
       localStorage.setItem('mychain_wallet_type', walletType);
 
       if (!client) {
-        // Create custom registry with MainCoin types
+        // Create custom registry with MainCoin and DEX types
         const registry = new Registry();
         registry.register('/mychain.maincoin.v1.MsgBuyMaincoin', MsgBuyMaincoinProtoType);
         registry.register('/mychain.maincoin.v1.MsgSellMaincoin', MsgSellMaincoinProtoType);
+        registry.register('/mychain.dex.v1.MsgCreateOrder', MsgCreateOrderProtoType);
+        registry.register('/mychain.dex.v1.MsgCancelOrder', MsgCancelOrderProtoType);
 
         const signingClient = await SigningStargateClient.connectWithSigner(
           CHAIN_INFO.rpc,
@@ -77,9 +81,21 @@ export const useKeplr = () => {
         );
         setClient(signingClient);
       }
+      
+      // Clear any previous errors on successful connection
+      setError('');
     } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet');
+      // Only set error if it's not a minor connection issue
+      if (!address || !err.message.includes('fetch')) {
+        setError(err.message || 'Failed to connect wallet');
+      }
       console.error('Wallet connection error:', err);
+      
+      // Even if RPC connection fails, we have the wallet connected
+      if (address) {
+        setIsConnected(true);
+        setError(''); // Clear error if wallet is connected
+      }
     }
   };
 
@@ -158,6 +174,172 @@ export const useKeplr = () => {
     }
   };
 
+  // Helper function to estimate gas based on order complexity
+  const estimateDexOrderGas = (
+    isBuy: boolean,
+    orderPrice: number,
+    orderAmount: number,
+    orderBook?: { buy_orders?: any[], sell_orders?: any[] }
+  ): number => {
+    let baseGas = 300000; // Base gas for simple order placement
+    
+    if (!orderBook) {
+      // If no order book data, use conservative estimate
+      return 800000; // Enough for ~3-4 matches
+    }
+    
+    let remainingAmount = orderAmount;
+    let matchCount = 0;
+    
+    // Check how many orders this will match
+    const ordersToMatch = isBuy ? orderBook.sell_orders : orderBook.buy_orders;
+    
+    if (ordersToMatch && ordersToMatch.length > 0) {
+      for (const existingOrder of ordersToMatch) {
+        const existingPrice = parseFloat(existingOrder.price) / 1000000;
+        const existingAmount = parseFloat(existingOrder.amount) / 1000000;
+        
+        // Check if orders can match
+        if ((isBuy && orderPrice >= existingPrice) || (!isBuy && orderPrice <= existingPrice)) {
+          matchCount++;
+          remainingAmount -= existingAmount;
+          
+          if (remainingAmount <= 0) break;
+        }
+      }
+    }
+    
+    // Add gas for each match (150k per match for order execution + state updates)
+    const matchGas = matchCount * 150000;
+    
+    // Add extra buffer for complex operations
+    const bufferGas = matchCount > 2 ? 100000 : 0;
+    
+    const totalGas = baseGas + matchGas + bufferGas;
+    
+    console.log(`Order analysis:
+      - Will match ${matchCount} existing orders
+      - Base gas: ${baseGas}
+      - Match gas: ${matchGas} (${matchCount} × 150k)
+      - Buffer gas: ${bufferGas}
+      - Total estimated gas: ${totalGas}`);
+    
+    return totalGas;
+  };
+
+  const createDexOrder = async (
+    pairId: string,
+    isBuy: boolean,
+    price: string,
+    amount: string,
+    priceDenom: string,
+    amountDenom: string,
+    orderBook?: { buy_orders?: any[], sell_orders?: any[] }
+  ) => {
+    // If no client but we have an address, try to reconnect
+    let signingClient = client;
+    
+    if (!signingClient && address && window.keplr) {
+      try {
+        const offlineSigner = window.keplr.getOfflineSigner(CHAIN_INFO.chainId);
+        const registry = new Registry();
+        registry.register('/mychain.maincoin.v1.MsgBuyMaincoin', MsgBuyMaincoinProtoType);
+        registry.register('/mychain.maincoin.v1.MsgSellMaincoin', MsgSellMaincoinProtoType);
+        registry.register('/mychain.dex.v1.MsgCreateOrder', MsgCreateOrderProtoType);
+        registry.register('/mychain.dex.v1.MsgCancelOrder', MsgCancelOrderProtoType);
+        
+        signingClient = await SigningStargateClient.connectWithSigner(
+          CHAIN_INFO.rpc,
+          offlineSigner,
+          { registry }
+        );
+        setClient(signingClient);
+      } catch (err) {
+        console.error('Failed to reconnect client:', err);
+        throw new Error('Failed to connect to blockchain. Please try reconnecting your wallet.');
+      }
+    }
+    
+    if (!signingClient || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    const msg = {
+      typeUrl: '/mychain.dex.v1.MsgCreateOrder',
+      value: {
+        maker: address,
+        pairId: Long.fromString(pairId),
+        price: {
+          denom: priceDenom,
+          amount: String(Math.floor(parseFloat(price) * 1000000)),
+        },
+        amount: {
+          denom: amountDenom,
+          amount: String(Math.floor(parseFloat(amount) * 1000000)),
+        },
+        isBuy: isBuy,
+      },
+    };
+
+    // Estimate gas based on order complexity
+    const estimatedGas = estimateDexOrderGas(
+      isBuy,
+      parseFloat(price),
+      parseFloat(amount),
+      orderBook
+    );
+    
+    const fee = {
+      amount: [{ denom: 'ulc', amount: '0' }], // 0 fee since minimum-gas-prices = "0ulc"
+      gas: String(estimatedGas),
+    };
+
+    try {
+      const result = await signingClient.signAndBroadcast(
+        address,
+        [msg],
+        fee,
+        isBuy ? 'Creating buy order' : 'Creating sell order'
+      );
+      return result;
+    } catch (error: any) {
+      console.error('DEX order failed:', error);
+      throw error;
+    }
+  };
+
+  const cancelDexOrder = async (orderId: string) => {
+    if (!client || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    const msg = {
+      typeUrl: '/mychain.dex.v1.MsgCancelOrder',
+      value: {
+        maker: address,
+        orderId: Long.fromString(orderId),
+      },
+    };
+
+    const fee = {
+      amount: [{ denom: 'ulc', amount: '50000' }],
+      gas: '300000',
+    };
+
+    try {
+      const result = await client.signAndBroadcast(
+        address,
+        [msg],
+        fee,
+        'Canceling order'
+      );
+      return result;
+    } catch (error: any) {
+      console.error('Cancel order failed:', error);
+      throw error;
+    }
+  };
+
   return {
     address,
     isConnected,
@@ -167,5 +349,7 @@ export const useKeplr = () => {
     disconnect,
     buyMainCoin,
     sellMainCoin,
+    createDexOrder,
+    cancelDexOrder,
   };
 };

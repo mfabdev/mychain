@@ -666,10 +666,23 @@ export const OrderPlacementGuide: React.FC = () => {
             <p className="text-xs text-gray-400">of MC supply value</p>
           </div>
         </div>
-        {placementData.tierInfo && placementData.tierInfo.price_deviation && (
+        {placementData.tierInfo && (
           <div className="mt-3 p-2 bg-gray-700/30 rounded text-sm">
             <p className="text-gray-400">
-              Price deviation for this tier: <span className="text-white font-mono">{(parseFloat(placementData.tierInfo.price_deviation) * 100).toFixed(1)}%</span>
+              Price deviation range for this tier: <span className="text-white font-mono">
+                {(() => {
+                  const tierNum = placementData.tierInfo.id || placementData.tier;
+                  if (tierNum === 1) {
+                    return "0 to -3%";
+                  } else if (tierNum === 2) {
+                    return "-3% to -5%";
+                  } else if (tierNum === 3) {
+                    return "-5% to -10%";
+                  } else {
+                    return "Beyond -10%";
+                  }
+                })()}
+              </span>
             </p>
           </div>
         )}

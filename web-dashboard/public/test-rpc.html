@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPC Connection Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { background: #0f3e0f; border-color: #0f0; }
+        .error { background: #3e0f0f; border-color: #f00; }
+        .info { background: #1e1e3e; border-color: #00f; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>MyChain RPC Connection Diagnostics</h1>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<strong>${title}</strong><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+
+        async function testDirectRPC() {
+            addResult('Testing Direct RPC (Port 26657)', 'Testing...', 'info');
+            try {
+                const response = await fetch('http://18.226.214.89:26657/status');
+                const data = await response.json();
+                addResult('Direct RPC (Port 26657)', 'SUCCESS\n' + JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                addResult('Direct RPC (Port 26657)', 'FAILED: ' + error.message, 'error');
+            }
+        }
+
+        async function testProxiedRPC() {
+            addResult('Testing Proxied RPC (/rpc)', 'Testing...', 'info');
+            try {
+                const response = await fetch('http://18.226.214.89/rpc/status');
+                const data = await response.json();
+                addResult('Proxied RPC (/rpc)', 'SUCCESS\n' + JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                addResult('Proxied RPC (/rpc)', 'FAILED: ' + error.message, 'error');
+            }
+        }
+
+        async function testRPCWithCORS() {
+            addResult('Testing RPC CORS Headers', 'Testing...', 'info');
+            try {
+                const response = await fetch('http://18.226.214.89/rpc/status', {
+                    method: 'GET',
+                    headers: {
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                const corsHeaders = {};
+                response.headers.forEach((value, key) => {
+                    if (key.toLowerCase().includes('access-control')) {
+                        corsHeaders[key] = value;
+                    }
+                });
+                
+                addResult('CORS Headers', JSON.stringify(corsHeaders, null, 2), 
+                    Object.keys(corsHeaders).length > 0 ? 'success' : 'error');
+                    
+                const data = await response.json();
+                addResult('RPC Response with CORS', 'SUCCESS\n' + JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                addResult('RPC with CORS', 'FAILED: ' + error.message, 'error');
+            }
+        }
+
+        async function testWebSocket() {
+            addResult('Testing WebSocket Connection', 'Testing...', 'info');
+            try {
+                const ws = new WebSocket('ws://18.226.214.89/rpc/websocket');
+                
+                ws.onopen = () => {
+                    addResult('WebSocket', 'Connected successfully', 'success');
+                    ws.close();
+                };
+                
+                ws.onerror = (error) => {
+                    addResult('WebSocket', 'Failed to connect: ' + error, 'error');
+                };
+                
+                setTimeout(() => {
+                    if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CLOSED) {
+                        ws.close();
+                        addResult('WebSocket', 'Connection timeout', 'error');
+                    }
+                }, 5000);
+            } catch (error) {
+                addResult('WebSocket', 'FAILED: ' + error.message, 'error');
+            }
+        }
+
+        async function testKeplrConnection() {
+            addResult('Testing Keplr RPC Connection', 'Testing...', 'info');
+            
+            const chainInfo = {
+                chainId: 'mychain',
+                rpc: 'http://18.226.214.89/rpc'
+            };
+            
+            try {
+                const { SigningStargateClient } = await import('https://unpkg.com/@cosmjs/stargate@0.32.2/build/index.js');
+                
+                // Test without signer (just connection)
+                const client = await SigningStargateClient.connect(chainInfo.rpc);
+                const height = await client.getHeight();
+                
+                addResult('Keplr RPC Connection', `SUCCESS - Block Height: ${height}`, 'success');
+            } catch (error) {
+                addResult('Keplr RPC Connection', 'FAILED: ' + error.message + '\n\nThis is likely the issue preventing Keplr from connecting.', 'error');
+            }
+        }
+
+        async function runAllTests() {
+            results.innerHTML = '';
+            addResult('Starting Diagnostics', `Testing from: ${window.location.origin}`, 'info');
+            
+            await testDirectRPC();
+            await testProxiedRPC();
+            await testRPCWithCORS();
+            await testWebSocket();
+            
+            // Note about Keplr test
+            addResult('Keplr Connection Test', 'Cannot test from this page due to module imports. Check browser console for any CORS errors when using the main dashboard.', 'info');
+        }
+
+        // Auto-run tests
+        runAllTests();
+    </script>
+</body>
+</html>

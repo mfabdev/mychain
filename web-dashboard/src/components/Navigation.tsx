@@ -41,17 +41,48 @@ export const Navigation: React.FC = () => {
 
   const fetchBlockHeight = async () => {
     try {
-      const response = await fetch(`${getRestEndpoint()}${API_ENDPOINTS.latestBlock}`);
-      if (response.ok) {
-        const data = await response.json();
-        const height = data.block?.header?.height || 'N/A';
-        setBlockHeight(`#${height}`);
-        setIsConnected(true);
-      } else {
-        setIsConnected(false);
+      // Try multiple endpoints to avoid CORS issues
+      const endpoints = [
+        `${getRestEndpoint()}${API_ENDPOINTS.latestBlock}`,
+        `http://18.226.214.89:1317${API_ENDPOINTS.latestBlock}`,
+        `http://18.226.214.89:26657/status`
+      ];
+      
+      let data = null;
+      let height = null;
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint);
+          if (response.ok) {
+            data = await response.json();
+            
+            // Handle different response formats
+            if (endpoint.includes('26657')) {
+              // RPC format
+              height = data.result?.sync_info?.latest_block_height;
+            } else {
+              // REST format
+              height = data.block?.header?.height;
+            }
+            
+            if (height) {
+              setBlockHeight(`#${height}`);
+              setIsConnected(true);
+              return;
+            }
+          }
+        } catch (e) {
+          // Try next endpoint
+        }
       }
+      
+      // If all endpoints fail
+      setIsConnected(false);
+      setBlockHeight('N/A');
     } catch (error) {
       setIsConnected(false);
+      setBlockHeight('N/A');
     }
   };
 

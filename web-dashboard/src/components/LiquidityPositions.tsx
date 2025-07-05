@@ -25,7 +25,7 @@ const MarketPriceRangeChart: React.FC<{
     volumeCapFraction: number;
   }> = [];
   
-  // Process buy orders (sorted by price descending)
+  // Process buy orders (sorted by price descending) - v2
   const sortedBuyOrders = [...allBuyOrders].sort((a, b) => {
     const priceA = parseFloat(a.price.amount) / 1000000;
     const priceB = parseFloat(b.price.amount) / 1000000;
@@ -1258,28 +1258,6 @@ const MarketPriceRangeChart: React.FC<{
                 </div>
               );
             })}
-            
-            {/* Suggestions for optimal placement */}
-            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-400 mb-2">💡 Strategy Tips for Maximum Rewards:</h4>
-              <div className="space-y-2 text-sm text-gray-300">
-                <div>
-                  <span className="text-green-400 font-semibold">1. Price Priority:</span> Place orders at higher prices to get processed first
-                </div>
-                <div>
-                  <span className="text-purple-400 font-semibold">2. Spread Reduction:</span> Get up to 2x bonus by placing orders close to the best ask price
-                </div>
-                <div>
-                  <span className="text-yellow-400 font-semibold">3. Volume Caps:</span> Check tier capacity before placing large orders
-                </div>
-                <div>
-                  <span className="text-blue-400 font-semibold">4. Dynamic Rates:</span> Rewards adjust every 6 hours based on liquidity needs (7%-100% APR)
-                </div>
-                <div className="mt-2 text-xs text-gray-400">
-                  Current best positions: Near ${mcPrice.toFixed(6)} for maximum spread bonus + high priority
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -1649,23 +1627,6 @@ const MarketPriceRangeChart: React.FC<{
                 </div>
               );
             })}
-            
-            {/* Suggestions for optimal placement */}
-            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-400 mb-2">💡 Suggested Sell Levels for Rewards:</h4>
-              <div className="space-y-1 text-sm text-gray-300">
-                {(() => {
-                  const suggestions = [];
-                  if (mcPrice > 0) {
-                    // Since we only have negative deviations, sell orders get rewards when at or below market
-                    suggestions.push(`• $${mcPrice.toFixed(6)} - At market (Tier 1) - Eligible for rewards`);
-                    suggestions.push(`• $${(mcPrice * 0.97).toFixed(6)} - 3% below market (Tier 2) - Higher tier rewards`);
-                    suggestions.push(`• Note: Sell orders above market price are not eligible for LC rewards`);
-                  }
-                  return suggestions.map((s, i) => <div key={i}>{s}</div>);
-                })()}
-              </div>
-            </div>
           </div>
         )}
       </div>

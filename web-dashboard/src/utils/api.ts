@@ -2,13 +2,45 @@ import axios from 'axios';
 import { CHAIN_INFO, API_ENDPOINTS } from './config';
 import { Balance } from '../types';
 
+// Check localStorage for custom endpoint
+const getApiEndpoint = () => {
+  // Check window config first
+  if ((window as any).__MYCHAIN_CONFIG__?.REST_ENDPOINT) {
+    return (window as any).__MYCHAIN_CONFIG__.REST_ENDPOINT;
+  }
+  const customEndpoint = localStorage.getItem('MYCHAIN_API_ENDPOINT');
+  return customEndpoint || CHAIN_INFO.rest;
+};
+
+// Create multiple API instances for fallback
 const api = axios.create({
-  baseURL: CHAIN_INFO.rest,
+  baseURL: getApiEndpoint(),
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 10000, // 10 second timeout
 });
+
+// Direct API instance for AWS deployment
+const directApi = axios.create({
+  baseURL: 'http://18.226.214.89:1317',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+// Add request interceptor to check for updated endpoint
+api.interceptors.request.use(
+  (config) => {
+    const customEndpoint = localStorage.getItem('MYCHAIN_API_ENDPOINT');
+    if (customEndpoint && config.baseURL !== customEndpoint) {
+      config.baseURL = customEndpoint;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Add response interceptor for better error handling
 api.interceptors.response.use(
@@ -25,24 +57,36 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function to make requests with fallback
+const fetchWithFallback = async (endpoint: string) => {
+  try {
+    const response = await api.get(endpoint);
+    return response.data;
+  } catch (error) {
+    if (window.location.hostname === '18.226.214.89') {
+      const response = await directApi.get(endpoint);
+      return response.data;
+    }
+    throw error;
+  }
+};
+
 export const fetchNodeInfo = async () => {
-  const response = await api.get(API_ENDPOINTS.nodeInfo);
-  return response.data;
+  return fetchWithFallback(API_ENDPOINTS.nodeInfo);
 };
 
 export const fetchLatestBlock = async () => {
-  const response = await api.get(API_ENDPOINTS.latestBlock);
-  return response.data;
+  return fetchWithFallback(API_ENDPOINTS.latestBlock);
 };
 
 export const fetchBalance = async (address: string): Promise<Balance[]> => {
-  const response = await api.get(API_ENDPOINTS.balance(address));
-  return response.data.balances;
+  const data = await fetchWithFallback(API_ENDPOINTS.balance(address));
+  return data.balances;
 };
 
 export const fetchTotalSupply = async (): Promise<Balance[]> => {
-  const response = await api.get(API_ENDPOINTS.totalSupply);
-  return response.data.supply;
+  const data = await fetchWithFallback(API_ENDPOINTS.totalSupply);
+  return data.supply;
 };
 
 // Note: These endpoints don't exist in current implementation
@@ -128,8 +172,21 @@ export const formatAmount = (amount: string, decimals: number = 6): string => {
   return value.toFixed(6);
 };
 
-// Generic API fetch function for components
+// Generic API fetch function for components with fallback
 export const fetchAPI = async (endpoint: string) => {
-  const response = await api.get(endpoint);
-  return response.data;
+  try {
+    const response = await api.get(endpoint);
+    return response.data;
+  } catch (error) {
+    // If proxy fails, try direct connection for AWS
+    if (window.location.hostname === '18.226.214.89') {
+      try {
+        const response = await directApi.get(endpoint);
+        return response.data;
+      } catch (directError) {
+        throw error; // Throw original error
+      }
+    }
+    throw error;
+  }
 };

@@ -67,7 +67,7 @@ export const PersonalDashboard: React.FC = () => {
         }
 
         // Fetch DEX orders
-        const orderBookResponse = await fetchAPI('/mychain/dex/v1/order-book/1');
+        const orderBookResponse = await fetchAPI('/mychain/dex/v1/order_book/1');
         if (orderBookResponse) {
           const userBuyOrders = (orderBookResponse.buy_orders || []).filter((o: DexOrder) => o.maker === address);
           const userSellOrders = (orderBookResponse.sell_orders || []).filter((o: DexOrder) => o.maker === address);

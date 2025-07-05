@@ -16,7 +16,7 @@ import { useKeplr } from './hooks/useKeplr';
 import './App.css';
 
 function App() {
-  const { address, isConnected, connectWallet, disconnect, error, client, buyMainCoin, sellMainCoin } = useKeplr();
+  const { address, isConnected, connectWallet, disconnect, error, client, buyMainCoin, sellMainCoin, createDexOrder, cancelDexOrder } = useKeplr();
 
   return (
     <Router>
@@ -49,7 +49,7 @@ function App() {
               <Route path="/liquiditycoin" element={<LiquidityCoinPage />} />
               <Route path="/testusd" element={<TestUSDPage />} />
               <Route path="/staking" element={<StakingPage />} />
-              <Route path="/dex" element={<DEXPage />} />
+              <Route path="/dex" element={<DEXPage address={address} isConnected={isConnected} createDexOrder={createDexOrder} cancelDexOrder={cancelDexOrder} />} />
               <Route path="/transactions" element={<TransactionsPage />} />
             </Routes>
           </main>

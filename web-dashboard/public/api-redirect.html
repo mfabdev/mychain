@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Redirect Setup</title>
+    <meta charset="utf-8" />
+</head>
+<body>
+    <h1>Setting up API redirect...</h1>
+    <script>
+        // Clear all service workers
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        
+        // Clear caches
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+            });
+        }
+        
+        // Set localStorage to use new endpoints
+        localStorage.setItem('MYCHAIN_API_ENDPOINT', 'http://18.227.228.35:8080');
+        localStorage.setItem('MYCHAIN_RPC_ENDPOINT', 'http://18.227.228.35:26657');
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+        
+        alert('API endpoints updated! Please close this tab and open the dashboard in a new tab.');
+    </script>
+</body>
+</html>
